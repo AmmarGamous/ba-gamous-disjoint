@@ -1,0 +1,42 @@
+Überarbeitung von n50-clustered-filtered
+Durchgeführte Änderungen:
+
+1. Anpassung der Dateipfade:
+   Die Pfade zu den CSV-Dateien wurden an die aktuelle Projektstruktur angepasst, sodass das Notebook aus dem Ordner evaluation/notebooks/resilience korrekt auf die vorhandenen Ausgabedateien zugreifen kann.
+
+   Zusätzlich wurden die ursprünglich referenzierten CSV-Dateien für die Failure Rates 0.8 und 0.9 durch tatsächlich vorhandene Dateien ersetzt:
+   - (trees-2021-09-05_18-46-22-p0.15-n50-f0.7999999999999999.csv)
+   - (trees-2021-09-05_18-46-42-p0.15-n50-f0.8999999999999999.csv)
+
+2. Anpassung der Hops-Auswertung:
+   Die Auswertung verwendete Variablen wie yAvgsPaths, yAvgsOne und yAvgsMult, obwohl diese zu diesem Zeitpunkt nicht definiert waren. Die Berechnung wurde daher auf die bereits vorhandenen Arrays:
+   - avgHopsPaths
+   - avgHopsOne
+   - avgHopsMult
+   umgestellt.
+
+3. Ergänzung der fehlenden yAvgs-Arrays:
+   Für die spätere Prozentberechnung gegenüber dem Shortest Path wurden die fehlenden Arrays explizit erzeugt:
+   
+   yAvgsPaths = np.array(avgHopsPaths, dtype=float)
+   yAvgsOne   = np.array(avgHopsOne, dtype=float)
+   yAvgsMult  = np.array(avgHopsMult, dtype=float)
+   yAvgsSP    = np.array(avgHopsSP, dtype=float)
+
+4. Korrektur der Prozentberechnung:
+   Die Zellen zur Berechnung von:
+   - percentAvgsOneToSP
+   - percentAvgsMultToSP
+   - percentAvgsPathsToSP
+
+   wurden angepasst, sodass nun die korrekt definierten Arrays verwendet werden und kein NameError mehr entsteht.
+
+5. Korrektur der Zellenreihenfolge:
+   Die Berechnung der Prozentwerte wurde vor die zugehörige Plot-Zelle verschoben. Dadurch werden die benötigten Listen zuerst vollständig berechnet und anschließend geplottet.
+
+6. Durch die Änderungen wurden folgende Fehler behoben:
+   - FileNotFoundError
+   - NameError
+   - TypeError
+
+   Die Klasse n50-clustered-filtered kann nun vollständig ausgeführt werden und erzeugt die vorgesehenen Resilience- und Hops-Auswertungen für die clustered-failure-Topologie mit n=50.

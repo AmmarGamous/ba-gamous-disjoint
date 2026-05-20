@@ -1,0 +1,27 @@
+Überarbeitung von plots_randomRegular-n25-clustered
+
+Durchgeführte Änderungen:
+
+1. Anpassung der Dateipfade:
+   Die bisherigen relativen Pfade vom Typ CSVs/... wurden auf die aktuelle Projektstruktur ../../../../external/TREE/evaluation/output/Paper_CSVs/... umgestellt, damit das Notebook aus dem Ordner evaluation/notebooks/resilience korrekt auf die erzeugten CSV-Dateien zugreift.
+
+2. Anpassung der randomRegular-CSV-Ordner für n=25:
+   Die Pfade für die drei randomRegular-Experimente mit n=25 und clustered failures wurden angepasst:
+
+   CSVs/randomRegular/n25-p2-clustered/ wurde ersetzt durch ../../../../external/TREE/evaluation/output/Paper_CSVs/randomRegular/n25-p2-clustered/
+
+   CSVs/randomRegular/n25-p4-clustered/ wurde ersetzt durch ../../../../external/TREE/evaluation/output/Paper_CSVs/randomRegular/n25-p4-clustered/
+
+   CSVs/randomRegular/n25-p8-clustered/ wurde ersetzt durch ../../../../external/TREE/evaluation/output/Paper_CSVs/randomRegular/n25-p8-clustered/
+
+3. Anpassung der Topology-Zoo-Pfade:
+   Zusätzlich wurden die Pfade für die Topology-Zoo-Auswertungen auf die neue Projektstruktur umgestellt. Betroffen sind die clustered- und random-Auswertungen für attmpls, cogentco und oteglobe.
+
+4. Beibehaltung der bestehenden Plot- und Auswertungslogik:
+   Die Funktionen allInOne, plotEval, plotEvalAx und plotEvalAx2 wurden nicht verändert. Dadurch bleibt die ursprüngliche Berechnungslogik des TREE-Codes erhalten.
+
+5. Kontrolle der x-Achsen-Werte:
+   Die x-Achsen-Werte werden weiterhin mit np.arange(0.1, 1.0, 0.1) erzeugt. Dadurch stimmen die 9 x-Werte mit den 9 CSV-Dateien pro Experiment überein.
+
+6. Kontrolle der plotEval-Aufrufe:
+   Die plotEval-Aufrufe verwenden weiterhin xVals als erstes Argument. Dadurch werden die Failure Rates korrekt auf der x-Achse dargestellt.
