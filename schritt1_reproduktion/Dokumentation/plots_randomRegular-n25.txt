@@ -1,0 +1,9 @@
+Überarbeitung von plots_randomRegular-n25
+
+Durchgeführte Änderungen:
+
+1. Anpassung der Dateipfade an die aktuelle Projektstruktur:
+   Die bisherigen relativen Pfade aus den lokalen CSVs-Unterordnern wurden auf die aktuelle Projektstruktur unter ../../../../external/TREE/evaluation/output/Paper_CSVs/ umgestellt. Dies betrifft die randomRegular-Auswertungen für n25-p2, n25-p4 und n25-p8 sowie die Topology-Zoo-Auswertungen für clustered und random Failures. Dadurch greift das Notebook aus dem Ordner evaluation/notebooks/resilience korrekt auf die CSV-Dateien der extern eingebundenen TREE-Referenzimplementierung zu und verwendet eine einheitliche zentrale Datenquelle.
+
+2. Beibehaltung der Berechnungs- und Plot-Logik:
+   Die zentrale Funktion allInOne wurde nicht verändert. Die Berechnung von Resilience und Average Hops für EDPs, One Tree, Multiple Trees und Shortest Path bleibt daher identisch zur alten Version. Auch die Plot-Funktionen plotEval, plotEvalAx und plotEvalAx2 wurden beibehalten. Die kombinierten Plot-Zellen für clustered und random Topology-Zoo-Auswertungen verwenden weiterhin die gleiche Struktur mit 2 x 3 Subplots. Achsenbeschriftungen, Titel und Plot-Aufrufe bleiben unverändert, sodass die Darstellung weiterhin mit der alten Notebook-Version vergleichbar ist.
