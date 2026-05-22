@@ -1,0 +1,9 @@
+Überarbeitung von plots_randomRegular-n100
+
+Durchgeführte Änderungen:
+
+1. Anpassung der Dateipfade:
+   Die bisherigen relativen Pfade vom Typ CSVs/randomRegular/... wurden auf die aktuelle Projektstruktur ../../../../external/TREE/evaluation/output/Paper_CSVs/randomRegular/... umgestellt. Betroffen sind die Auswertungen n100-p2, n100-p4 und n100-p8. Die jeweilige Dateinamenlogik für trees-p2-n100-ff..., trees-p4-n100-ff... und trees-p8-n100-ff... wurde beibehalten. Zusätzlich wurden am Ende des Notebooks die Pfade der Topology-Zoo-Auswertungen auf die externe TREE-Projektstruktur angepasst.
+
+2. Kontrolle der Berechnungs- und Plotlogik:
+   Die zentrale Auswertungsfunktion allInOne sowie die Plotfunktionen plotEval, plotEvalAx, plotEvalAx2 und printHopPercent wurden nicht verändert. Auch die Aufrufe von allInOne und plotEval in den randomRegular-n100-Zellen bleiben gleich. Die Berechnung von Resilience und Average Hops für EDPs, One Tree und Multiple Trees bleibt daher identisch zur alten Version.

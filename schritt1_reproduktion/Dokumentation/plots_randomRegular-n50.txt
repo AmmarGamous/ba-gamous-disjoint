@@ -1,0 +1,9 @@
+Überarbeitung von plots_randomRegular-n50
+
+Durchgeführte Änderungen:
+
+1. Anpassung der Dateipfade:
+   Die bisherigen relativen Pfade vom Typ CSVs/... wurden auf die aktuelle Projektstruktur ../../../../external/TREE/evaluation/output/Paper_CSVs/... umgestellt. Dies betrifft sowohl die randomRegular-Auswertungen für n50-p2, n50-p4 und n50-p8 als auch die Topology-Zoo-Auswertungen für clustered und random failures. Dadurch greift das Notebook aus dem Ordner evaluation/notebooks/resilience korrekt auf die CSV-Dateien der extern eingebundenen TREE-Referenzimplementierung zu.
+
+2. Kontrolle der Plot-Erzeugung und Berechnungslogik:
+   Die Aufrufe von plotEval und plotEvalAx sowie die zentrale Auswertungsfunktion allInOne wurden nicht verändert. Auch die Arrays für Resilience und Average Hops werden weiterhin wie in der alten Version initialisiert und befüllt. Die Berechnung und Darstellung der Werte für EDPs, One Tree und Multiple Trees bleibt daher identisch zur alten Version.

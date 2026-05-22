@@ -1,0 +1,11 @@
+Überarbeitung von plots_zoo
+
+Durchgeführte Änderungen:
+
+1. Anpassung der Dateipfade:
+   Die bisherigen relativen Pfade vom Typ CSVs/zoo-.../ wurden auf die aktuelle Projektstruktur ../../../../external/TREE/evaluation/output/Paper_CSVs/zoo-.../ umgestellt. Dies betrifft sowohl die Clustered-Failure-Auswertungen als auch die Random-Failure-Auswertungen und die zusammenfassenden Plot-Zellen. Dadurch greifen die einzelnen Auswertungen und die finalen Vergleichsplots einheitlich auf die CSV-Dateien der extern eingebundenen TREE-Referenzimplementierung zu und es entstehen keine Abhängigkeiten zu alten lokalen CSVs-Ordnern.
+
+2. Neuinitialisierung der Ergebnislisten:
+   Die Ergebnislisten rPaths, rOne, rMult, avgHopsPaths, avgHopsOne, avgHopsMult und avgHopsSP werden  innerhalb der jeweiligen Auswertungsblöcke neu initialisiert. 
+
+3. Kontrolle der Berechnungslogik und fachlichen Zielsetzung: Die zentrale Auswertungsfunktion allInOne wurde nicht verändert. Die Berechnung von Resilience und Average Hops für EDPs, One Tree und Multiple Trees bleibt daher identisch zur alten Version. Auch die Plot-Funktionen plotEval, plotEvalAx und plotEvalAx2 wurden inhaltlich nicht verändert. Die Änderung betrifft vor allem die saubere Einbindung der Referenzimplementierung über external/TREE.
