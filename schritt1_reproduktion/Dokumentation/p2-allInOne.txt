@@ -1,0 +1,35 @@
+Überarbeitung von p2-allInOne und Anpassung an die aktuelle Projektstruktur
+
+Durchgeführte Änderungen:
+
+1. Anpassung der Dateipfade:
+   Die bisherigen relativen Pfade vom Typ CSVs/... wurden in allen fünf Auswertungszellen auf die aktuelle Projektstruktur ../../../../external/TREE/evaluation/output/ umgestellt. Dadurch greift die Klasse p2-allInOne nun direkt auf die erzeugten CSV-Dateien der extern eingebundenen TREE-Referenzimplementierung zu und benötigt keine lokal kopierten CSV-Dateien im Notebook-Ordner mehr.
+
+2. Korrektur der CSV-Aufrufe für die einzelnen Experimente:
+   Die folgenden Aufrufe wurden entsprechend angepasst:
+
+   allInOne("CSVs/trees-2021-07-25_13-22-50-p0.05-n100.csv")
+   wurde ersetzt durch:
+   allInOne("../../../../external/TREE/evaluation/output/trees-2021-07-25_13-22-50-p0.05-n100.csv")
+
+   allInOne('CSVs/trees-2021-07-25_14-24-23-p0.05-n100.csv')
+   wurde ersetzt durch:
+   allInOne('../../../../external/TREE/evaluation/output/trees-2021-07-25_14-24-23-p0.05-n100.csv')
+
+   allInOne('CSVs/trees-2021-07-24_19-48-33-p0.05-n100.csv')
+   wurde ersetzt durch:
+   allInOne('../../../../external/TREE/evaluation/output/trees-2021-07-24_19-48-33-p0.05-n100.csv')
+
+   allInOne('CSVs/trees-2021-07-25_14-37-35-p0.05-n100.csv')
+   wurde ersetzt durch:
+   allInOne('../../../../external/TREE/evaluation/output/trees-2021-07-25_14-37-35-p0.05-n100.csv')
+
+   allInOne('CSVs/trees-2021-08-01_19-33-45-p0.05-n100.csv')
+   wurde ersetzt durch:
+   allInOne('../../../../external/TREE/evaluation/output/trees-2021-08-01_19-33-45-p0.05-n100.csv')
+
+3. Beibehaltung der Experimentstruktur:
+   Die Markdown-Abschnitte und die Reihenfolge der Experimente wurden nicht verändert. Die Klasse enthält weiterhin dieselben Auswertungen für Clustered-Failures, adversariale Failures um d sowie den TODO-Fall mit schlecht angebundenem s. Dadurch bleibt die fachliche Struktur der alten Version erhalten.
+
+4. Kontrolle der Berechnungslogik:
+   Die zentrale Auswertungsfunktion allInOne wurde nicht verändert. Die Berechnung der Resilience-Werte, der Hop-Vergleiche und der Differenzplots für EDPs, One Tree, Multiple Trees sowie Ranked und Unranked Trees bleibt daher identisch zur alten Version.
