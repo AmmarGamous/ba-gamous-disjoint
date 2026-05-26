@@ -1,0 +1,100 @@
+Überarbeitung von Colorizer.py
+
+Durchgeführte Änderungen:
+
+1. Headless-Ausgabe aktiviert:
+Matplotlib wird nun mit dem Agg-Backend gestartet:
+matplotlib.use("Agg")
+Dadurch können PNG-Dateien auch ohne geöffnetes Fenster, ohne Notebook und ohne grafische Oberfläche erzeugt werden. Das ist wichtig für Serverläufe und GitLab-nahe Reproduktion.
+
+2. Speicherordner relativ zur Colorizer.py-Datei festgelegt:
+Der Standardausgabeordner wurde auf den lokalen Schritt-1-src-Ordner gelegt:
+schritt1_reproduktion/src/img
+Dafür wurden eingeführt:
+- SRC_DIR = Path(__file__).resolve().parent
+- DEFAULT_OUTPUT_DIR = SRC_DIR / "img"
+Damit landen relative Bildpfade nicht mehr abhängig vom aktuellen Terminalordner irgendwo im Projekt, sondern zuverlässig unter:
+schritt1_reproduktion/src/img
+
+3. Die neue Funktion resolveOutputPath(file_name) berechnet den tatsächlichen Speicherpfad, ergänzt bei Bedarf .png, unterstützt absolute Pfade und legt fehlende Zielordner automatisch an.
+
+4. Kantenattribute robuster gelesen:
+Die alte Implementierung erwartete, dass jede Kante ein numerisches attr-Feld besitzt.
+Neu ist:
+edgeAttrAsInt(data)
+Diese Funktion versucht, attr als Integer zu lesen. Falls attr fehlt oder nicht numerisch ist, wird 0 verwendet. Dadurch kann Colorizer.py auch Graphen visualisieren, bei denen nicht alle Kanten vollständig vorbereitet wurden.
+
+5. Fallback-Farbe ergänzt:
+mycmap(...) gibt nun auch für unerwartete Werte eine Farbe zurück. Dadurch entstehen keine None-Werte in der Farbliste.
+Fallback:
+lightgrey
+
+6. Mutable Default Argument entfernt:
+Die alte Signatur enthielt:
+fails=[]
+Das wurde ersetzt durch:
+fails=None
+Innerhalb der Funktion wird daraus bei Bedarf eine leere Liste erzeugt. Dadurch wird vermieden, dass eine veränderbare Standardliste zwischen Funktionsaufrufen geteilt wird.
+
+7. routed_paths robuster behandelt:
+routed_paths kann nun None sein. In diesem Fall wird intern eine leere Liste verwendet. Dadurch muss der Aufrufer routed_paths nicht explizit setzen.
+
+8. Titelanzeige für 0-Werte repariert:
+Vorher wurden hops oder sp_length nur in den Titel geschrieben, wenn sie truthy waren. Dadurch wurden Werte wie 0 nicht angezeigt.
+Neu wird geprüft mit:
+- hops is not None
+- sp_length is not None
+Damit erscheinen auch gültige Werte wie hops=0 oder sp_length=0 korrekt im Titel.
+
+9. DPI steuerbar gemacht:
+Die alte Implementierung speicherte immer mit dpi=1000. Das führte bei Tests und --draw-Läufen zu sehr langen Laufzeiten.
+Die Funktion colorizeGraph(...) akzeptiert nun:
+dpi=300
+Der Standard ist damit deutlich praktikabler. Falls nötig, kann weiterhin eine höhere Auflösung übergeben werden.
+
+10. Figuren werden geschlossen:
+Nach dem Speichern wird die Figur nun mit
+plt.close(fig)
+geschlossen. Das verhindert, dass bei vielen Visualisierungen unnötig viele offene Matplotlib-Figuren im Speicher bleiben.
+
+Durchgeführte Kontrollen:
+
+1. Syntaxprüfung:
+Die Datei wurde mit ast.parse(...) geprüft. Ergebnis:
+syntax ok
+
+2. Direkter Colorizer-Test:
+Ein kleiner path_graph mit vier Knoten wurde erzeugt. Danach wurden attr-Werte für Quelle, Ziel und Kanten gesetzt und colorizeGraph(...) direkt aufgerufen.
+Testaufruf sinngemäß:
+Colorizer.colorizeGraph(
+    g,
+    paths=1,
+    hops=0,
+    file_name="path_location_check/test_graph",
+    sp_length=0,
+    dpi=80
+)
+Ergebnis:
+Die PNG-Datei wurde erfolgreich erzeugt.
+Geprüfter Speicherort:
+schritt1_reproduktion/src/img/path_location_check/test_graph.png
+
+3. Pfadauflösung geprüft:
+Der direkte Aufruf von resolveOutputPath("path_location_check/test_graph") ergab:
+C:\Users\test\ba-gamous-disjoint\schritt1_reproduktion\src\img\path_location_check\test_graph.png
+Damit ist bestätigt, dass relative Pfade nun unter schritt1_reproduktion/src/img gespeichert werden.
+
+4. Integration mit kResilienceTrees.py geprüft:
+Ein kleiner Lauf mit --draw wurde über kResilienceTrees.py gestartet:
+python kResilienceTrees.py --rep 1 --p 2 --nrNodes 8 --failureModel random --edgeFailFactorPar 0 --outputDir output_colorizer_integration_check --seed 123 --draw
+Ergebnis:
+- CSV wurde erzeugt.
+- mehrere PNG-Dateien wurden unter schritt1_reproduktion/src/img/... erzeugt.
+- Colorizer.py funktioniert weiterhin im Zusammenspiel mit kResilienceTrees.py.
+
+Die Ausgabe unter schritt1_reproduktion/src/img ist bewusst gewählt, damit die Visualisierungen zu Schritt 1 gehören und nicht versehentlich im Projektwurzelordner img landen.
+Absolute Dateipfade werden weiterhin unterstützt. Wenn ein absoluter Pfad übergeben wird, wird dieser nicht unter schritt1_reproduktion/src/img verschoben.
+
+Ziel der Änderungen:
+
+Die Anpassungen wurden nur in der Schritt-1-Kopie unter schritt1_reproduktion/src vorgenommen. Sie betreffen ausschließlich die Visualisierung und Dateiausgabe. Die Routingalgorithmen sowie die Berechnung von Resilience- und Hop-Werten wurden nicht verändert. Ziel war es, die Bildausgabe robuster und reproduzierbarer zu machen, insbesondere für Serverläufe, GitLab-nahe Reproduktion und --draw-Ausführungen mit kResilienceTrees.py.

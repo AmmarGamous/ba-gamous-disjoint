@@ -1,0 +1,134 @@
+Überarbeitung von kResilienceTrees.py
+
+Durchgeführte Änderungen:
+
+1. Kommandozeilenstart ergänzt:
+Der alte __main__-Block startete direkt fest eingestellte große Experimente. Dieser Block wurde durch eine Kommandozeilenoberfläche ersetzt, sodass kleine und große Experimente gezielt über Parameter gestartet werden können.
+Durch die neue Funktionen: parseArgs(), runFromArgs(args) kann die Datei direkt mit Parametern gestartet werden, ohne Werte im Code umzuschreiben.
+Beispiel:
+python kResilienceTrees.py --rep 1 --p 2 --nrNodes 25 --failureModel clustered --failurePercent 0.9 --failureDropPar 0.3 --outputDir output --seed 123
+
+2. Parameter-Aliase hinzugefügt:
+Die Kommandozeilenparameter können nun sowohl mit lesbaren Namen als auch mit den Namen aus der ursprünglichen Implementierung verwendet werden.
+Beispiele:
+- --runs oder --rep
+- --degree oder --p
+- --nodes oder --nrNodes
+- --failure-model oder --failureModel
+- --failure-percent, --failurePercent oder --failurePercentPar
+- --failure-drop oder --failureDropPar
+- --tree-choice oder --treeChoice
+- --graphml oder --graphMLpath
+Spalten wie nrEdges, nrPaths, hopsRanked, hopsPath oder stretch_mult werden berechnet, da nicht alle CSV-Spalten Eingabeparameter sind. 
+
+3. CSV-Spaltenreihenfolge fest definiert:
+Die Reihenfolge der CSV-Ausgabe wurde als feste Liste CSV_FIELDNAMES definiert. Dadurch bleibt die Ausgabe kompatibel zur ursprünglichen TREE-Struktur.
+Verwendete Reihenfolge:
+rep,nrNodes,nrEdges,edgeProb,nrPaths,nrFails,failureModel,failurePercent,hopsRanked,hopsUnranked,spLength,stretch_mult,nodeAdditions,hopsPath,stretch_path,hopsRankedOne,hopsUnrankedOne,stretch_one,overallNodeAdditionsOne,treeChoice
+Diese Reihenfolge wurde mit einem Testlauf gegen den erzeugten Header geprüft.
+
+4. Runtime-Spalten separat festgelegt:
+Auch die Runtime-Ausgabe verwendet nun eine feste Feldliste:
+nodes,edges,edp,one,mult
+Der Header der Runtime-Datei wird nur geschrieben, wenn die Datei neu ist oder überschrieben wird. Dadurch werden bei angehängten Läufen keine mehrfachen Header in die Runtime-Datei geschrieben.
+
+5. Ausgabeordner steuerbar gemacht:
+Vorher wurden CSV-Dateien fest unter output/ geschrieben. Nun kann der Ausgabeordner mit output_dir bzw. --outputDir gesetzt werden.
+Beispiel:
+--outputDir output_failure_09_alias_check
+Der Zielordner wird automatisch angelegt, falls er noch nicht existiert.
+
+6. CSV-Dateinamen stabilisiert:
+Die Dateinamen werden weiter nach dem bekannten TREE-Schema erzeugt:
+Random-Regular:
+trees-p{p}-n{nrNodes}-ff{wert}.csv
+GraphML:
+trees-n{nrNodes}-ff{wert}.csv
+Für random failures wird der Wert aus edgeFailFactorPar verwendet. Für clustered/adversarial failures wird der Wert aus failurePercentPar verwendet.
+Der Sonderfall 0.0 wird als 0 geschrieben, damit Dateinamen wie trees-p2-n6-ff0.csv entstehen und nicht trees-p2-n6-ff0.0.csv.
+
+7. Seed für wiederholbare kleine Testläufe ergänzt:
+main(...) akzeptiert nun optional seed. Wenn ein Seed gesetzt ist, werden random und numpy entsprechend initialisiert. Für random_regular_graph wird daraus pro Wiederholung ein Graph-Seed erzeugt.
+Dadurch sind kleine Kontrollläufe besser reproduzierbar.
+
+8. Fehlerfall bei nicht erreichbarem Ziel repariert:
+Wenn nx.edge_disjoint_paths(...) wegen nicht erreichbarer Knoten scheitert, gab die Funktion früher ein zu kurzes Tupel zurück. Das konnte später beim Entpacken der Rückgabe brechen.
+Die Rückgabe hat nun auch im Fehlerfall die erwartete Länge:
+hops, sp_length, overallNodeAdditions, hops_unranked, graph, routed_paths, rankings, tree_order, timeEDP, overallTime
+
+9. draw=True abgesichert:
+Wenn draw=True gesetzt wurde, aber kein file_name übergeben war, konnte die Visualisierung wegen None + String abbrechen. In diesem Fall wird nun automatisch file_name = "run" verwendet.
+
+10. DFS-Filterung robuster gemacht:
+Die alte Implementierung entfernte Elemente aus dfs_edge_order_list, während über dieselbe Liste iteriert wurde. Das ist fehleranfällig.
+Dafür wurde cleanDfsEdges(dfs_edges) eingeführt. Die Funktion filtert nontree-Kanten und Self-Loops, ohne die Liste während der Iteration zu verändern.
+Diese Funktion wird in routeTrees(...), postProcessTree(...) und rankTree(...) verwendet.
+
+11. Leere DFS-Listen im Postprocessing abgefangen:
+Wenn im Postprocessing keine DFS-Kanten vorhanden sind, wird der jeweilige Baum übersprungen. Dadurch wird ein Zugriff auf dfs_edge_order_list[0] bei leerer Liste vermieden.
+
+12. Unbekannte failureModel-Werte explizit abgefangen:
+Wenn failureModel weder random, adversarial noch clustered ist, wird nun ein ValueError ausgelöst. Dadurch fällt eine falsche Eingabe direkt auf.
+
+13. Doppelte Zuweisung entfernt:
+overallNodeAdditionsOne wurde in der alten Datei dreimal hintereinander mit demselben Wert gesetzt. Die doppelten Zuweisungen wurden entfernt.
+
+14. CSV-Form für nrFails wieder an Referenz angepasst:
+Bei random failures wird nrFails als Zahl geschrieben.
+Bei clustered failures bleibt nrFails leer. Beim Einlesen mit pandas erscheint dieser leere Wert als NaN. Das entspricht den vorhandenen Referenz-CSV-Dateien.
+Beispiel clustered:
+1,25,25,2,2,,clustered,0.9;-0.3,...
+Beispiel random:
+1,25,25,2,2,1,random,-1,...
+
+15. Erdos-Renyi-Graphen wieder unterstützt:
+Zusätzlich zum bisherigen Random-Regular-Graphen kann die Datei nun wieder Erdos-Renyi-Graphen erzeugen. Dafür wurde der Parameter graph_type bzw. --graphType/--graph-type ergänzt.
+Verfügbare Werte:
+- random_regular
+- erdos_renyi
+Bei random_regular bedeutet --p bzw. --degree den Knotengrad. Bei erdos_renyi bedeutet --p die Kantenwahrscheinlichkeit.
+Beispiel für einen Erdos-Renyi-Lauf mit Visualisierung:
+python kResilienceTrees.py --rep 1 --graphType erdos_renyi --p 0.15 --nrNodes 50 --failureModel random --edgeFailFactorPar 1 --treeChoice edgeCount --outputDir output_er_check --draw --seed 123
+Die erzeugten Graph-Bilder werden über Colorizer.py unter schritt1_reproduktion/src/img gespeichert.
+
+Durchgeführte Kontrollen:
+
+1. Syntaxprüfung:
+Die Datei wurde mit ast.parse(...) geprüft. Ergebnis:
+syntax ok
+
+2. Hilfeausgabe der Kommandozeile:
+Der Aufruf
+python kResilienceTrees.py --help
+wurde geprüft. Die neuen Parameter und Aliase werden angezeigt.
+
+3. Kleiner random-failure Lauf:
+Beispielaufruf:
+python kResilienceTrees.py --runs 1 --degree 2 --nodes 25 --failure-model random --edge-fail-factor 1.0 --output-dir output_form_check_random --seed 123
+Erzeugte Datei:
+schritt1_reproduktion/src/output_form_check_random/trees-p2-n25-ff1.0.csv
+Geprüft:
+- Header korrekt
+- 20 Spalten
+- nrFails ist numerisch
+- failureModel ist random
+- failurePercent ist -1
+
+4. Kleiner clustered-failure Lauf mit 0.9:
+Beispielaufruf:
+python kResilienceTrees.py --rep 1 --p 2 --nrNodes 25 --failureModel clustered --failurePercent 0.9 --failureDropPar 0.3 --outputDir output_failure_09_alias_check --seed 123
+Erzeugte Datei:
+schritt1_reproduktion/src/output_failure_09_alias_check/trees-p2-n25-ff0.9.csv
+Beispielzeile:
+1,25,25,2,2,,clustered,0.9;-0.3,-1,-1,-1,0,0,-1,0,-1,-1,0,0,edgeCount
+Geprüft:
+- Header korrekt
+- 20 Spalten
+- nrFails bleibt leer
+- failurePercent wird als 0.9;-0.3 geschrieben
+
+Ziel der Änderungen:
+
+Die Anpassungen wurden nur in der Schritt-1-Kopie unter schritt1_reproduktion/src vorgenommen.
+Die Klasse kResilienceTrees.py sollte für Schritt 1 der Bachelorarbeit lauffähig und einfacher bedienbar gemacht werden. Ziel war nicht, die fachliche Algorithmik von EDPs, One Tree oder Multiple Trees umzubauen, sondern die bestehende Implementierung stabiler ausführbar zu machen und CSV-Dateien in der gleichen Form wie die ursprünglichen TREE-Ausgaben zu erzeugen.
+kResilienceTrees.py ist nun für kleine Kontrollläufe direkt startbar und erzeugt CSV-Dateien im erwarteten Ausgabeformat. Die fachlichen Algorithmen EDPs, One Tree und Multiple Trees wurden nicht grundlegend verändert. Die Anpassungen betreffen vor allem Ausführbarkeit, Robustheit, CSV-Kompatibilität und Bedienbarkeit für Schritt 1.
