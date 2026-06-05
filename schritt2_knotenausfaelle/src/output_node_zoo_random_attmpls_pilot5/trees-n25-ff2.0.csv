@@ -1,0 +1,6 @@
+rep,nrNodes,nrEdges,edgeProb,nrPaths,nrFails,nrFailedNodes,failureModel,failurePercent,hopsRanked,hopsUnranked,spLength,stretch_mult,nodeAdditions,hopsPath,stretch_path,hopsRankedOne,hopsUnrankedOne,stretch_one,overallNodeAdditionsOne,treeChoice
+5,25,56,..\data\topology_zoo\AttMpls.graphml,2,2,2,random,-1,-1,-1,5,-6,0,-1,-6,-1,-1,-6,0,edgeCount
+4,25,56,..\data\topology_zoo\AttMpls.graphml,2,2,2,random,-1,4,4,3,1,2,4,1,4,7,1,2,edgeCount
+3,25,56,..\data\topology_zoo\AttMpls.graphml,3,4,4,random,-1,4,4,3,1,22,3,0,3,3,0,12,edgeCount
+2,25,56,..\data\topology_zoo\AttMpls.graphml,3,4,4,random,-1,-1,-1,6,-7,22,-1,-7,-1,-1,-7,12,edgeCount
+1,25,56,..\data\topology_zoo\AttMpls.graphml,3,4,4,random,-1,4,3,3,1,10,3,0,3,3,0,6,edgeCount

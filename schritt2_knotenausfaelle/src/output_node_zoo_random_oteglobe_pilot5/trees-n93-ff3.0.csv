@@ -1,0 +1,6 @@
+rep,nrNodes,nrEdges,edgeProb,nrPaths,nrFails,nrFailedNodes,failureModel,failurePercent,hopsRanked,hopsUnranked,spLength,stretch_mult,nodeAdditions,hopsPath,stretch_path,hopsRankedOne,hopsUnrankedOne,stretch_one,overallNodeAdditionsOne,treeChoice
+5,93,103,..\data\topology_zoo\Oteglobe.graphml,1,0,0,random,-1,12,12,12,0,2,12,0,12,12,0,2,edgeCount
+4,93,103,..\data\topology_zoo\Oteglobe.graphml,2,3,3,random,-1,6,6,5,1,4,7,2,7,20,2,4,edgeCount
+3,93,103,..\data\topology_zoo\Oteglobe.graphml,2,3,3,random,-1,6,6,5,1,2,6,1,6,6,1,2,edgeCount
+2,93,103,..\data\topology_zoo\Oteglobe.graphml,2,3,3,random,-1,22,8,8,14,0,8,0,8,8,0,0,edgeCount
+1,93,103,..\data\topology_zoo\Oteglobe.graphml,2,3,3,random,-1,7,7,7,0,0,7,0,7,7,0,0,edgeCount

@@ -1,0 +1,10 @@
+path,failure_value,runs,EDPs_resilience,EDPs_avg_hops,One Tree_resilience,One Tree_avg_hops,Multiple Trees_resilience,Multiple Trees_avg_hops
+src\output_node_clustered_n25_p2_series\trees-p2-n25-ff0.1.csv,0.1,5,1.0,5.2,1.0,5.2,1.0,5.2
+src\output_node_clustered_n25_p2_series\trees-p2-n25-ff0.2.csv,0.2,5,1.0,5.2,1.0,5.2,1.0,5.2
+src\output_node_clustered_n25_p2_series\trees-p2-n25-ff0.3.csv,0.3,5,1.0,5.2,1.0,5.2,1.0,5.2
+src\output_node_clustered_n25_p2_series\trees-p2-n25-ff0.4.csv,0.4,5,1.0,5.2,1.0,5.2,1.0,5.2
+src\output_node_clustered_n25_p2_series\trees-p2-n25-ff0.5.csv,0.5,5,1.0,20.4,1.0,20.4,1.0,20.4
+src\output_node_clustered_n25_p2_series\trees-p2-n25-ff0.6.csv,0.6,5,1.0,20.4,1.0,20.4,1.0,20.4
+src\output_node_clustered_n25_p2_series\trees-p2-n25-ff0.7.csv,0.7,5,1.0,20.4,1.0,20.4,1.0,20.4
+src\output_node_clustered_n25_p2_series\trees-p2-n25-ff0.8.csv,0.8,5,0.4,21.5,0.4,21.5,0.4,21.5
+src\output_node_clustered_n25_p2_series\trees-p2-n25-ff0.9.csv,0.9,5,0.4,21.5,0.4,21.5,0.4,21.5

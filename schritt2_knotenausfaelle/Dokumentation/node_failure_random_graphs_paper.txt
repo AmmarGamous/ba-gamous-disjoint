@@ -1,0 +1,116 @@
+node_failure_random_graphs_paper.ipynb
+
+Ziel:
+Das Notebook node_failure_random_graphs_paper.ipynb enthält die Paper-nahe Auswertung für
+synthetische Random Graphs mit Node Failures.
+Die alten Paper-Plots für Random Graphs wurden in Schritt 1 mit Link Failures betrachtet.
+In Schritt 2 werden die gleichen Auswertungsarten auf Node/Vertex Failures übertragen.
+Die Routingalgorithmen bleiben unverändert. Geändert wird nur, welche Ausfälle in den
+Experimenten simuliert werden.
+
+Verwendete Graphparameter:
+Für die direkte Paper-Analogie wurden Erdos-Renyi-Graphen G(n,p) verwendet:
+- n=25, p=0.15
+- n=50, p=0.15
+- n=100, p=0.02
+Diese Parameter entsprechen der synthetischen Random-Graph-Reihe aus dem Paper.
+
+Aufbau des Notebooks:
+1. Technisches Setup:
+Die erste Code-Zelle enthält Pfade, Paper-Parameter und Ausgabeordner. 
+
+2. Hilfsfunktionen:
+Die Auswertung bleibt nah an den alten Plot-Notebooks aus Schritt 1. Die wichtigsten
+Funktionen sind:
+- allInOne(...)
+- plotEval(...)
+- plotEvalAx2(...)
+Die Funktionen lesen CSV-Dateien ein und berechnen:
+- Resilience für EDPs, One Tree und Multiple Trees
+- durchschnittliche Hops für EDPs, One Tree und Multiple Trees
+
+3. CSV-Import :
+Das Notebook liest vorhandene CSV-Dateien aus den
+Ergebnisordnern ein. Die Erzeugung der CSV-Dateien erfolgt ausschließlich über
+src/kResilienceTrees.py.
+Diese Trennung ist wichtig, damit die Notebooks wie in Schritt 1 nur der Auswertung und
+Darstellung dienen.
+
+4. Pilot-Zellen:
+Im Notebook sind kleine Pilotreihen mit 5 Wiederholungen eingebunden. Diese dienen nur der
+Plausibilitätskontrolle. Die Pilotkurven sind aufgrund der wenigen Wiederholungen noch nicht
+BA-fähig.
+
+5. Finale 1000-Run-Zellen:
+Die finalen Plot-Zellen lesen die 1000-Run-CSV-Dateien ein und erzeugen die BA-Plots.
+
+Ergebnisordner der 1000-Run-Reihe:
+
+Random Node Failures:
+- src/output_node_er_random_n25_p015_runs1000: 11 CSV-Dateien
+- src/output_node_er_random_n50_p015_runs1000: 21 CSV-Dateien
+- src/output_node_er_random_n100_p002_runs1000: 62 CSV-Dateien
+Clustered Node Failures:
+- src/output_node_er_clustered_n25_p015_runs1000: 7 CSV-Dateien
+- src/output_node_er_clustered_n50_p015_runs1000: 7 CSV-Dateien
+- src/output_node_er_clustered_n100_p002_runs1000: 7 CSV-Dateien
+Alle Ergebnis-CSV-Dateien enthalten 1000 Zeilen.
+
+Erzeugte Plot-Dateien:
+
+Random Node Failures:
+- evaluation/output/notebook_node_er_random_paper_runs1000.png
+- evaluation/output/notebook_node_er_random_paper_runs1000.svg
+Clustered Node Failures:
+- evaluation/output/notebook_node_er_clustered_paper_runs1000.png
+- evaluation/output/notebook_node_er_clustered_paper_runs1000.svg
+
+Durchgeführte Kontrollen:
+
+1. Notebook-Ausführung:
+Das Notebook wurde ausgeführt und gespeichert.
+Ergebnis:
+- 25 Zellen
+- 0 Fehlerausgaben
+
+2. CSV-Kontrolle:
+Geprüft wurde:
+- erwartete Anzahl CSV-Dateien pro Ordner
+- 1000 Zeilen pro Ergebnis-CSV
+- passende Werte für nrNodes, edgeProb und failureModel
+- vorhandene Spalte nrFailedNodes
+- plausible Mittelwerte der tatsächlich ausgefallenen Knoten
+Ergebnis:
+Alle 1000-Run-CSV-Dateien sind inhaltlich plausibel.
+
+Beobachtungen:
+
+Random Node Failures:
+Bei Random Node Failures sinkt die Resilience mit steigendem Node-Failure-Faktor.
+Multiple Trees erreicht meist die hoechste Resilience, gefolgt von One Tree und EDPs.
+Der Abstand zwischen den Verfahren ist sichtbar, aber nicht sehr groß.
+Der Graph n=100, p=0.02 verhaelt sich anders als n=25 und n=50 mit p=0.15. Obwohl dort
+hohe Failure-Faktoren betrachtet werden, bleibt die Resilience relativ hoch. Der Grund ist,
+dass die Anzahl der zufällig ausgewählten Knotenausfälle von der Anzahl der
+edge-disjoint paths abhängt. In dem dünneren Graphen gibt es im Mittel weniger solche
+Pfade, daher fallen auch bei hohen Faktoren weniger Knoten aus.
+
+Clustered Node Failures:
+Clustered Node Failures sind kritischer als Random Node Failures. Die ausgefallenen Knoten
+liegen konzentriert in der Umgebung des Zielknotens. Dadurch wird die Erreichbarkeit schneller
+verschlechtert.
+Multiple Trees zeigt bei clustered Node Failures einen größeren Vorteil gegenüber EDPs
+als bei Random Node Failures.
+
+Durchschnittliche Hops:
+Multiple Trees benötigt häufig mehr Hops als EDPs und One Tree. Das passt zur höheren
+Resilience: Die Methode findet in mehr Fällen noch eine Route, diese Route kann aber
+länger sein.
+Wenn die durchschnittlichen Hops bei hohen Failure-Werten sinken, bedeutet das nicht, dass
+das Routing einfacher wird. Der Mittelwert wird nur über erfolgreiche Routing-Versuche
+gebildet. Fehlgeschlagene Versuche gehen nicht in den Hops-Mittelwert ein.
+
+Ergebnis:
+Das Notebook stellt die synthetischen Paper-Graphen für Node Failures dar und nutzt
+dieselbe Auswertungslogik wie die alten Paper-Notebooks. Die finalen Plots basieren auf
+1000 Wiederholungen pro CSV-Datei.

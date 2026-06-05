@@ -1,0 +1,2 @@
+path,failure_value,runs,EDPs_resilience,EDPs_avg_hops,One Tree_resilience,One Tree_avg_hops,Multiple Trees_resilience,Multiple Trees_avg_hops
+src\output_node_random_check\trees-p2-n25-ff1.0.csv,1.0,1,1.0,10.0,1.0,10.0,1.0,10.0

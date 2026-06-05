@@ -1,0 +1,22 @@
+path,failure_value,runs,EDPs_resilience,EDPs_avg_hops,One Tree_resilience,One Tree_avg_hops,Multiple Trees_resilience,Multiple Trees_avg_hops
+src\output_node_random_n25_p2_series\trees-p2-n25-ff0.csv,0.0,5,1.0,5.2,1.0,5.2,1.0,5.2
+src\output_node_random_n25_p2_series\trees-p2-n25-ff1.0.csv,1.0,5,1.0,10.2,1.0,10.2,1.0,10.2
+src\output_node_random_n25_p2_series\trees-p2-n25-ff2.0.csv,2.0,5,0.6,3.6666666666666665,0.6,3.6666666666666665,0.6,3.6666666666666665
+src\output_node_random_n25_p2_series\trees-p2-n25-ff3.0.csv,3.0,5,0.6,7.666666666666667,0.6,7.666666666666667,0.6,7.666666666666667
+src\output_node_random_n25_p2_series\trees-p2-n25-ff4.0.csv,4.0,5,0.2,10.0,0.2,10.0,0.2,10.0
+src\output_node_random_n25_p2_series\trees-p2-n25-ff5.0.csv,5.0,5,0.2,6.0,0.2,6.0,0.2,6.0
+src\output_node_random_n25_p2_series\trees-p2-n25-ff6.0.csv,6.0,5,0.0,,0.0,,0.0,
+src\output_node_random_n25_p2_series\trees-p2-n25-ff7.0.csv,7.0,5,0.2,2.0,0.2,2.0,0.2,2.0
+src\output_node_random_n25_p2_series\trees-p2-n25-ff8.0.csv,8.0,5,0.0,,0.0,,0.0,
+src\output_node_random_n25_p2_series\trees-p2-n25-ff9.0.csv,9.0,5,0.0,,0.0,,0.0,
+src\output_node_random_n25_p2_series\trees-p2-n25-ff10.0.csv,10.0,5,0.2,2.0,0.2,2.0,0.2,2.0
+src\output_node_random_n25_p2_series\trees-p2-n25-ff11.0.csv,11.0,5,0.0,,0.0,,0.0,
+src\output_node_random_n25_p2_series\trees-p2-n25-ff12.0.csv,12.0,5,0.2,2.0,0.2,2.0,0.2,2.0
+src\output_node_random_n25_p2_series\trees-p2-n25-ff13.0.csv,13.0,5,0.0,,0.0,,0.0,
+src\output_node_random_n25_p2_series\trees-p2-n25-ff14.0.csv,14.0,5,0.2,2.0,0.2,2.0,0.2,2.0
+src\output_node_random_n25_p2_series\trees-p2-n25-ff15.0.csv,15.0,5,0.2,2.0,0.2,2.0,0.2,2.0
+src\output_node_random_n25_p2_series\trees-p2-n25-ff16.0.csv,16.0,5,0.2,2.0,0.2,2.0,0.2,2.0
+src\output_node_random_n25_p2_series\trees-p2-n25-ff17.0.csv,17.0,5,0.0,,0.0,,0.0,
+src\output_node_random_n25_p2_series\trees-p2-n25-ff18.0.csv,18.0,5,0.2,2.0,0.2,2.0,0.2,2.0
+src\output_node_random_n25_p2_series\trees-p2-n25-ff19.0.csv,19.0,5,0.0,,0.0,,0.0,
+src\output_node_random_n25_p2_series\trees-p2-n25-ff20.0.csv,20.0,5,0.0,,0.0,,0.0,

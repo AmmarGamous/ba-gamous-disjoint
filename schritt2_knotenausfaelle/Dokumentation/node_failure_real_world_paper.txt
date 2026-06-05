@@ -1,0 +1,126 @@
+node_failure_real_world_paper.ipynb
+
+Ziel:
+Das Notebook node_failure_real_world_paper.ipynb enthält die Paper-nahe Auswertung für
+Real-World-Graphen mit Node Failures.
+
+Notebook-Pfad:
+schritt2_knotenausfälle/evaluation/notebooks/node_failure_real_world_paper.ipynb
+Es orientiert sich an der alten Real-World-Auswertung aus Schritt 1, insbesondere an
+plots_zoo.ipynb. Statt Link Failures werden nun Node/Vertex Failures betrachtet. Die
+Routingalgorithmen bleiben unverändert.
+
+Verwendete Real-World-Graphen:
+Die Auswertung verwendet dieselben drei Topologien wie die zusammenfassenden Zoo-Plots aus
+Schritt 1:
+- ATT-MPLS, n=25
+- Cogentco, n=197
+- Oteglobe, n=93
+Die Graphen werden für Schritt 2 nicht aus den alten CSV-Dateien rekonstruiert. Sie werden
+aus GraphML-Dateien geladen, damit die Kantenliste der jeweiligen Topologie bekannt ist.
+
+Wichtiges Problem mit den alten Schritt-1-Daten:
+
+In Schritt 1 konnten die Real-World-Plots ohne lokal vorhandene GraphML-Dateien dargestellt
+werden, weil die alten Plot-Notebooks bereits fertige Paper_CSVs gelesen haben.
+Diese CSV-Dateien enthalten aber nur Ergebniswerte pro Lauf, zum Beispiel Resilience,
+Hops, Anzahl der Knoten und Anzahl der Kanten. Sie enthalten keine Kantenliste und keine
+vollständige Topologiebeschreibung.
+Für Node Failures reicht das nicht aus. Wenn ein Knoten ausfällt, muss bekannt sein, welche
+Kanten an diesem Knoten hängen. Deshalb kann man aus den alten Link-Failure-CSV-Dateien keine
+neuen Node-Failure-CSV-Dateien erzeugen.
+Im alten Original-Code steht für echte Real-World-Experimente weiterhin:
+loadedML = nx.Graph(nx.read_graphml(graphMLpath))
+Außerdem sind dort die benötigten Dateien vorgesehen:
+- graphml/AttMpls.graphml
+- graphml/Cogentco.graphml
+- graphml/Oteglobe.graphml
+Im aktuellen Workspace existierte dieser graphml-Ordner jedoch nicht.
+
+Die Topology-Zoo-Seite verweist inzwischen auf das GitHub-Archiv
+mroughan/InternetTopologyZoo. Dort werden die Daten als GraphML und GML für
+Netzwerktopologie-Projekte bereitgestellt.
+Quellen:
+- https://topology-zoo.org/dataset.html
+- https://github.com/mroughan/InternetTopologyZoo
+Für Schritt 2 wurden genau die drei benötigten GraphML-Dateien in den neuen Datenordner
+gelegt:
+- data/topology_zoo/AttMpls.graphml
+- data/topology_zoo/Cogentco.graphml
+- data/topology_zoo/Oteglobe.graphml
+Erwartete Pfade im Workspace:
+- schritt2_knotenausfälle/data/topology_zoo/AttMpls.graphml
+- schritt2_knotenausfälle/data/topology_zoo/Cogentco.graphml
+- schritt2_knotenausfälle/data/topology_zoo/Oteglobe.graphml
+
+Aufbau des Notebooks:
+
+1. Technisches Setup:
+Die erste Code-Zelle definiert Projektpfade, Datenordner, die drei Real-World-Graphen und
+die erwarteten CSV-Ordner.
+
+2. GraphML-Kontrolle:
+Das Notebook prüft, ob die drei GraphML-Dateien vorhanden sind. 
+
+3. CSV-Import:
+Das Notebook liest vorhandene Ergebnisdateien aus
+den Output-Ordnern ein. Die Erzeugung erfolgt über src/kResilienceTrees.py.
+
+4. Plotlogik:
+Die Plotlogik orientiert sich an plots_zoo.ipynb:
+- oben: Resilience
+- unten: durchschnittliche Hops
+- Spalten: ATT-MPLS, Cogentco und Oteglobe
+Es gibt jeweils einen Plot für Random Node Failures und einen Plot für Clustered Node
+Failures.
+
+Ergebnisordner der 1000-Run-Reihe:
+Random Node Failures:
+- src/output_node_zoo_random_attmpls_runs1000: 10 CSV-Dateien
+- src/output_node_zoo_random_cogentco_runs1000: 10 CSV-Dateien
+- src/output_node_zoo_random_oteglobe_runs1000: 10 CSV-Dateien
+Clustered Node Failures:
+- src/output_node_zoo_clustered_attmpls_runs1000: 7 CSV-Dateien
+- src/output_node_zoo_clustered_cogentco_runs1000: 7 CSV-Dateien
+- src/output_node_zoo_clustered_oteglobe_runs1000: 7 CSV-Dateien
+Alle Ergebnis-CSV-Dateien enthalten 1000 Zeilen.
+Erzeugte Plot-Dateien:
+Random Node Failures:
+- evaluation/output/notebook_node_zoo_random_paper_runs1000.png
+- evaluation/output/notebook_node_zoo_random_paper_runs1000.svg
+Clustered Node Failures:
+- evaluation/output/notebook_node_zoo_clustered_paper_runs1000.png
+- evaluation/output/notebook_node_zoo_clustered_paper_runs1000.svg
+
+Durchgeführte Kontrollen:
+1. Notebook-Ausführung:
+Das Notebook wurde ausgeführt und gespeichert.
+Ergebnis:
+- 24 Zellen
+- 0 Fehlerausgaben
+
+2. CSV-Kontrolle:
+Geprüft wurde:
+- alle erwarteten 51 Ergebnis-CSV-Dateien sind vorhanden
+- jede Ergebnis-CSV enthält 1000 Zeilen
+- die Spalte nrFailedNodes ist vorhanden
+- nrNodes, nrEdges und failureModel passen zur jeweiligen Topologie
+Ergebnis:
+Alle 1000-Run-CSV-Dateien sind inhaltlich plausibel.
+
+Beobachtungen:
+
+Random Node Failures:
+Bei ATT-MPLS fällt die Resilience deutlich mit steigendem Node-Failure-Faktor. Bei Cogentco
+und Oteglobe ist der Abfall weniger stark. Das liegt daran, dass die zufällig gewählten
+Knotenausfälle bei größeren bzw. anders strukturierten Topologien nicht sofort die
+Erreichbarkeit zerstören.
+Clustered Node Failures:
+Clustered Node Failures sind bei allen drei Real-World-Graphen deutlich kritischer als Random
+Node Failures. Die Resilience fällt, weil die Ausfälle lokal um den Zielbereich konzentriert
+sind.
+Multiple Trees erreicht in vielen Bereichen die hoechste Resilience. Gleichzeitig liegen die
+durchschnittlichen Hops für Multiple Trees häufig höher als bei EDPs und One Tree.
+
+Ergebnis:
+Das Notebook bildet die Real-World-Experimente für Node Failures ab.
