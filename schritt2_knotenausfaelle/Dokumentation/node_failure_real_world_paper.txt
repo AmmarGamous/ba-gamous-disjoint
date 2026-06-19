@@ -84,6 +84,7 @@ Clustered Node Failures:
 - src/output_node_zoo_clustered_cogentco_runs1000: 7 CSV-Dateien
 - src/output_node_zoo_clustered_oteglobe_runs1000: 7 CSV-Dateien
 Alle Ergebnis-CSV-Dateien enthalten 1000 Zeilen.
+
 Erzeugte Plot-Dateien:
 Random Node Failures:
 - evaluation/output/notebook_node_zoo_random_paper_runs1000.png

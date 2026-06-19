@@ -46,9 +46,9 @@ Analog zur Link-Failure-Variante startet der Cluster nahe beim Ziel. Zuerst werd
 Nachbarn des Zielknotens betrachtet, danach weitere Nachbarschaftsschichten. Quelle
 und Ziel werden auch hier ausgeschlossen.
 
-5. Umwandlung von Knotenfehlern in Kantenfehler:
+5. Simulation von Knotenausfällen über ausgefallene Kanten:
 Die Funktion nodeFailuresToEdgeFailures(g, failed_nodes) wandelt die ausgefallenen Knoten
-in eine Menge ausgefallener Kanten um.
+in die Menge der dadurch betroffenen Kanten um.
 Für jeden ausgefallenen Knoten werden alle inzidenten Kanten gesammelt. Doppelte Kanten
 werden entfernt. Diese Kantenmenge wird anschließend an die bestehenden Routing-Routinen
 übergeben.

@@ -1,0 +1,108 @@
+ndp_edp_random_runs1000.ipynb 
+
+schritt3_knoten_disjunkte_pfade/evaluation/notebooks/ndp_edp_random_runs1000.ipynb
+
+1. Zweck des Notebooks:
+Dieses Notebook ist die zentrale Auswertung für alle synthetischen Random-Graph Experimente in Schritt 3.
+Es liest ausschließlich vorhandene CSVs aus dem src-Ordner,
+prüft deren Struktur und erstellt daraus Vergleichsplots für EDP und NDP.
+Im Notebook und in den Plot-Titeln wird die Paper-Bezeichnung Random Graphs verwendet. 
+Technisch sind die paper-nahen Graphen als Erdos-Renyi-Graphen erzeugt worden. 
+Deshalb enthalten die Ausgabeordner weiterhin erdos_renyi im Namen.
+
+2. Eingelesene Daten:
+Das Notebook liest drei Gruppen:
+Frühe Random-Regular-Piloten:
+- output_ndp_edp_random_failures_series
+- output_ndp_edp_clustered_failures_series
+- 2 Ordner
+- 18 CSV-Dateien
+- 1.800 Datenzeilen
+Paper-nahe Pilot5-Reihen:
+- output_ndp_edp_er_random_n25_p015_pilot5
+- output_ndp_edp_er_random_n50_p015_pilot5
+- output_ndp_edp_er_random_n100_p002_pilot5
+- output_ndp_edp_er_clustered_n25_p015_pilot5
+- output_ndp_edp_er_clustered_n50_p015_pilot5
+- output_ndp_edp_er_clustered_n100_p002_pilot5
+- 6 Ordner
+- 48 CSV-Dateien
+- 240 Datenzeilen
+Paper-nahe 1000-Run-Reihen:
+- output_ndp_edp_er_random_n25_p015_runs1000
+- output_ndp_edp_er_random_n50_p015_runs1000
+- output_ndp_edp_er_random_n100_p002_runs1000
+- output_ndp_edp_er_clustered_n25_p015_runs1000
+- output_ndp_edp_er_clustered_n50_p015_runs1000
+- output_ndp_edp_er_clustered_n100_p002_runs1000
+- 6 Ordner
+- 230 CSV-Dateien
+- 230.000 Datenzeilen
+
+3. Graphkonfigurationen:
+Frühe Pilotreihe:
+- random_regular
+- n=25
+- Grad 4
+Paper-nahe Random Graphs:
+- n=25, p=0.15
+- n=50, p=0.15
+- n=100, p=0.02
+
+4. Validierung beim Laden:
+Das Notebook prüft vor der Auswertung:
+- Die erwarteten Ordner existieren.
+- Die erwartete Anzahl CSV-Dateien ist vorhanden.
+- Jede CSV hat die erwartete Anzahl Datenzeilen.
+- rep ist innerhalb jeder CSV eindeutig.
+- graphType ist bei den paper-nahen Reihen erdos_renyi.
+- nrNodes entspricht der erwarteten Knotenzahl.
+- edgeProb entspricht dem erwarteten p-Wert.
+- Die frühen Pilotdaten erfüllen nrEDPs >= nrNDPs.
+Wenn eine dieser Bedingungen nicht stimmt, bricht das Notebook mit einem AssertionError ab.
+
+5. Berechnete Kennzahlen:
+Für jede Gruppe werden EDP und NDP berechnet beziehungsweise zusammengefasst:
+- resilience
+  Anteil erfolgreicher Routings. Ein Routing ist erfolgreich, wenn hopsEDP beziehungsweise hopsNDP nicht -1 ist.
+- meanHopsSuccessful
+  Mittlere Hop-Anzahl nur über erfolgreiche Routen.
+- meanFailures
+  Mittlere tatsächliche Anzahl ausgefallener Links oder Knoten.
+Bei Random Failures ist die x-Achse der Failure Factor.
+Bei Clustered Failures ist die x-Achse der Failure Start.
+
+6. Ausgaben:
+Plotordner:
+schritt3_knoten_disjunkte_pfade/evaluation/output/ndp_edp_random_runs1000
+Erzeugte Plots:
+- ndp_edp_random_regular_pilot_random.png
+- ndp_edp_random_regular_pilot_clustered.png
+- ndp_edp_random_pilot5_random_link.png
+- ndp_edp_random_pilot5_random_node.png
+- ndp_edp_random_pilot5_clustered_link.png
+- ndp_edp_random_pilot5_clustered_node.png
+- ndp_edp_random_runs1000_random_link.png
+- ndp_edp_random_runs1000_random_node.png
+- ndp_edp_random_runs1000_clustered_link.png
+- ndp_edp_random_runs1000_clustered_node.png
+Insgesamt:
+10 PNG-Dateien.
+
+7. Notebook-Aufbau:
+Das Notebook enthält 10 Zellen:
+- 6 Codezellen
+- 4 Markdownzellen
+Alle Codezellen wurden ausgeführt.
+Es gibt keine Error-Outputs.
+Das Notebook enthält read_csv-Aufrufe.
+Das Notebook enthält keine to_csv-Aufrufe.
+
+8. Hinweise zur Interpretation:
+Random Failure Factor und Clustered Failure Start sind nicht direkt dieselbe Größe.
+Failure Factor steuert bei Random Failures die Anzahl zufälliger Ausfälle.
+Failure Start steuert bei Clustered Failures den Anteil der ersten Ausbreitungsschicht.
+Für einen direkten Vergleich zwischen Random und Clustered Failures sollte meanFailures mit betrachtet werden.
+
+9. Ergebnis:
+Das Notebook bündelt alle synthetischen Random-Graph-Auswertungen von Schritt 3 und ersetzt die früheren separaten Pilot-Notebooks.
