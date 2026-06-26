@@ -1,0 +1,47 @@
+result_analysis.py
+
+Datei: schritt4_algorithmen_vergleich/evaluation/result_analysis.py
+
+1. Aufgabe des Moduls:
+result_analysis.py enthält gemeinsame Auswertungsfunktionen für die finalen Schritt-4-Notebooks. 
+Es verhindert doppelte Plot- und Aggregationslogik in den Notebookdateien.
+
+2. Wichtige Funktionen:
+load_result_directories()
+    Lädt alle algorithms_*.csv aus den angegebenen Dataset-Verzeichnissen und
+    ergänzt Datasetname sowie Quelldatei.
+
+aggregate_results()
+    Berechnet aus den Rohdaten die Summary-Tabelle mit:
+    - Resilience,
+    - Avg. Hops,
+    - Avg. Stretch,
+    - samples,
+    - successes.
+
+completeness_table()
+    Erstellt eine Übersicht, ob pro Konfiguration alle Algorithmen und die erwartete Sample-Zahl vorhanden sind.
+
+validate_summary()
+    Bricht mit Fehler ab, wenn die Daten unvollständig sind oder Resilience außerhalb des Bereichs [0, 1] liegt.
+
+plot_all_comparisons()
+    Erzeugt die Vergleichsplots als PNG und SVG.
+    Die Funktion kann gezielt nur ausgewählte Metriken plotten,
+    damit Resilience/Avg. Hops und Avg. Stretch in getrennten Notebookzellen erzeugt werden können.
+
+3. Plotkonventionen:
+Die X-Achse heißt paper-nah Failure Rate.
+Intern gilt:
+- Random Failures: Failure Rate entspricht failFactor.
+- Clustered Failures: Failure Rate entspricht failureStart.
+EDP-Verfahren werden durchgezogen dargestellt, NDP-Verfahren gestrichelt.
+
+4. Nutzung:
+Das Modul wird von diesen Hauptnotebooks genutzt:
+- synthetic_graphs_runs1000.ipynb
+- real_world_graphs_runs1000.ipynb
+
+5. Prüfstatus:
+validate_summary() und die Aggregation werden durch
+test_final_analysis_validates_complete_server_style_data geprüft.

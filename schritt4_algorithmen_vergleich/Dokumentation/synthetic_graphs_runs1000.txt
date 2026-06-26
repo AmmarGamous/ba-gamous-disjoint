@@ -1,0 +1,48 @@
+synthetic_graphs_runs1000.ipynb
+
+Datei: schritt4_algorithmen_vergleich/evaluation/notebooks/synthetic_graphs_runs1000.ipynb
+
+1. Aufgabe des Notebooks:
+synthetic_graphs_runs1000.ipynb ist das Hauptnotebook für Random Graphs.
+Es enthält einen Pilotlauf und danach die finale 1000-Run-Auswertung.
+
+2. Pilot:
+Der Pilotabschnitt prüft die Pipeline auf kleinen Random Graphs bzw. Erdos-Renyi-Graphen mit:
+- n = 25
+- p = 0.15
+- kleiner Run-Zahl
+- Random und Clustered Failures
+- Link und Node Failures
+Der Pilot erzeugt bzw. nutzt:
+    schritt4_algorithmen_vergleich/output/random_failures_pilot_data
+    schritt4_algorithmen_vergleich/output/clustered_failures_pilot_data
+    schritt4_algorithmen_vergleich/evaluation/output/synthetic_graphs_pilot
+
+3. Finale Auswertung:
+Nach dem Pilotabschnitt lädt das Notebook die vollständigen Daten:
+    schritt4_algorithmen_vergleich/output/server/synthetic_n25_p015
+    schritt4_algorithmen_vergleich/output/server/synthetic_n50_p015
+    schritt4_algorithmen_vergleich/output/server/synthetic_n100_p002
+Erwartet werden pro Konfiguration 1000 Runs und alle sechs Algorithmen.
+
+4. Ausgaben:
+Finale Ausgaben:
+    schritt4_algorithmen_vergleich/evaluation/output/synthetic_graphs_runs1000
+Erwartet:
+- 12 PNG-Plots
+- 12 SVG-Plots
+- synthetic_graphs_runs1000_summary.csv
+Zusätzlich erzeugt der Pilot seine Pilotplots im Pilot-Outputordner,
+aber wenn Pilotdaten vollständig vorhanden sind, werden sie wiederverwendet.
+
+5. Plotstruktur:
+Hauptplots:
+- Resilience
+- Avg. Hops
+Separate Stretch-Zelle:
+- Avg. Stretch
+Die X-Achse wird in den Plots paper-nah als Failure Rate bezeichnet.
+Technisch entspricht failureParameter bei Random Failures dem failFactor und bei Clustered Failures dem failureStart.
+
+6. Status:
+Die finalen CSV-Dateien wurden vollständig geprüft.
