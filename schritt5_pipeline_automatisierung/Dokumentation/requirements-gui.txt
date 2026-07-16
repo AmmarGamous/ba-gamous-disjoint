@@ -1,0 +1,4 @@
+# GUI-Abhängigkeiten für Schritt 5.
+#  Zuerst eine virtuelle Umgebung mit `python -m venv venv` erstellen.
+# `venv` ist Teil der Python-Standardbibliothek und wird nicht per pip installiert.
+streamlit

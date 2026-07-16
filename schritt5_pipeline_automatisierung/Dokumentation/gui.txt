@@ -1,0 +1,46 @@
+gui.py
+
+
+Zweck
+`gui.py` stellt eine Streamlit-Oberfläche für die Pipeline bereit. Die GUI
+ersetzt die Pipeline nicht, sondern sammelt Einstellungen, schreibt eine
+JSON-Konfiguration und startet oder vorbereitet danach denselben Pipeline-Kern.
+
+Aufgaben
+- Algorithmen, Fehlertypen, Metriken und Ausführungsmodus auswählbar machen
+- Random-Graphen und Real-World-Graphen konfigurieren
+- Failure-Rate-Bereiche für Random- und Clustered-Failure erzeugen
+- Paper-Graphsets als fertige Auswahl bereitstellen
+- `gui_config.json` im Ausgabeordner schreiben
+- lokalen Lauf starten oder Serverbefehl erzeugen
+- Ergebnisse, Summary-Pfad und PNG-Plots anzeigen
+
+Wichtige Konstanten
+- `DEFAULT_SEED = 123`: fester GUI-Seed für reproduzierbare GUI-Läufe.
+- `ERDOS_RENYI_DATASETS`: vorbereitete Random-Graphsets aus Schritt 4.
+- `REAL_WORLD_DATASETS`: lokale TopologyZoo-GraphML-Datasets.
+- `GRAPH_TYPE_LABELS`: sichtbare GUI-Namen für Graph-Typen.
+- `ALGORITHM_LABELS` und `FAILURE_LABELS`: sichtbare Namen für Auswahlfelder.
+
+Wichtige Funktionen
+- `build_failure_rate_range(...)`: erzeugt inklusive Failure-Rate-Listen.
+- `build_gui_random_dataset(...)`: erzeugt ein GUI-Dataset für Erdős-Rényi.
+- `build_gui_real_world_dataset(...)`: erzeugt ein GUI-Dataset für GraphML-Topologien.
+- `build_plot_groups(...)`: trennt Plots in Random- und Real-World-Gruppen.
+- `build_gui_config(...)`: baut die Pipeline-JSON aus GUI-Eingaben.
+- `write_gui_config(...)`: schreibt `gui_config.json`.
+- `build_server_command(...)`: erzeugt einen wiederholbaren Serverbefehl.
+- `_render_graph_builder(...)`: rendert die Graph-Auswahl mit mehreren Graph-Konfigurationen.
+- `main(...)`: startet die Streamlit-Anwendung.
+
+Erweiterungspunkte
+- Neue Algorithmusnamen werden in `ALGORITHM_LABELS` ergänzt.
+- Neue Failure-Auswahlen werden in `FAILURE_LABELS` ergänzt.
+- Neue GUI-Graph-Typen werden in `GRAPH_TYPE_LABELS` ergänzt und im Graph-Builder gerendert.
+
+Besonderheiten
+- Die GUI schreibt Failure-Parameter direkt in jedes Dataset.
+- Der Modus `Dry Run` zeigt nur den geplanten Jobplan.
+- Der Modus `Preflight` prüft die technische Ausführbarkeit.
+- Die GUI zeigt PNG-Plots nach dem Lauf an, wenn diese erzeugt wurden.
+- Die Option `Server vorbereiten` startet keinen entfernten Prozess, sondern erzeugt eine Config und ein Hilfsskript.

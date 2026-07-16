@@ -1,0 +1,75 @@
+{
+  "run_name": "full_runs1000",
+  "title": "Step 5 Full Pipeline",
+  "runs": 1000,
+  "seed": 123,
+  "resume": true,
+  "algorithms": [
+    "edp_paths",
+    "edp_one_tree",
+    "edp_multiple_trees",
+    "ndp_paths",
+    "ndp_one_tree",
+    "ndp_multiple_trees"
+  ],
+  "failures": [
+    "random_link",
+    "random_node",
+    "clustered_link",
+    "clustered_node"
+  ],
+  "fail_factors": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+  "failure_starts": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+  "failure_drop": 0.3,
+  "metrics": ["resilience", "avgHops", "avgStretch"],
+  "datasets": [
+    {
+      "name": "synthetic_n25_p015",
+      "display_name": "Random Graphs n=25, p=0.15",
+      "type": "synthetic",
+      "graph_type": "erdos_renyi",
+      "nodes": 25,
+      "p": 0.15,
+      "fail_factors": [0.8, 1.6, 2.4, 3.2, 4.0, 4.8, 5.6, 6.4, 7.2, 8.0, 8.8]
+    },
+    {
+      "name": "synthetic_n50_p015",
+      "display_name": "Random Graphs n=50, p=0.15",
+      "type": "synthetic",
+      "graph_type": "erdos_renyi",
+      "nodes": 50,
+      "p": 0.15,
+      "fail_factors": [0.8, 1.6, 2.4, 3.2, 4.0, 4.8, 5.6, 6.4, 7.2, 8.0, 8.8, 9.6, 10.4, 11.2, 12.0, 12.8, 13.6, 14.4, 15.2, 16.0, 16.8]
+    },
+    {
+      "name": "synthetic_n100_p002",
+      "display_name": "Random Graphs n=100, p=0.02",
+      "type": "synthetic",
+      "graph_type": "erdos_renyi",
+      "nodes": 100,
+      "p": 0.02,
+      "fail_factors": [0.8, 1.6, 2.4, 3.2, 4.0, 4.8, 5.6, 6.4, 7.2, 8.0, 8.8, 9.6, 10.4, 11.2, 12.0, 12.8, 13.6, 14.4, 15.2, 16.0, 16.8, 17.6, 18.4, 19.2, 20.0, 20.8, 21.6, 22.4, 23.2, 24.0, 24.8, 25.6, 26.4, 27.2, 28.0, 28.8, 29.6, 30.4, 31.2, 32.0, 32.8, 33.6, 34.4, 35.2, 36.0, 36.8, 37.6, 38.4, 39.2, 40.0, 40.8, 41.6, 42.4, 43.2, 44.0, 44.8, 45.6, 46.4, 47.2, 48.0, 48.8, 49.6]
+    },
+    {
+      "name": "real_attmpls",
+      "display_name": "ATT-MPLS",
+      "type": "graphml",
+      "graphml": "data/topology_zoo/AttMpls.graphml",
+      "graph_name": "attmpls"
+    },
+    {
+      "name": "real_cogentco",
+      "display_name": "Cogentco",
+      "type": "graphml",
+      "graphml": "data/topology_zoo/Cogentco.graphml",
+      "graph_name": "cogentco"
+    },
+    {
+      "name": "real_oteglobe",
+      "display_name": "Oteglobe",
+      "type": "graphml",
+      "graphml": "data/topology_zoo/Oteglobe.graphml",
+      "graph_name": "oteglobe"
+    }
+  ]
+}

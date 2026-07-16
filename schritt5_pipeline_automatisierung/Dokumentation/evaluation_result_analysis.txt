@@ -1,0 +1,32 @@
+evaluation/result_analysis.py
+
+
+Zweck
+`evaluation/result_analysis.py` lädt Rohdaten, aggregiert die Ergebnisse und
+erzeugt paper-nahe Vergleichsplots.
+
+Aufgaben
+- alle `algorithms_*.csv`-Dateien pro Dataset laden
+- Resilience, Average Hops und Average Stretch aggregieren
+- Vollständigkeit der Algorithmusauswahl prüfen
+- PNG- und SVG-Plots pro Failure-Kombination und Metrik schreiben
+
+Wichtige Strukturen
+- `ALGORITHM_LABELS`: sichtbare Plot-Legenden.
+- `ALGORITHM_COLORS`: feste Farben pro Algorithmus.
+
+Wichtige Funktionen
+- `load_result_directories(...)`: liest Rohdatenordner und ergänzt Dataset-Schlüssel.
+- `aggregate_results(...)`: berechnet Summary-Daten.
+- `completeness_table(...)`: erzeugt eine Kontrolltabelle.
+- `validate_summary(...)`: prüft Vollständigkeit und gültige Resilience-Werte.
+- `plot_all_comparisons(...)`: erzeugt Plotdateien.
+
+Erweiterungspunkte
+- Neue Algorithmen müssen in `ALGORITHM_LABELS` und `ALGORITHM_COLORS` ergänzt
+  werden, damit die Plot-Erzeugung vollständige Legenden und Farben hat.
+
+Besonderheiten
+- `failureParameter` wird aus `failFactor` oder `failureStart` gebildet.
+- Die Pipeline übergibt Plotgruppen, damit Random-Graphen und Real-World-Graphen
+  getrennt visualisiert werden können.

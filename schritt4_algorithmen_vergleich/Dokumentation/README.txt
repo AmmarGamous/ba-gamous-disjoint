@@ -17,7 +17,7 @@ Die Bezeichnung der synthetischen Graphen orientiert sich in der Auswertung am P
 wird deshalb sichtbar als "Random Graphs" geführt.
 Einige Datei- und Ordnernamen enthalten weiterhin "synthetic", damit vorhandene Pfade und Ausgaben stabil bleiben.
 
-Papergetreue Konstruktion
+Paper-nahe Konstruktion
 - EDPs beziehungsweise NDPs werden zuerst berechnet.
 - Für die Baumkonstruktion werden die Pfade längste zuerst betrachtet.
 - One Tree erweitert ausschließlich den längsten Pfad.
@@ -41,7 +41,8 @@ Diese Datei enthält den gemeinsamen Kern der sechs Routingverfahren.
 Implementiert sind:
 
 - RoutingStructure: speichert Pfade, Bäume, Exit-Knoten und den ursprünglichen Hauptpfad einer Routingstruktur.
-- RoutingResult: speichert Erfolg, Hops, Stretch, verwendetes Verfahren und optionale Zusatzinformationen eines Routings.
+- RoutingResult speichert Erfolg, Hops, Route, Anzahl Pfade und Anzahl Strukturen. 
+   Der Stretch wird anschließend in experiment.py anhand der kürzesten Restpfadlänge berechnet und in die CSV geschrieben.
 - ALGORITHMS: zentrale Liste der sechs implementierten Verfahren.
 - get_disjoint_paths: berechnet EDPs oder NDPs abhängig vom Verfahren.
 - build_structures: baut je nach Modus Pfad-, One-Tree- oder Multiple-Tree- Strukturen.

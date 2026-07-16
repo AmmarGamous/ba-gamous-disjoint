@@ -1,0 +1,40 @@
+src/routing_algorithms.py
+
+
+Zweck
+`src/routing_algorithms.py` enthält die sechs paper-nahen Routingvarianten aus
+EDP/NDP und Paths/One Tree/Multiple Trees. Das Modul baut Routingstrukturen und
+simuliert das Routing unter ausgefallenen Kanten.
+
+Aufgaben
+- EDP- und NDP-Pfade berechnen
+- Pfade, One Tree und Multiple Trees erzeugen
+- Bäume wachsen lassen und trunkieren
+- Routing mit Backtracking simulieren
+- Ergebnisse als `RoutingResult` zurückgeben
+
+Wichtige Klassen
+- `RoutingStructure`: beschreibt eine Pfad- oder Baumstruktur für ein Source-Destination-Paar.
+- `RoutingResult`: beschreibt Erfolg, Hops, Route und Strukturanzahl eines Algorithmus.
+
+Wichtige Strukturen
+- `BASE_ALGORITHMS`: die sechs bestehenden Varianten.
+- `EXTRA_ALGORITHM_RUNNERS`: Erweiterungspunkt für einfache Zusatzalgorithmen.
+- `ALGORITHMS`: sichtbare Gesamtauswahl aus Basis- und Zusatzalgorithmen.
+
+Wichtige Funktionen
+- `get_disjoint_paths(...)`: berechnet EDPs oder NDPs.
+- `build_structures(...)`: baut Paths, One Tree oder Multiple Trees.
+- `route_structure(...)`: routet über eine konkrete Struktur.
+- `route_algorithm(...)`: führt genau einen Algorithmus aus.
+- `run_algorithms(...)`: vergleicht ausgewählte Algorithmen auf derselben Instanz.
+
+Erweiterungspunkte
+- Ein einfacher neuer Algorithmus wie `shortest_path` wird als Funktion
+  implementiert und in `EXTRA_ALGORITHM_RUNNERS` registriert.
+- Für solche Zusatzalgorithmen wird kein EDP-/NDP-Pfadcache benötigt.
+
+Besonderheiten
+- Das Ziel `destination` ist nicht Teil der gespeicherten Baumstruktur.
+- Kanten werden intern als `frozenset` normalisiert.
+- Fehlgeschlagene Routen erhalten `hops = -1`.

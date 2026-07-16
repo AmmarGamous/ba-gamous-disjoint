@@ -1,0 +1,182 @@
+# Feedbackfragen: Reproduzierbarkeit
+
+Ziel:
+Die Umgebung soll von einer anderen Person auf einem anderen Rechner nachvollziehbar gestartet werden können.
+Dabei soll geprüft werden, ob Installation, Konfiguration, Ausführung und Ergebnisablage verständlich und reproduzierbar sind.
+
+Bitte teste nach Möglichkeit einen kleinen Lauf(5-10), zum Beispiel mit der
+Pilot-Konfiguration oder einer kleinen GUI-Konfiguration. Notiere währenddessen
+alle Stellen, an denen du nachdenken, suchen oder nachfragen musstest.
+
+## Angaben zur testenden Person
+
+Name:
+
+Studiengang / Rolle:
+
+Betriebssystem:
+
+Python-Version:
+
+Datum:
+
+## Vor dem Start
+
+1. War aus der README klar, welchen Ordner du verwenden musst?
+
+Antwort:
+
+2. War klar, welche Abhängigkeiten installiert werden müssen?
+
+Antwort:
+
+3. War klar, ob du die CLI, die GUI oder beides testen sollst?
+
+Antwort:
+
+4. War die Ordnerstruktur verständlich, insbesondere `config/`, `data/`,
+   `src/`, `evaluation/`, `Output/` und `Dokumentation/`?
+
+Antwort:
+
+## Installation und Start
+
+5. Konntest du die Umgebung ohne zusätzliche Erklärung starten?
+
+Antwort:
+
+6. Falls der Start nicht direkt funktioniert hat: Welche Fehlermeldung oder
+   welches Problem ist aufgetreten?
+
+Antwort:
+
+7. Waren die Startbefehle in der README verständlich?
+
+Antwort:
+
+8. War der Unterschied zwischen `--dry-run`, `--preflight`,
+   `--only-experiments` und `--only-plots` verständlich?
+
+Antwort:
+
+9. Falls du die GUI getestet hast: War klar, wie `streamlit run gui.py`
+   beziehungsweise `python -m streamlit run gui.py` verwendet wird?
+
+Antwort:
+
+## Konfiguration
+
+10. War verständlich, welche Parameter in der JSON-Konfiguration geändert
+    werden können?
+
+Antwort:
+
+11. War verständlich, was `runs`, `seed`, `algorithms`, `failures`,
+    `datasets`, `fail_factors`, `failure_starts` und `failure_drop` bedeuten?
+
+Antwort:
+
+12. War klar, dass relative Ausgabepfade im Schritt-5-Ordner unter `Output/`
+    landen?
+
+Antwort:
+
+13. War klar, dass dataset-spezifische Failure-Parameter globale Werte
+    überschreiben?
+
+Antwort:
+
+14. Falls du die GUI getestet hast: War die Auswahl von Algorithmen,
+    Fehlertypen, Graphen und Failure-Rates verständlich?
+
+Antwort:
+
+## Ausführung
+
+15. Konntest du einen kleinen Lauf erfolgreich ausführen?
+
+Antwort:
+
+16. Wie lange hat der Lauf ungefähr gedauert?
+
+Antwort:
+
+17. War die Konsolenausgabe beziehungsweise die GUI-Rückmeldung verständlich?
+
+Antwort:
+
+18. War klar, wo Manifest, Summary, Rohdaten-CSV und Plots gespeichert werden?
+
+Antwort:
+
+19. Konntest du anhand von `manifest.json` und `used_config.json`
+    nachvollziehen, welche Parameter verwendet wurden?
+
+Antwort:
+
+20. War die Trennung zwischen Random-Graph-Plots und Real-World-Graph-Plots
+    verständlich?
+
+Antwort:
+
+## Reproduzierbarkeit
+
+21. Wenn du denselben Lauf erneut gestartet hast: Waren die Ergebnisse und
+    Dateien nachvollziehbar reproduzierbar?
+
+Antwort:
+
+22. War klar, wie ein Lauf auf einem Server vorbereitet oder dort gestartet
+    werden kann?
+
+Antwort:
+
+23. Welche Stelle wäre für eine externe Person am wahrscheinlichsten schwierig?
+
+Antwort:
+
+## Dokumentation
+
+24. Hat die README genug Informationen geliefert?
+
+Antwort:
+
+25. Waren die Modulprotokolle hilfreich, um die Struktur zu verstehen?
+
+Antwort:
+
+26. Welche Information hat gefehlt oder war zu knapp?
+
+Antwort:
+
+27. Welche Formulierung war unklar?
+
+Antwort:
+
+## Gesamtbewertung
+
+28. Auf einer Skala von 1 bis 5: Wie einfach war es, die Umgebung zu starten?
+
+1 = sehr schwierig, 5 = sehr einfach
+
+Antwort:
+
+29. Auf einer Skala von 1 bis 5: Wie gut war die Reproduzierbarkeit nachvollziehbar?
+
+1 = gar nicht nachvollziehbar, 5 = vollständig nachvollziehbar
+
+Antwort:
+
+30. Würdest du sagen, dass eine Informatikerin oder ein Informatiker die Umgebung ohne direkte Hilfe verwenden kann?
+
+Antwort:
+
+31. Welche drei Verbesserungen wären aus deiner Sicht am wichtigsten?
+
+Antwort:
+
+## Freie Notizen
+
+Weitere Beobachtungen, Fehler, Verbesserungsvorschläge oder Rückfragen:
+
+Antwort:

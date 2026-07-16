@@ -1,0 +1,25 @@
+tests/test_pipeline.py
+
+
+Zweck
+`tests/test_pipeline.py` prüft die Pipeline-Logik ohne lange Serverläufe.
+
+Geprüfte Bereiche
+- lokale Modulimporte aus dem Schritt-5-Ordner
+- Ausgabeordner relativ zum Schritt-5-Ordner
+- dataset-spezifische Failure-Parameter
+- Dry-Run-Planung
+- CLI-Overrides
+- Preflight-Prüfungen und Trennung von Dry Run/Preflight
+- Summary-, Plot- und Manifest-Erzeugung
+- getrennte Plotgruppen
+- stabile CSV-Dateinamen
+- getrennte Zählung von `nrFailedEdges` und `nrFailedNodes`
+
+ Wichtige Klasse
+- `Step5PipelineTest`: bündelt alle Pipeline-Unit-Tests.
+
+Besonderheiten
+- Tests verwenden temporäre Ordner.
+- Kleine Graphen und wenige Runs halten die Laufzeit kurz.
+- Die Tests sichern auch die Erweiterungshelfer aus Schritt 7 ab.

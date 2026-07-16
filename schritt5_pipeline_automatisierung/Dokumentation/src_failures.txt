@@ -1,0 +1,37 @@
+src/failures.py
+
+
+Zweck
+`src/failures.py` enthält die Failure-Modelle für Link- und Knotenausfälle.
+Das Modul kapselt die Auswahl der ausgefallenen Kanten und Knoten.
+
+Aufgaben
+- Failure-Modell-Metadaten bereitstellen
+- zufällige Link- und Node-Failures erzeugen
+- clustered Link- und Node-Failures um den Zielknoten erzeugen
+- ausgefallene Knoten in betroffene Kanten umrechnen
+- Clusterparameter validieren
+
+Wichtige Strukturen
+- `FAILURE_MODEL_SPECS`: beschreibt pro Modell, ob `failFactor` oder
+  `failureStart`/`failureDrop` verwendet wird und welcher CSV-Präfix gilt.
+
+Wichtige Funktionen
+- `failure_model_spec(...)`: liefert die Metadaten eines Failure-Modells.
+- `uses_failure_count(...)`: gibt an, ob ein Modell eine feste Ausfallanzahl nutzt.
+- `uses_cluster_parameters(...)`: gibt an, ob ein Modell Clusterparameter nutzt.
+- `node_failures_to_edges(...)`: übersetzt Knotenausfälle in inzidente Kanten.
+- `clustered_link_failures(...)`: wählt Linkausfälle schichtweise um `destination`.
+- `clustered_node_failures(...)`: wählt Knotenausfälle schichtweise um `destination`.
+- `select_failures(...)`: zentrale Auswahlfunktion für Modell und Typ.
+
+Erweiterungspunkte
+- Neue Failure-Modelle werden zuerst in `FAILURE_MODEL_SPECS` beschrieben.
+- Die konkrete Auswahl wird anschließend in `select_failures(...)` ergänzt.
+- Für clustered-artige Modelle kann die bestehende Clusterlogik wiederverwendet
+  oder leicht angepasst werden.
+
+Besonderheiten
+- Source und Destination werden bei Node-Failure geschützt.
+- Link-Failure liefert Kanten, Node-Failure liefert Kanten plus die ursprünglich
+  ausgefallenen Knoten.

@@ -107,6 +107,8 @@ def plot_all_comparisons(
     title_prefix,
     runs,
     metrics=None,
+    failure_combinations=None,
+    show=True,
 ):
     """Erzeugt paper-ähnliche Vergleiche jeweils als PNG und SVG."""
     output_dir = Path(output_dir)
@@ -118,50 +120,58 @@ def plot_all_comparisons(
     ]
     metrics = default_metrics if metrics is None else metrics
     outputs = []
-    for failure_model in ["random", "clustered"]:
-        for failure_type in ["link", "node"]:
-            for metric, ylabel, ylim in metrics:
-                fig, axes = plt.subplots(1, len(datasets), figsize=(16, 4.8))
-                if len(datasets) == 1:
-                    axes = [axes]
-                for ax, dataset in zip(axes, datasets):
-                    subset = summary[
-                        (summary["dataset"] == dataset)
-                        & (summary["failureModel"] == failure_model)
-                        & (summary["failureType"] == failure_type)
-                    ]
-                    for algorithm in algorithms:
-                        values = subset[subset["algorithm"] == algorithm].sort_values(
-                            "failureParameter"
-                        )
-                        ax.plot(
-                            values["failureParameter"],
-                            values[metric],
-                            marker="o",
-                            linewidth=2,
-                            color=ALGORITHM_COLORS[algorithm],
-                            label=ALGORITHM_LABELS[algorithm],
-                            linestyle="--" if algorithm.startswith("ndp_") else "-",
-                        )
-                    ax.set_title(display_names[dataset])
-                    ax.set_xlabel("Failure Rate")
-                    ax.grid(True, alpha=0.3)
-                    if ylim is not None:
-                        ax.set_ylim(*ylim)
-                axes[0].set_ylabel(ylabel)
-                fig.suptitle(
-                    f"{title_prefix}: {failure_model.title()} "
-                    f"{failure_type.title()} Failures (runs={runs})",
-                    fontsize=15,
-                )
-                handles, labels = axes[0].get_legend_handles_labels()
-                fig.legend(handles, labels, loc="lower center", ncol=3, fontsize=9)
-                fig.tight_layout(rect=(0, 0.13, 1, 0.93))
-                stem = f"{failure_model}_{failure_type}_{metric}"
-                png_path = output_dir / f"{stem}.png"
-                svg_path = output_dir / f"{stem}.svg"
-                fig.savefig(png_path, dpi=180, bbox_inches="tight")
-                fig.savefig(svg_path, bbox_inches="tight")
+    combinations = failure_combinations or [
+        ("random", "link"),
+        ("random", "node"),
+        ("clustered", "link"),
+        ("clustered", "node"),
+    ]
+    for failure_model, failure_type in combinations:
+        for metric, ylabel, ylim in metrics:
+            fig, axes = plt.subplots(1, len(datasets), figsize=(16, 4.8))
+            if len(datasets) == 1:
+                axes = [axes]
+            for ax, dataset in zip(axes, datasets):
+                subset = summary[
+                    (summary["dataset"] == dataset)
+                    & (summary["failureModel"] == failure_model)
+                    & (summary["failureType"] == failure_type)
+                ]
+                for algorithm in algorithms:
+                    values = subset[subset["algorithm"] == algorithm].sort_values(
+                        "failureParameter"
+                    )
+                    ax.plot(
+                        values["failureParameter"],
+                        values[metric],
+                        marker="o",
+                        linewidth=2,
+                        color=ALGORITHM_COLORS[algorithm],
+                        label=ALGORITHM_LABELS[algorithm],
+                        linestyle="--" if algorithm.startswith("ndp_") else "-",
+                    )
+                ax.set_title(display_names[dataset])
+                ax.set_xlabel("Failure Rate")
+                ax.grid(True, alpha=0.3)
+                if ylim is not None:
+                    ax.set_ylim(*ylim)
+            axes[0].set_ylabel(ylabel)
+            fig.suptitle(
+                f"{title_prefix}: {failure_model.title()} "
+                f"{failure_type.title()} Failures (runs={runs})",
+                fontsize=15,
+            )
+            handles, labels = axes[0].get_legend_handles_labels()
+            fig.legend(handles, labels, loc="lower center", ncol=3, fontsize=9)
+            fig.tight_layout(rect=(0, 0.13, 1, 0.93))
+            stem = f"{failure_model}_{failure_type}_{metric}"
+            png_path = output_dir / f"{stem}.png"
+            svg_path = output_dir / f"{stem}.svg"
+            fig.savefig(png_path, dpi=180, bbox_inches="tight")
+            fig.savefig(svg_path, bbox_inches="tight")
+            if show:
                 plt.show()
-                outputs.extend([png_path, svg_path])
+            else:
+                plt.close(fig)
+            outputs.extend([png_path, svg_path])
     return outputs

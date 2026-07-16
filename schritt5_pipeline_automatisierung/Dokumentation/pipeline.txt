@@ -1,0 +1,48 @@
+pipeline.py
+
+
+Zweck
+`pipeline.py` ist der zentrale Einstiegspunkt der Umgebung. 
+Das Modul lädt eine JSON-Konfiguration, erzeugt daraus konkrete Experimentjobs, startet
+den Experimentgenerator, schreibt Summary-Dateien und erzeugt Plots.
+
+Aufgaben
+- lokale Module gezielt aus `src/` und `evaluation/` importieren
+- JSON-Konfiguration laden und Defaults ergänzen
+- CLI-Overrides auf Config und Datasets anwenden
+- Algorithmen, Fehlertypen und Datasets validieren
+- Experimentplan aus Dataset- und Failure-Kombinationen erstellen
+- Rohdaten, Summary, Plots, `used_config.json` und `manifest.json` erzeugen
+- `--dry-run`, `--preflight`, `--only-experiments` und `--only-plots` unterstützen
+- `--dry-run` als reine Plananzeige und `--preflight` als technische Prüfung trennen
+
+Wichtige Funktionen
+- `_import_local_module(...)`: stellt sicher, dass nur Module aus dem Schritt-5-Ordner geladen werden.
+- `load_config(...)`: lädt die JSON-Konfiguration und ergänzt stabile Defaults.
+- `selected_algorithms(...)`: validiert die Algorithmusauswahl.
+- `selected_failures(...)`: validiert Fehlertypen und prüft die Failure-Modell-Metadaten.
+- `build_experiment_plan(...)`: erzeugt die konkreten Experimentjobs.
+- `run_experiments(...)`: ruft `experiment.run_experiment_series(...)` für jeden Job auf.
+- `write_summary_and_plots(...)`: aggregiert Rohdaten und erzeugt PNG/SVG-Plots.
+- `validate_preflight(...)`: prüft Konfiguration, Dateien und Schreibrechte ohne lange Berechnung.
+- `write_manifest(...)`: dokumentiert den Lauf für Reproduzierbarkeit.
+- `run_pipeline(...)`: Hauptfunktion für Tests, CLI und GUI.
+- `main(...)`: CLI-Einstiegspunkt.
+
+Ein- und Ausgaben
+- Eingabe: JSON-Konfiguration, CLI-Parameter, optional GraphML-Dateien.
+- Ausgabe: Rohdaten-CSV, Summary-CSV, PNG/SVG-Plots, `used_config.json`,
+  `manifest.json`.
+
+Erweiterungspunkte
+- Neue auswählbare Failure-Kombinationen werden in `FAILURE_COMBINATIONS` ergänzt.
+- Neue Graph-Typen werden über `experiment.GRAPH_TYPES`,
+  `experiment.graph_parameter_from_dataset(...)` und
+  `experiment.validate_graph_parameters(...)` automatisch von der Pipeline übernommen.
+- Neue Algorithmen werden über `routing_algorithms.ALGORITHMS` sichtbar.
+
+Besonderheiten
+- Relative Ausgabepfade werden relativ zum Schritt-5-Ordner aufgelöst.
+- `resume` kann unvollständige Läufe fortsetzen.
+- Das Manifest enthält zusätzlich `job_failure_parameters`, damit
+  dataset-spezifische Failure-Parameter nachvollziehbar bleiben.

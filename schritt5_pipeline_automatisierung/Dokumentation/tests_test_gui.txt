@@ -1,0 +1,26 @@
+tests/test_gui.py
+
+
+Zweck
+`tests/test_gui.py` prüft die GUI-Hilfsfunktionen ohne laufenden Streamlit-Server.
+
+Geprüfte Bereiche
+- Parsen von Zahlenlisten
+- inklusive Failure-Rate-Bereiche
+- Schritt-4-Defaults der GUI
+- Aufbau von GUI-Konfigurationen
+- Random- und Real-World-Plotgruppen
+- lokale GraphML-Pfade
+- Pflichtauswahlen
+- Schreiben von `gui_config.json`
+- relative Ausgabeordner
+- vorbereitete Serverbefehle
+
+Wichtige Klasse
+- `Step5GuiTest`: bündelt alle GUI-Unit-Tests.
+
+Besonderheiten
+- Die Tests importieren `gui.py` direkt.
+- Es wird keine Browser- oder Streamlit-Sitzung gestartet.
+- Die Tests sichern, dass GUI-Konfigurationen dieselbe Pipeline-Struktur wie
+  CLI-Konfigurationen erzeugen.

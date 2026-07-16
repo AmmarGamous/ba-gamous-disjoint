@@ -1,0 +1,54 @@
+src/experiment.py
+
+
+Zweck
+`src/experiment.py` erzeugt die eigentlichen Experimentdaten. Es baut Graphen,
+wählt Source/Destination-Paare, erzeugt Failure-Instanzen, ruft die
+Routingalgorithmen auf und schreibt lange CSV-Dateien.
+
+Aufgaben
+- synthetische Graphen erzeugen
+- GraphML-Graphen laden
+- gültige Endpunkte wählen
+- EDP- und NDP-Pfade pro Instanz vorbereiten
+- randomisierte und clustered Failures ausführen
+- alle ausgewählten Algorithmen auf derselben Failure-Instanz vergleichen
+- Rohdaten im langen CSV-Format schreiben
+- unterbrochene Läufe über Resume fortsetzen
+
+ Wichtige Strukturen
+- `CSV_FIELDNAMES`: definiert die Rohdaten-Spalten.
+- `GRAPH_BUILDERS`: registriert synthetische Graph-Builder.
+- `GRAPH_PARAMETER_SPECS`: beschreibt, welcher Dataset-Parameter für welchen Graphen gelesen wird.
+- `GRAPH_VALIDATORS`: validiert Graphparameter vor langen Läufen.
+- `GRAPH_TYPES`: wird aus `GRAPH_BUILDERS` gebildet und von der CLI/Pipeline genutzt.
+
+Aktuelle CSV-Zähler
+- `nrFailedEdges`: Anzahl der betroffenen oder direkt ausgefallenen Kanten.
+- `nrFailedNodes`: Anzahl der ausgefallenen Knoten.
+
+Diese Trennung ersetzt die frühere Mischspalte `nrFails` und macht Link- und
+Node-Failure-Ergebnisse eindeutiger lesbar.
+
+Wichtige Funktionen
+- `create_graph(...)`: erzeugt einen registrierten synthetischen Graphen.
+- `choose_endpoints(...)`: wählt ein verbundenes, nicht direkt benachbartes Source-Destination-Paar.
+- `build_configurations(...)`: erzeugt alle Failure-Parameterkombinationen.
+- `configuration_filename(...)`: erzeugt stabile CSV-Dateinamen.
+- `create_instance_rows(...)`: erzeugt die CSV-Zeilen einer Instanz.
+- `run_experiment_series(...)`: führt eine ganze Experimentreihe aus.
+- `completed_rep_prefix(...)`: erkennt vollständig geschriebene Wiederholungen für Resume.
+- `run_from_args(...)`: übersetzt direkte CLI-Argumente in eine Experimentserie.
+
+Erweiterungspunkte
+- Neue synthetische Graphen werden über `GRAPH_BUILDERS`,
+  `GRAPH_PARAMETER_SPECS` und `GRAPH_VALIDATORS` ergänzt.
+- Neue Failure-Modelle werden in `src/failures.py` beschrieben und hier über
+  die Metadaten automatisch parametrisiert.
+- Neue Algorithmen werden über `routing_algorithms.run_algorithms(...)` genutzt.
+
+Besonderheiten
+- Random-Failure verwendet `failFactor`.
+- Clustered-Failure verwendet `failureStart` und `failureDrop`.
+- Bei Node-Failure werden ausgefallene Knoten in die betroffenen inzidenten
+  Kanten umgerechnet, damit das Routing ein einheitliches Kanten-Failure-Format erhält.

@@ -1,0 +1,35 @@
+{
+  "run_name": "pilot",
+  "title": "Step 5 Pilot",
+  "runs": 2,
+  "seed": 123,
+  "resume": true,
+  "algorithms": [
+    "edp_paths",
+    "edp_one_tree",
+    "edp_multiple_trees",
+    "ndp_paths",
+    "ndp_one_tree",
+    "ndp_multiple_trees"
+  ],
+  "failures": [
+    "random_link",
+    "random_node",
+    "clustered_link",
+    "clustered_node"
+  ],
+  "fail_factors": [1.0],
+  "failure_starts": [0.9],
+  "failure_drop": 0.3,
+  "metrics": ["resilience", "avgHops", "avgStretch"],
+  "datasets": [
+    {
+      "name": "synthetic_n8_p04",
+      "display_name": "Synthetic n=8, p=0.4",
+      "type": "synthetic",
+      "graph_type": "erdos_renyi",
+      "nodes": 8,
+      "p": 0.4
+    }
+  ]
+}

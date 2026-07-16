@@ -1,9 +1,0 @@
-kResiliencePaths output1
-Number of nodes: 12
-Number of edges: 22
-Probability of edge appearance: 0.3
-Number of edge-disjoint paths: 1
-Number of failed edges: 0
-Hops: 2
-Route: [(11, 10), (10, 0)]
-Path attributes: ['1']
