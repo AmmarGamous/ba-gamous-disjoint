@@ -374,15 +374,6 @@ Lauf gestartet werden.
 > Nutze diese Datei als Anleitung und
 > notiere, an welchen Stellen du unsicher warst.
 
-Geeignete Feedbackfragen:
 
-1. War klar, in welcher Datei du anfangen musst?
-2. War klar, welche zweite und dritte Datei danach angepasst werden müssen?
-3. Waren die Namen `failureModel`, `failureType`, `failFactor`,
-   `failureStart` und `failureDrop` verständlich?
-4. Waren Fehlermeldungen aus `--preflight` oder Tests hilfreich?
-5. Konntest du die Erweiterung ohne Änderungen an fremden Ordnern durchführen?
-6. Welche Stelle würdest du als Erstes besser dokumentieren?
-7. Wie lange hast du ungefähr gebraucht?
 
 
