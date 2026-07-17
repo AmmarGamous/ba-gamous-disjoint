@@ -1,7 +1,7 @@
 # Feedbackfragen: Erweiterbarkeit
 
 Ziel:
-Die Umgebung soll von einer anderen Person erweitert werden können. Getestet
+Das Framework soll von einer anderen Person erweitert werden können. Getestet
 werden soll, ob ein einfaches neues Fehlermodell, ein neuer Graph und ein neuer
 Algorithmus nachvollziehbar ergänzt werden können.
 

@@ -1,8 +1,8 @@
 # Erweiterungsleitfaden
 
-Dieser Leitfaden beschreibt, wie die Umgebung erweitert werden kann.
+Dieser Leitfaden beschreibt, wie das Framework erweitert werden kann.
 Ziel ist nicht, ein großes Plugin-System zu bauen, sondern zu
-zeigen, dass eine andere Studierende die Umgebung mit einem neuen Fehlermodell,
+zeigen, dass eine andere Studierende die Experimentierumgebung mit einem neuen Fehlermodell,
 einem neuen Graphen und einem neuen Algorithmus nachvollziehbar erweitern kann.
 
 Die aktuelle Architektur wurde etwas vereinfacht. 
@@ -369,7 +369,7 @@ Lauf gestartet werden.
 ----------------------------
 
 
-> Bitte erweitere die Umgebung um einen einfachen Algorithmus, einen einfachen
+> Bitte erweitere das Framework um einen einfachen Algorithmus, einen einfachen
    Graphen und oder ein einfaches Fehlermodell, Oder setze die Beispiele einfach ein. Das würde reichen.
 > Nutze diese Datei als Anleitung und
 > notiere, an welchen Stellen du unsicher warst.

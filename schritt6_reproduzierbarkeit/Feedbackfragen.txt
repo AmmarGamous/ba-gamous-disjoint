@@ -1,7 +1,7 @@
 # Feedbackfragen: Reproduzierbarkeit
 
 Ziel:
-Die Umgebung soll von einer anderen Person auf einem anderen Rechner nachvollziehbar gestartet werden können.
+Die Experimentierumgebung soll von einer anderen Person auf einem anderen Rechner nachvollziehbar gestartet werden können.
 Dabei soll geprüft werden, ob Installation, Konfiguration, Ausführung und Ergebnisablage verständlich und reproduzierbar sind.
 
 Bitte teste nach Möglichkeit einen kleinen Lauf(5-10), zum Beispiel mit der
