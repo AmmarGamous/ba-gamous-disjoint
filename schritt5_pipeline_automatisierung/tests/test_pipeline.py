@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+import random
 import sys
 import tempfile
 import unittest
@@ -63,6 +64,7 @@ class Step5PipelineTest(unittest.TestCase):
             Path(result["plan"][0]["output_dir"]).resolve(),
             pipeline.PIPELINE_ROOT / "Output" / "portable_run" / "raw" / "small",
         )
+        self.assertEqual(result["config"]["title"], "Step 5 CLI")
 
     def test_dataset_failure_values_do_not_need_global_failure_defaults(self):
         """Prüft dataset-spezifische Failureparameter ohne globale Defaults."""
@@ -415,6 +417,61 @@ class Step5PipelineTest(unittest.TestCase):
         self.assertTrue(any("random_graphs" in path.parts for path in plot_paths))
         self.assertTrue(any("real_world" in path.parts for path in plot_paths))
 
+    def test_pipeline_defaults_plot_groups_like_gui(self):
+        """Prüft automatische CLI-Plotgruppen ohne explizite JSON-Plotgruppen."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            graphml_path = Path(temp_dir) / "cycle.graphml"
+            nx.write_graphml(nx.cycle_graph(8), graphml_path)
+            config_path = self.write_config(
+                temp_dir,
+                {
+                    "runs": 1,
+                    "datasets": [
+                        {
+                            "name": "random_small",
+                            "display_name": "Random Small",
+                            "type": "synthetic",
+                            "graph_type": "erdos_renyi",
+                            "nodes": 8,
+                            "p": 0.4,
+                        },
+                        {
+                            "name": "real_cycle",
+                            "display_name": "Real Cycle",
+                            "type": "graphml",
+                            "graphml": str(graphml_path),
+                            "graph_name": "cycle",
+                        },
+                    ],
+                },
+            )
+
+            result = pipeline.run_pipeline(config_path)
+            plot_paths = [Path(path) for path in result["plots"]]
+
+        self.assertEqual(len(plot_paths), 4)
+        self.assertTrue(all("all_graphs" not in path.parts for path in plot_paths))
+        self.assertTrue(any("random_graphs" in path.parts for path in plot_paths))
+        self.assertTrue(any("real_world" in path.parts for path in plot_paths))
+
+    def test_default_plot_groups_use_at_most_three_datasets(self):
+        """Prüft, dass Standard-Plotgruppen höchstens drei Teilplots enthalten."""
+        datasets = [
+            {"name": f"random_{index}", "type": "synthetic"}
+            for index in range(4)
+        ] + [
+            {"name": f"real_{index}", "type": "graphml"}
+            for index in range(4)
+        ]
+
+        groups = pipeline.default_plot_groups(datasets)
+
+        self.assertEqual(
+            [group["name"] for group in groups],
+            ["random_graphs", "random_graphs_2", "real_world", "real_world_2"],
+        )
+        self.assertTrue(all(len(group["datasets"]) <= 3 for group in groups))
+
     def test_extension_helpers_keep_existing_failure_filenames(self):
         """Prüft stabile CSV-Dateinamen nach Erweiterungshelfern."""
         random_filename = pipeline.experiment.configuration_filename(
@@ -459,6 +516,290 @@ class Step5PipelineTest(unittest.TestCase):
         self.assertEqual(rows[0]["nrFailedEdges"], 2)
         self.assertEqual(rows[0]["nrFailedNodes"], 1)
         self.assertNotIn("nrFails", rows[0])
+
+    def test_scene_selection_is_stable_for_graph_insertion_order(self):
+        """Prüft deterministische Endpunkt- und Failure-Auswahl."""
+        edges = [
+            ("0", "1"),
+            ("1", "2"),
+            ("2", "3"),
+            ("3", "4"),
+            ("0", "4"),
+            ("1", "4"),
+        ]
+        graph_a = nx.Graph()
+        graph_a.add_edges_from(edges)
+        graph_b = nx.Graph()
+        graph_b.add_edges_from(reversed(edges))
+
+        self.assertEqual(
+            pipeline.experiment.choose_endpoints(graph_a, random.Random(123)),
+            pipeline.experiment.choose_endpoints(graph_b, random.Random(123)),
+        )
+
+        random_link_a = pipeline.failures.select_failures(
+            graph_a, "0", "3", "link", "random", 2, 0.0, 0.3, random.Random("same")
+        )
+        random_link_b = pipeline.failures.select_failures(
+            graph_b, "0", "3", "link", "random", 2, 0.0, 0.3, random.Random("same")
+        )
+        random_node_a = pipeline.failures.select_failures(
+            graph_a, "0", "3", "node", "random", 2, 0.0, 0.3, random.Random("same")
+        )
+        random_node_b = pipeline.failures.select_failures(
+            graph_b, "0", "3", "node", "random", 2, 0.0, 0.3, random.Random("same")
+        )
+
+        self.assertEqual(random_link_a, random_link_b)
+        self.assertEqual(random_node_a, random_node_b)
+
+    def test_failure_seed_parameter_tokens_are_numeric_canonical(self):
+        """Prüft gleiche Failure-RNG-Schlüssel für 1 und 1.0."""
+        self.assertEqual(
+            pipeline.experiment.seed_parameter_token(1),
+            pipeline.experiment.seed_parameter_token(1.0),
+        )
+        self.assertEqual(
+            pipeline.experiment.seed_parameter_token("0.30"),
+            pipeline.experiment.seed_parameter_token(0.3),
+        )
+
+    def test_clustered_link_protects_source_in_every_layer(self):
+        """Prüft den Schutz von `s` sowie den Rücklaufschutz für `d`."""
+        class RecordingRandom:
+            """Zeichnet die Kandidaten jeder deterministischen Auswahl auf."""
+
+            def __init__(self):
+                self.populations = []
+
+            def sample(self, population, count):
+                population = list(population)
+                self.populations.append(population)
+                return population[:count]
+
+        graph = nx.Graph()
+        graph.add_edges_from(
+            [
+                ("d", "a"),
+                ("d", "b"),
+                ("a", "c"),
+                ("b", "e"),
+                ("c", "f"),
+                ("s", "a"),
+                ("s", "d"),
+            ]
+        )
+        rng = RecordingRandom()
+
+        pipeline.failures.clustered_link_failures(
+            graph,
+            "s",
+            "d",
+            failure_start=1.0,
+            failure_drop=0.3,
+            rng=rng,
+        )
+
+        self.assertTrue(rng.populations)
+        self.assertTrue(
+            all(
+                "s" not in edge
+                for population in rng.populations
+                for edge in population
+            )
+        )
+        self.assertTrue(
+            all("d" in edge for edge in rng.populations[0])
+        )
+        self.assertTrue(
+            all(
+                "d" not in edge
+                for population in rng.populations[1:]
+                for edge in population
+            )
+        )
+
+    def test_one_tree_keeps_other_disjoint_paths_separate(self):
+        """Prüft, dass nur der längste Pfad zum One Tree erweitert wird."""
+        graph = nx.Graph()
+        graph.add_edges_from(
+            [
+                ("s", "a"),
+                ("a", "b"),
+                ("b", "c"),
+                ("c", "d"),
+                ("s", "x"),
+                ("x", "d"),
+                ("a", "x"),
+                ("b", "y"),
+                ("y", "d"),
+            ]
+        )
+        paths = [
+            ["s", "x", "d"],
+            ["s", "a", "b", "c", "d"],
+        ]
+
+        structures = pipeline.routing_algorithms.build_structures(
+            graph,
+            "s",
+            "d",
+            paths,
+            "one_tree",
+        )
+
+        remaining_path, one_tree = structures
+        self.assertFalse(remaining_path.is_tree)
+        self.assertEqual(remaining_path.original_path, ("s", "x", "d"))
+        self.assertEqual(
+            {frozenset(edge) for edge in remaining_path.graph.edges},
+            {frozenset(("s", "x"))},
+        )
+        self.assertTrue(one_tree.is_tree)
+        self.assertIsNone(one_tree.grown_graph)
+        self.assertEqual(one_tree.original_path, ("s", "a", "b", "c", "d"))
+        self.assertNotIn("x", one_tree.graph)
+        self.assertTrue(
+            {
+                frozenset(("s", "a")),
+                frozenset(("a", "b")),
+                frozenset(("b", "c")),
+                frozenset(("b", "y")),
+            }.issubset({frozenset(edge) for edge in one_tree.graph.edges})
+        )
+        self.assertEqual(set(one_tree.exits), {"c", "y"})
+
+    def test_multiple_trees_keep_every_base_path(self):
+        """Prüft, dass jeder disjunkte Pfad Grundgerüst eines Baums bleibt."""
+        graph = nx.Graph()
+        graph.add_edges_from(
+            [
+                ("s", "a"),
+                ("a", "d"),
+                ("s", "b"),
+                ("b", "c"),
+                ("c", "d"),
+                ("a", "u"),
+                ("u", "d"),
+                ("b", "v"),
+                ("v", "d"),
+            ]
+        )
+        paths = [["s", "a", "d"], ["s", "b", "c", "d"]]
+
+        structures = pipeline.routing_algorithms.build_structures(
+            graph,
+            "s",
+            "d",
+            paths,
+            "multiple_trees",
+        )
+
+        self.assertTrue(all(structure.is_tree for structure in structures))
+        for structure in structures:
+            base_edges = {
+                frozenset(edge)
+                for edge in zip(
+                    structure.original_path[:-2],
+                    structure.original_path[1:-1],
+                )
+            }
+            self.assertTrue(
+                base_edges.issubset(
+                    {frozenset(edge) for edge in structure.graph.edges}
+                )
+            )
+
+    def test_tree_growth_does_not_start_at_source(self):
+        """Prüft die TREE-Regel: Wachstum beginnt nur an inneren Pfadknoten."""
+        graph = nx.Graph()
+        graph.add_edges_from(
+            [
+                ("s", "a"),
+                ("a", "d"),
+                ("s", "z"),
+                ("z", "d"),
+            ]
+        )
+        paths = [["s", "a", "d"]]
+
+        for structure_type in ("one_tree", "multiple_trees"):
+            with self.subTest(structure_type=structure_type):
+                structures = pipeline.routing_algorithms.build_structures(
+                    graph,
+                    "s",
+                    "d",
+                    paths,
+                    structure_type,
+                )
+
+                self.assertEqual(len(structures), 1)
+                self.assertNotIn("z", structures[0].graph)
+                self.assertEqual(set(structures[0].exits), {"a"})
+
+    def test_one_tree_retains_growth_stage_before_truncation(self):
+        """Prüft die sichtbare Wachstumsphase vor dem Entfernen toter Äste."""
+        graph = nx.Graph()
+        graph.add_edges_from(
+            [
+                ("s", "a"),
+                ("a", "b"),
+                ("b", "d"),
+                ("s", "x"),
+                ("x", "d"),
+                ("a", "u"),
+                ("u", "v"),
+            ]
+        )
+        paths = [["s", "x", "d"], ["s", "a", "b", "d"]]
+
+        structures = pipeline.routing_algorithms.build_structures(
+            graph,
+            "s",
+            "d",
+            paths,
+            "one_tree",
+            retain_growth_stage=True,
+        )
+        one_tree = next(structure for structure in structures if structure.is_tree)
+
+        self.assertIsNotNone(one_tree.grown_graph)
+        self.assertTrue(one_tree.grown_graph.has_edge("a", "u"))
+        self.assertTrue(one_tree.grown_graph.has_edge("u", "v"))
+        self.assertNotIn("u", one_tree.graph)
+        self.assertNotIn("v", one_tree.graph)
+
+    def test_tree_growth_processes_base_path_from_source_to_destination(self):
+        """Prüft die Wachstumsreihenfolge vom ersten bis zum letzten Innenknoten."""
+        graph = nx.Graph()
+        graph.add_edges_from(
+            [
+                ("s", "a"),
+                ("a", "b"),
+                ("b", "d"),
+                ("a", "u"),
+                ("b", "u"),
+                ("u", "v"),
+                ("v", "d"),
+            ]
+        )
+        paths = [["s", "a", "b", "d"]]
+
+        for structure_type in ("one_tree", "multiple_trees"):
+            with self.subTest(structure_type=structure_type):
+                structures = pipeline.routing_algorithms.build_structures(
+                    graph,
+                    "s",
+                    "d",
+                    paths,
+                    structure_type,
+                    retain_growth_stage=True,
+                )
+                grown_graph = structures[0].grown_graph
+
+                self.assertTrue(grown_graph.has_edge("a", "u"))
+                self.assertFalse(grown_graph.has_edge("b", "u"))
+
 
 
 if __name__ == "__main__":

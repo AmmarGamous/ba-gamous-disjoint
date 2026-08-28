@@ -1,6 +1,6 @@
 {
   "run_name": "pilot",
-  "title": "Step 5 Pilot",
+  "title": "Step 5 CLI",
   "runs": 2,
   "seed": 123,
   "resume": true,

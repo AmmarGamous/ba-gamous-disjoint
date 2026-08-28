@@ -54,26 +54,73 @@ def edge_key(edge):
     return frozenset(edge)
 
 
+def node_sort_key(node):
+    """Liefert einen stabilen Sortierschlüssel für Graphknoten."""
+    return (node.__class__.__module__, node.__class__.__qualname__, str(node))
+
+
+def stable_edge_tuple(edge):
+    """Normalisiert eine ungerichtete Kante mit stabiler Endpunkt-Reihenfolge."""
+    return tuple(sorted(tuple(edge), key=node_sort_key))
+
+
+def edge_sort_key(edge):
+    """Liefert einen stabilen Sortierschlüssel für ungerichtete Kanten."""
+    return tuple(node_sort_key(node) for node in stable_edge_tuple(edge))
+
+
+def sorted_edges(edges):
+    """Sortiert Kanten stabil und normalisiert ihre Richtung."""
+    return [stable_edge_tuple(edge) for edge in sorted(edges, key=edge_sort_key)]
+
+
+def sorted_edge_sequence(edges):
+    """Sortiert Kanten stabil, behält aber ihre aktuelle Richtung."""
+    return [tuple(edge) for edge in sorted(edges, key=edge_sort_key)]
+
+
+def unique_sorted_nodes(nodes):
+    """Entfernt Duplikate und sortiert Knoten stabil."""
+    return sorted(dict.fromkeys(nodes), key=node_sort_key)
+
+
 def node_failures_to_edges(graph, failed_nodes):
     """Wandelt ausgefallene Knoten in alle inzidenten Kanten um."""
     failed = {edge_key(edge) for node in failed_nodes for edge in graph.edges(node)}
-    return [tuple(edge) for edge in failed]
+    return sorted_edges(failed)
 
 
 def validate_cluster_parameters(failure_start, failure_drop):
-    """Prüft die Parameter des clustered Failure-Modells."""
-    if not 0.0 <= failure_start <= 1.0:
-        raise ValueError("failure_start must be between 0 and 1")
-    if failure_drop <= 0.0:
-        raise ValueError("failure_drop must be greater than 0")
+    """Prüft die Parameter des Clustered-Failure-Modells."""
+    if not 0.0 < failure_start <= 1.0:
+        raise ValueError(
+            "failure_start must be greater than 0 and less than or equal to 1"
+        )
+
+    if not 0.0 < failure_drop <= 1.0:
+        raise ValueError(
+            "failure_drop must be greater than 0 and less than or equal to 1"
+        )
 
 
-def clustered_link_failures(graph, destination, failure_start, failure_drop, rng):
-    """Wählt Linkausfälle schichtweise vom Zielknoten nach außen."""
+def clustered_link_failures(
+    graph, source, destination, failure_start, failure_drop, rng
+):
+    """Wählt Linkausfälle schichtweise vom Zielknoten nach außen.
+
+    Kanten zu `source` sind in allen Schichten geschützt. Nur die erste Schicht
+    enthält direkte Kanten zu `destination`. Beim Aufbau aller weiteren
+    Schichten werden diese Kanten ausgeschlossen, damit das Ziel nicht erneut
+    als Kandidat der nach außen laufenden Ausbreitung dient.
+    """
     validate_cluster_parameters(failure_start, failure_drop)
     failed = []
     seen_failed = set()
-    incidents = list(graph.edges(destination))
+    incidents = [
+        edge
+        for edge in sorted_edge_sequence(graph.edges(destination))
+        if source not in edge
+    ]
     probability = failure_start
 
     while probability > 0.0 and incidents:
@@ -87,12 +134,14 @@ def clustered_link_failures(graph, destination, failure_start, failure_drop, rng
         next_incidents = []
         seen_next = set()
         for _, outer_node in incidents:
-            for edge in graph.edges(outer_node):
+            for edge in sorted_edge_sequence(graph.edges(outer_node)):
+                if source in edge or destination in edge:
+                    continue
                 key = edge_key(edge)
                 if key not in seen_next:
                     next_incidents.append(edge)
                     seen_next.add(key)
-        incidents = next_incidents
+        incidents = sorted_edge_sequence(next_incidents)
         probability -= failure_drop
     return failed
 
@@ -103,10 +152,10 @@ def clustered_node_failures(
     """Wählt Knotenausfälle schichtweise um d und schützt s sowie d."""
     validate_cluster_parameters(failure_start, failure_drop)
     failed = []
-    candidates = [
+    candidates = unique_sorted_nodes(
         node for node in graph.neighbors(destination)
         if node not in (source, destination)
-    ]
+    )
     probability = failure_start
 
     while probability > 0.0 and candidates:
@@ -115,12 +164,12 @@ def clustered_node_failures(
         failed = list(dict.fromkeys(failed))
         next_candidates = []
         for node in candidates:
-            for neighbor in graph.neighbors(node):
+            for neighbor in sorted(graph.neighbors(node), key=node_sort_key):
                 if neighbor not in (source, destination) and neighbor not in failed:
                     next_candidates.append(neighbor)
-        candidates = list(dict.fromkeys(next_candidates))
+        candidates = unique_sorted_nodes(next_candidates)
         probability -= failure_drop
-    return failed
+    return unique_sorted_nodes(failed)
 
 
 def select_failures(
@@ -138,16 +187,18 @@ def select_failures(
     # Schritt-7-Erweiterungspunkt: neue Failure-Modelle hier ausführen.
     failure_model_spec(failure_model)
     if failure_model == "random" and failure_type == "link":
-        edges = list(graph.edges)
+        edges = sorted_edges(graph.edges)
         return rng.sample(edges, min(nr_failures, len(edges))), []
     if failure_model == "random" and failure_type == "node":
-        candidates = [node for node in graph if node not in (source, destination)]
+        candidates = unique_sorted_nodes(
+            node for node in graph if node not in (source, destination)
+        )
         nodes = rng.sample(candidates, min(nr_failures, len(candidates)))
-        return node_failures_to_edges(graph, nodes), nodes
+        return node_failures_to_edges(graph, nodes), unique_sorted_nodes(nodes)
     if failure_model == "clustered" and failure_type == "link":
         return (
             clustered_link_failures(
-                graph, destination, failure_start, failure_drop, rng
+                graph, source, destination, failure_start, failure_drop, rng
             ),
             [],
         )

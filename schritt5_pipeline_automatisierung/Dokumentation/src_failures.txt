@@ -20,8 +20,13 @@ Wichtige Funktionen
 - `failure_model_spec(...)`: liefert die Metadaten eines Failure-Modells.
 - `uses_failure_count(...)`: gibt an, ob ein Modell eine feste Ausfallanzahl nutzt.
 - `uses_cluster_parameters(...)`: gibt an, ob ein Modell Clusterparameter nutzt.
+- `node_sort_key(...)` und `edge_sort_key(...)`: sortieren Knoten und Kanten
+  stabil für reproduzierbare Zufallsauswahl.
 - `node_failures_to_edges(...)`: übersetzt Knotenausfälle in inzidente Kanten.
-- `clustered_link_failures(...)`: wählt Linkausfälle schichtweise um `destination`.
+- `clustered_link_failures(...)`: wählt Linkausfälle schichtweise um
+  `destination`. Kanten zu `source` sind in allen Schichten geschützt. Direkte
+  Kanten zu `destination` sind nur in der ersten Schicht Kandidaten und werden
+  in allen weiteren Schichten ausgeschlossen.
 - `clustered_node_failures(...)`: wählt Knotenausfälle schichtweise um `destination`.
 - `select_failures(...)`: zentrale Auswahlfunktion für Modell und Typ.
 
@@ -33,5 +38,6 @@ Erweiterungspunkte
 
 Besonderheiten
 - Source und Destination werden bei Node-Failure geschützt.
+- Kanten- und Knotenkandidaten werden vor `rng.sample(...)` stabil sortiert.
 - Link-Failure liefert Kanten, Node-Failure liefert Kanten plus die ursprünglich
   ausgefallenen Knoten.

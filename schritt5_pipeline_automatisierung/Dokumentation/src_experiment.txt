@@ -33,6 +33,8 @@ Node-Failure-Ergebnisse eindeutiger lesbar.
 Wichtige Funktionen
 - `create_graph(...)`: erzeugt einen registrierten synthetischen Graphen.
 - `choose_endpoints(...)`: wählt ein verbundenes, nicht direkt benachbartes Source-Destination-Paar.
+- `seed_parameter_token(...)`: normalisiert numerisch gleiche Failure-Parameter
+  für reproduzierbare Zufallsschlüssel.
 - `build_configurations(...)`: erzeugt alle Failure-Parameterkombinationen.
 - `configuration_filename(...)`: erzeugt stabile CSV-Dateinamen.
 - `create_instance_rows(...)`: erzeugt die CSV-Zeilen einer Instanz.
@@ -50,5 +52,7 @@ Erweiterungspunkte
 Besonderheiten
 - Random-Failure verwendet `failFactor`.
 - Clustered-Failure verwendet `failureStart` und `failureDrop`.
+- Source-/Destination-Kandidaten werden stabil sortiert, bevor der Seed daraus
+  eine Szene auswählt.
 - Bei Node-Failure werden ausgefallene Knoten in die betroffenen inzidenten
   Kanten umgerechnet, damit das Routing ein einheitliches Kanten-Failure-Format erhält.

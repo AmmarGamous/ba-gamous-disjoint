@@ -37,6 +37,7 @@ class RoutingStructure:
     original_path: tuple  # Ursprünglicher s-d-Pfad, aus dem die Struktur entstand.
     exits: tuple  # Baum-/Pfadknoten mit direkter Kante zum Ziel d.
     is_tree: bool  # True bei gewachsenem Baum, False bei reinem Pfad.
+    grown_graph: nx.Graph | None = None  # Baum vor dem abschließenden Trunkieren.
 
 
 @dataclass
@@ -98,26 +99,39 @@ def _grow_tree(
     graph: nx.Graph,
     tree: nx.Graph,
     destination,
+    start_nodes: Sequence,
     globally_used_edges: set[frozenset] | None = None,
+    protected_nodes: set | None = None,
 ) -> None:
-    """Erweitert einen Ausgangspfad deterministisch und ohne Zyklen."""
-    queue = list(tree.nodes)
-    index = 0
-    while index < len(queue):
-        node = queue[index]
-        index += 1
-        for neighbor in sorted(graph.neighbors(node), key=str):
-            if neighbor == destination:
-                continue
-            edge = _edge_key(node, neighbor)
-            if globally_used_edges is not None and edge in globally_used_edges:
-                continue
-            if neighbor in tree:
-                continue
-            tree.add_edge(node, neighbor)
-            queue.append(neighbor)
-            if globally_used_edges is not None:
-                globally_used_edges.add(edge)
+    """Erweitert einen Ausgangspfad von seinen inneren Knoten aus.
+
+    Bereits vorhandene disjunkte Pfade können über `globally_used_edges` und
+    `protected_nodes` reserviert werden. Dadurch wächst ein One Tree nur über
+    freie Graphbereiche und übernimmt keine Teile der verbleibenden Pfade. Die
+    Quelle gehört zum Baumgrundgerüst, ist gemäß TREE-Konstruktion aber kein
+    Startpunkt für das Baumwachstum.
+    """
+    protected_nodes = protected_nodes or set()
+    for start_node in start_nodes:
+        queue = [start_node]
+        index = 0
+        while index < len(queue):
+            node = queue[index]
+            index += 1
+            for neighbor in sorted(graph.neighbors(node), key=str):
+                if neighbor == destination:
+                    continue
+                edge = _edge_key(node, neighbor)
+                if globally_used_edges is not None and edge in globally_used_edges:
+                    continue
+                if neighbor in tree:
+                    continue
+                if neighbor in protected_nodes:
+                    continue
+                tree.add_edge(node, neighbor)
+                queue.append(neighbor)
+                if globally_used_edges is not None:
+                    globally_used_edges.add(edge)
 
 
 def truncate_tree(graph: nx.Graph, tree: nx.Graph, source, destination) -> tuple[nx.Graph, tuple]:
@@ -153,8 +167,13 @@ def build_structures(
     destination,
     paths: Sequence[Sequence],
     structure_type: str,
+    retain_growth_stage: bool = False,
 ) -> list[RoutingStructure]:
-    """Konstruiert Paths, One Tree oder Multiple Trees nach dem Paper."""
+    """Konstruiert Paths, One Tree oder Multiple Trees nach dem Paper.
+
+    `retain_growth_stage` bewahrt für Illustrationen zusätzlich den noch nicht
+    trunkierten Baum. Normale Experimente speichern diese Diagnosekopie nicht.
+    """
     if structure_type not in STRUCTURE_TYPES:
         raise ValueError(f"Unknown structure type: {structure_type}")
     if not paths:
@@ -172,9 +191,38 @@ def build_structures(
     trees_by_path = {}
     if structure_type == "one_tree":
         tree = _base_tree(longest)
-        _grow_tree(graph, tree, destination)
+        # Wie in der TREE-Konstruktion bleiben die übrigen disjunkten Pfade
+        # eigenständige Ausweichstrukturen. Ihre Kanten und inneren Knoten
+        # dürfen deshalb nicht in den längsten, zum Baum erweiterten Pfad
+        # aufgenommen werden.
+        reserved_path_edges = {
+            _edge_key(a, b)
+            for path in ascending
+            for a, b in zip(path[:-2], path[1:-1])
+        }
+        protected_path_nodes = {
+            node
+            for path in ascending[:-1]
+            for node in path[1:-1]
+            if node not in tree
+        }
+        _grow_tree(
+            graph,
+            tree,
+            destination,
+            longest[1:-1],
+            reserved_path_edges,
+            protected_path_nodes,
+        )
+        grown_graph = tree.copy() if retain_growth_stage else None
         tree, exits = truncate_tree(graph, tree, source, destination)
-        trees_by_path[tuple(longest)] = RoutingStructure(tree, tuple(longest), exits, True)
+        trees_by_path[tuple(longest)] = RoutingStructure(
+            tree,
+            tuple(longest),
+            exits,
+            True,
+            grown_graph,
+        )
     else:
         # Alle Ausgangspfade sind bereits Teil der Strukturen und werden deshalb
         # vor der Erweiterung global reserviert (Algorithmus 2).
@@ -185,9 +233,22 @@ def build_structures(
         }
         for path in reversed(ascending):
             tree = _base_tree(path)
-            _grow_tree(graph, tree, destination, globally_used)
+            _grow_tree(
+                graph,
+                tree,
+                destination,
+                path[1:-1],
+                globally_used,
+            )
+            grown_graph = tree.copy() if retain_growth_stage else None
             tree, exits = truncate_tree(graph, tree, source, destination)
-            trees_by_path[tuple(path)] = RoutingStructure(tree, tuple(path), exits, True)
+            trees_by_path[tuple(path)] = RoutingStructure(
+                tree,
+                tuple(path),
+                exits,
+                True,
+                grown_graph,
+            )
 
     structures = []
     for path in ascending:

@@ -2,6 +2,7 @@
 
 import argparse
 import csv
+from decimal import Decimal, InvalidOperation
 from itertools import combinations
 from pathlib import Path
 import random
@@ -12,6 +13,7 @@ import networkx as nx
 from failures import (
     failure_model_csv_prefix,
     failure_parameter_key,
+    node_sort_key,
     select_failures,
     uses_cluster_parameters,
     uses_failure_count,
@@ -225,9 +227,17 @@ def choose_endpoints(graph, rng):
     # Nur Paare innerhalb derselben Zusammenhangskomponente betrachten. Das
     # vermeidet bei größeren Real-World-Graphen eine Pfadsuche für jedes der
     # O(n^2) möglichen Knotenpaare.
+    components = [
+        tuple(sorted(component, key=node_sort_key))
+        for component in nx.connected_components(graph)
+    ]
+    components = sorted(
+        components,
+        key=lambda component: tuple(node_sort_key(node) for node in component),
+    )
     candidates = [
         pair
-        for component in nx.connected_components(graph)
+        for component in components
         for pair in combinations(component, 2)
         if not graph.has_edge(*pair)
     ]
@@ -239,6 +249,19 @@ def choose_endpoints(graph, rng):
 def format_parameter(value):
     """Formatiert Parameterwerte stabil für Dateinamen."""
     return "0" if value == 0 else str(value)
+
+
+def seed_parameter_token(value):
+    """Normalisiert numerische Parameter für reproduzierbare RNG-Schlüssel."""
+    if value == "":
+        return ""
+    try:
+        decimal = Decimal(str(value))
+    except (InvalidOperation, ValueError):
+        return str(value)
+    if decimal == decimal.to_integral_value():
+        return str(int(decimal))
+    return format(decimal.normalize(), "f")
 
 
 def build_configurations(failure_types, failure_models, fail_factors, failure_starts):
@@ -403,7 +426,8 @@ def run_experiment_series(
             )
             failure_rng = random.Random(
                 f"{seed}:{rep}:{failure_type}:{failure_model}:"
-                f"{fail_factor}:{failure_start}"
+                f"{seed_parameter_token(fail_factor)}:"
+                f"{seed_parameter_token(failure_start)}"
             )
             failed_edges, failed_nodes = select_failures(
                 graph,

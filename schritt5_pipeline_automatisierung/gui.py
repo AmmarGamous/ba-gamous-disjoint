@@ -283,27 +283,8 @@ def build_gui_real_world_dataset(
 
 
 def build_plot_groups(datasets):
-    """Trennt Plotgruppen in Random-Graphen und Real-World-Graphen."""
-    random_names = [dataset["name"] for dataset in datasets if dataset.get("type") == "synthetic"]
-    real_world_names = [dataset["name"] for dataset in datasets if dataset.get("type") == "graphml"]
-    groups = []
-    if random_names:
-        groups.append(
-            {
-                "name": "random_graphs",
-                "title": "Random Graphs",
-                "datasets": random_names,
-            }
-        )
-    if real_world_names:
-        groups.append(
-            {
-                "name": "real_world",
-                "title": "Real-World Graphs",
-                "datasets": real_world_names,
-            }
-        )
-    return groups
+    """Trennt Plotgruppen wie die CLI mit maximal drei Graphen pro Bild."""
+    return pipeline.default_plot_groups(datasets)
 
 
 def build_gui_config(

@@ -136,8 +136,12 @@ class Step5GuiTest(unittest.TestCase):
                         "synthetic_n25_p015",
                         "synthetic_n50_p015",
                         "synthetic_n100_p002",
-                        "random_er_n30_p0p2",
                     ],
+                },
+                {
+                    "name": "random_graphs_2",
+                    "title": "Random Graphs 2",
+                    "datasets": ["random_er_n30_p0p2"],
                 },
                 {
                     "name": "real_world",

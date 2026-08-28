@@ -192,5 +192,5 @@
       "graph_name": "oteglobe"
     }
   ],
-  "output_root": "Output/full_runs1000"
+  "output_root": "output/full_runs1000"
 }

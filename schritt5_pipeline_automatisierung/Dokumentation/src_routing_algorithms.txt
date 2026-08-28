@@ -36,5 +36,18 @@ Erweiterungspunkte
 
 Besonderheiten
 - Das Ziel `destination` ist nicht Teil der gespeicherten Baumstruktur.
+- Beim One Tree bildet der längste disjunkte Pfad das Baumgrundgerüst. Kanten
+  und innere Knoten der übrigen disjunkten Pfade bleiben für deren separate
+  Ausweichstrukturen reserviert.
+- Bei Multiple Trees bildet jeder disjunkte Pfad das Grundgerüst eines Baums.
+- Das Baumwachstum startet ausschließlich an den inneren Knoten des jeweiligen
+  Grundpfads. Diese werden vom ersten Innenknoten neben `source` bis zum letzten
+  Innenknoten `d-1` verarbeitet. Die Quelle gehört zur Struktur, wird aber
+  nicht als Startpunkt für neue Baumäste verwendet.
+- Für den Baumaufbau werden die Grundpfade längenabsteigend verarbeitet. Bei
+  One Tree wird nur der längste Pfad erweitert; bei Multiple Trees werden alle
+  Pfade in dieser Reihenfolge erweitert.
+- Beim Routing werden die finalen Strukturen wieder längenaufsteigend getestet,
+  sodass zunächst die Struktur des kürzesten Grundpfads verwendet wird.
 - Kanten werden intern als `frozenset` normalisiert.
 - Fehlgeschlagene Routen erhalten `hops = -1`.

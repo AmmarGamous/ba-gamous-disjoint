@@ -1,6 +1,6 @@
 {
   "run_name": "full_runs1000",
-  "title": "Step 5 Full Pipeline",
+  "title": "Step 5 CLI",
   "runs": 1000,
   "seed": 123,
   "resume": true,

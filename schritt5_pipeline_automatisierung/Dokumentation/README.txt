@@ -89,6 +89,9 @@ Die GUI bietet Auswahlfelder für:
 Der Seed ist in der GUI fest auf `123` gesetzt. Dadurch bleiben wiederholte
 GUI-Läufe mit derselben Konfiguration reproduzierbar. Über die CLI kann der
 Seed weiterhin überschrieben werden.
+Die Pipeline sortiert Endpunkt-, Kanten- und Knotenkandidaten stabil, bevor
+zufällig ausgewählt wird. Dadurch führen gleiche Konfiguration, gleiche
+Inputdaten, gleiche Codeversion und gleicher Seed zu denselben Routing-Szenen.
 
 Der Button `Experiment starten` schreibt zuerst `gui_config.json` und startet
 dann die Pipeline. Dadurch bleiben GUI-Läufe genauso nachvollziehbar wie
@@ -202,6 +205,8 @@ GraphML-Real-World-Datasets bleiben dabei unverändert.
 
 CLI-Overrides für `--fail-factor`, `--failure-start` und `--failure-drop`
 überschreiben auch dataset-spezifische Werte für den aktuellen Lauf.
+Numerisch gleiche Failure-Parameter wie `1` und `1.0` werden für die
+Zufallsinitialisierung gleich behandelt.
 
 ## Dry Run und Preflight
 

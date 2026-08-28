@@ -92,6 +92,7 @@ def load_config(config_path):
 
     run_name = config.get("run_name") or config_path.stem
     config["run_name"] = run_name
+    config.setdefault("title", "Step 5 CLI")
     config.setdefault(
         "output_root",
         str(Path("Output") / run_name),
@@ -236,6 +237,48 @@ def dataset_output_dir(output_root, dataset):
     return Path(output_root) / "raw" / dataset["name"]
 
 
+def chunked_plot_group(name, title, dataset_names, max_datasets=3):
+    """Erzeugt Plotgruppen mit höchstens `max_datasets` Teilplots pro Bild."""
+    groups = []
+    for index in range(0, len(dataset_names), max_datasets):
+        chunk = dataset_names[index:index + max_datasets]
+        group_number = index // max_datasets + 1
+        suffix = "" if group_number == 1 else f"_{group_number}"
+        title_suffix = "" if group_number == 1 else f" {group_number}"
+        groups.append(
+            {
+                "name": f"{name}{suffix}",
+                "title": f"{title}{title_suffix}",
+                "datasets": chunk,
+            }
+        )
+    return groups
+
+
+def default_plot_groups(datasets):
+    """Trennt Standardplots in Gruppen mit maximal drei Graphen pro Bild."""
+    random_names = [
+        dataset["name"] for dataset in datasets
+        if dataset.get("type", "synthetic") == "synthetic"
+    ]
+    real_world_names = [
+        dataset["name"] for dataset in datasets
+        if dataset.get("type") == "graphml"
+    ]
+    groups = []
+    if random_names:
+        groups.extend(chunked_plot_group("random_graphs", "Random Graphs", random_names))
+    if real_world_names:
+        groups.extend(chunked_plot_group("real_world", "Real-World Graphs", real_world_names))
+    if groups:
+        return groups
+    return chunked_plot_group(
+        "all_graphs",
+        "All Graphs",
+        [dataset["name"] for dataset in datasets],
+    )
+
+
 def graphml_node_count(graphml_path, fallback=0):
     """Liest die Knotenzahl eines GraphML-Datasets für Plan- und Dry-Run-Ausgaben."""
     graphml_path = Path(graphml_path)
@@ -344,13 +387,7 @@ def write_summary_and_plots(config, datasets, algorithms, failures):
     summary_path = summary_dir / f"{config['run_name']}_summary.csv"
     summary.to_csv(summary_path, index=False)
 
-    plot_groups = config.get("plot_groups") or [
-        {
-            "name": "all_graphs",
-            "title": config.get("title", config["run_name"]),
-            "datasets": list(directories),
-        }
-    ]
+    plot_groups = config.get("plot_groups") or default_plot_groups(datasets)
     plot_paths = []
     for group in plot_groups:
         group_datasets = [
@@ -408,12 +445,15 @@ def validate_preflight(config, plan):
             raise ValueError(f"{dataset['name']}: fail_factors must not be empty")
         if not item["failure_starts"]:
             raise ValueError(f"{dataset['name']}: failure_starts must not be empty")
-        if any(float(value) < 0 for value in item["fail_factors"]):
-            raise ValueError(f"{dataset['name']}: fail_factors must be >= 0")
-        if any(not 0 <= float(value) <= 1 for value in item["failure_starts"]):
-            raise ValueError(f"{dataset['name']}: failure_starts must be in [0, 1]")
-        if float(item["failure_drop"]) <= 0:
-            raise ValueError(f"{dataset['name']}: failure_drop must be > 0")
+        if item["failure_model"] == "random":
+            if any(float(value) < 0 for value in item["fail_factors"]):
+                raise ValueError(f"{dataset['name']}: fail_factors must be >= 0")
+        if item["failure_model"] == "clustered":
+            for failure_start in item["failure_starts"]:
+                failures.validate_cluster_parameters(
+                    float(failure_start),
+                    float(item["failure_drop"]),
+                )
 
         if dataset_type == "synthetic":
             experiment.validate_graph_parameters(
