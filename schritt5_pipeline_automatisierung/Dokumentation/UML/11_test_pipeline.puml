@@ -1,0 +1,21 @@
+@startuml
+!include _style.iuml
+start
+partition "Eingabe: tests/test_pipeline.py" {
+  :unittest lädt Step5PipelineTest\nKleine Testgraphen, Konfigurationen und feste Seeds;
+}
+partition "Prüfungen (unabhängige Testmethoden)" {
+  :Konfiguration / Planung\nDefaults, CLI-Overrides, Dry Run und Preflight\nDataset-Auswahl und Plotgruppen prüfen;
+  :Experimentkern\nSeed-Stabilität, Ausfälle, Strukturaufbau\nKantennutzung und One-Tree-Pfadschutz prüfen;
+  :Pipeline-Integration\nKleine Läufe in temporären Ordnern ausführen\nRohdaten, Summary und Plots prüfen;
+}
+partition "Ausgabe" {
+  :unittest-Bericht: bestanden / fehlgeschlagen / Fehler\nTemporäre Ergebnisse werden aufgeräumt;
+}
+note right
+  Die Blöcke gruppieren Testthemen.
+  Sie sind keine vorgeschriebene
+  Reihenfolge der Testmethoden.
+end note
+stop
+@enduml

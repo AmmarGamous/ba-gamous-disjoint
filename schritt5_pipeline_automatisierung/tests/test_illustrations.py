@@ -2,7 +2,10 @@
 
 from pathlib import Path
 import sys
+from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 import unittest
+from xml.etree import ElementTree
 
 
 STEP5_ROOT = Path(__file__).resolve().parents[1]
@@ -37,6 +40,140 @@ class ThesisIllustrationTest(unittest.TestCase):
         self.assertFalse(analysis["edp_after"].success)
         self.assertTrue(analysis["ndp_before"].success)
         self.assertFalse(analysis["ndp_after"].success)
+
+    def test_thesis_comparison_uses_one_graph_for_all_variants(self):
+        """Prüft Pfade und sichtbares Baumwachstum der Seed-430-Szene."""
+        graph, metadata = figures.thesis_comparison_scene()
+        edps = metadata["paths"]["edp"]
+        ndps = metadata["paths"]["ndp"]
+
+        self.assertEqual(graph.number_of_nodes(), 10)
+        self.assertEqual(metadata["config"]["graph_type"], "erdos_renyi")
+        self.assertEqual(metadata["config"]["p"], 0.35)
+        self.assertEqual(metadata["config"]["seed"], 430)
+        self.assertEqual(len(edps), 3)
+        self.assertEqual(len(ndps), 2)
+        self.assertNotIn(
+            figures.BRANCH_COLOR,
+            figures.THESIS_PATH_COLORS,
+        )
+        self.assertTrue(figures.shared_inner_nodes(edps))
+        self.assertFalse(figures.shared_inner_nodes(ndps))
+
+        added_edges = {}
+        for path_type, paths in (("edp", edps), ("ndp", ndps)):
+            one_tree = metadata["structures"][f"{path_type}_one_tree"]
+            multiple_trees = metadata["structures"][
+                f"{path_type}_multiple_trees"
+            ]
+            self.assertEqual(len(one_tree), len(paths))
+            self.assertEqual(sum(item.is_tree for item in one_tree), 1)
+            self.assertEqual(len(multiple_trees), len(paths))
+            self.assertTrue(all(item.is_tree for item in multiple_trees))
+            for structure_type, structures in (
+                ("one_tree", one_tree),
+                ("multiple_trees", multiple_trees),
+            ):
+                added_edges[f"{path_type}_{structure_type}"] = sum(
+                    frozenset(edge)
+                    not in {
+                        frozenset(path_edge)
+                        for path_edge in zip(
+                            structure.original_path,
+                            structure.original_path[1:],
+                        )
+                    }
+                    for structure in structures
+                    for edge in structure.graph.edges
+                )
+
+        self.assertEqual(
+            added_edges,
+            {
+                "edp_one_tree": 2,
+                "edp_multiple_trees": 5,
+                "ndp_one_tree": 4,
+                "ndp_multiple_trees": 5,
+            },
+        )
+
+    def test_failure_comparison_uses_exactly_the_incident_edges(self):
+        """Prüft gezielte Ausfälle, Reproduzierbarkeit und unveränderte Topologie."""
+        graph, metadata = figures.failure_comparison_scene()
+        repeated_graph, repeated_metadata = figures.failure_comparison_scene()
+        node = metadata["failed_node"]
+
+        self.assertEqual(metadata, repeated_metadata)
+        self.assertEqual(set(graph.edges), set(repeated_graph.edges))
+        self.assertEqual(graph.graph["seed"], 21)
+        self.assertEqual(graph.number_of_edges(), 10)
+        self.assertNotIn(node, (figures.SOURCE, figures.DESTINATION))
+        self.assertEqual(len(metadata["link_failed_edges"]), 1)
+        self.assertEqual(
+            {frozenset(edge) for edge in metadata["node_failed_edges"]},
+            {frozenset(edge) for edge in graph.edges(node)},
+        )
+        self.assertEqual(len(metadata["node_failed_edges"]), 5)
+        self.assertIn(metadata["link_failed_edges"][0], metadata["node_failed_edges"])
+
+        for key, connected in (("link_failed_edges", True), ("node_failed_edges", False)):
+            remaining_graph = graph.copy()
+            remaining_graph.remove_edges_from(metadata[key])
+            self.assertEqual(
+                figures.nx.has_path(remaining_graph, figures.SOURCE, figures.DESTINATION),
+                connected,
+            )
+
+    def test_failure_comparison_scene_is_explicitly_selectable(self):
+        """Der neue Vergleich ändert die bisherige Standardausgabe nicht."""
+        self.assertEqual(figures.parse_args([]).scene, "comparison")
+        self.assertEqual(
+            figures.parse_args(["--scene", "failure_comparison"]).scene,
+            "failure_comparison",
+        )
+
+    def test_failure_comparison_exports_svg_and_nonblank_png(self):
+        """Prüft beide Präsentationsformate einschließlich sichtbarer Ausfälle."""
+        with TemporaryDirectory() as output_dir:
+            paths = figures.create_failure_comparison_files(output_dir)
+            self.assertEqual([path.suffix for path in paths], [".svg", ".png"])
+            svg_root = ElementTree.parse(paths[0]).getroot()
+            self.assertTrue(svg_root.tag.endswith("svg"))
+            pixels = figures.plt.imread(paths[1])
+            self.assertGreater(pixels.shape[0], 500)
+            red_pixels = (
+                (pixels[:, :, 0] > 0.6)
+                & (pixels[:, :, 1] < 0.35)
+                & (pixels[:, :, 2] < 0.35)
+            )
+            self.assertGreater(red_pixels.sum(), 100)
+
+    def test_pipeline_overview_exports_all_four_stages(self):
+        """Prüft die Auswahl und beide Ausgabeformate der Ablaufgrafik."""
+        self.assertEqual(figures.parse_args(["--scene", "pipeline"]).scene, "pipeline")
+        with TemporaryDirectory() as output_dir:
+            paths = figures.create_pipeline_overview_files(output_dir)
+            self.assertEqual([path.suffix for path in paths], [".svg", ".png"])
+            self.assertTrue(ElementTree.parse(paths[0]).getroot().tag.endswith("svg"))
+            svg = paths[0].read_text(encoding="utf-8")
+            for stage in ("Konfiguration", "Experimente", "Auswertung", "Plots"):
+                self.assertIn(stage, svg)
+            pixels = figures.plt.imread(paths[1])
+            self.assertGreater(pixels.shape[1], 2000)
+            self.assertLess(pixels[:, :, :3].min(), 0.5)
+
+    def test_existing_base_path_exits_are_not_redrawn(self):
+        """Prüft, dass nur wirklich zusätzliche Ausgänge rot gezeichnet werden."""
+        structure = SimpleNamespace(exits=("a", "b", "c"))
+        base_edges = {
+            frozenset(("a", figures.DESTINATION)),
+            frozenset(("b", figures.DESTINATION)),
+        }
+
+        self.assertEqual(
+            figures._visible_additional_exits(structure, base_edges),
+            [("c", figures.DESTINATION)],
+        )
 
     def test_one_tree_uses_longest_path_and_free_edges(self):
         """Prüft die anschauliche Seed-2-Szene für EDP und NDP One Tree."""

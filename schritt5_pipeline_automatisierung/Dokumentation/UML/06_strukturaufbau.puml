@@ -1,0 +1,41 @@
+@startuml
+!include _style.iuml
+start
+:build_structures(G, s, d, paths, structure_type)\nPfade nach Länge und Knotendarstellung sortieren;
+if (Keine Pfade?) then (ja)
+  :Leere Strukturliste zurückgeben;
+  stop
+endif
+if (Strukturtyp?) then (paths)
+  :Je Pfad _base_tree(path) ohne d\nEin Ausgang: vorletzter Pfadknoten;
+else (Baumverfahren)
+  :Kanten aller Basispfade ohne Schlusskante nach d reservieren;
+  if (One Tree?) then (ja)
+    :Längsten Pfad auswählen\nGrundbaum ohne d erzeugen\nInnere Knoten anderer Pfade schützen,\nsoweit nicht bereits im eigenen Grundbaum;
+    :_grow_tree() vom ersten bis letzten inneren Pfadknoten\nJe Startknoten vollständiges Breitensuchwachstum;
+    note right
+      Gilt für EDP One Tree UND NDP One Tree.
+      Keine Erweiterung aus s; d bleibt außerhalb.
+      Neue Kanten müssen frei sein; neue Knoten
+      dürfen weder im Baum noch geschützt sein.
+    end note
+    :truncate_tree() nach abgeschlossenem Wachstum\nNur Verbindungen von s zu Ausgängen nach d behalten;
+    :Andere Pfade bleiben reine Pfadstrukturen;
+  else (Multiple Trees)
+    while (Weiterer Pfad, längster zuerst?) is (ja)
+      :Grundbaum ohne d erzeugen;
+      :_grow_tree()\nGemeinsame Kantenreservierung aller Bäume\nKeine globale Reservierung innerer Knoten;
+      :truncate_tree() für diesen Baum\nDann erst den nächsten Pfad erweitern;
+    endwhile (nein)
+    note right
+      Trunkierte Kanten bleiben reserviert.
+      Verschiedene Bäume dürfen Knoten teilen,
+      auch bei NDP Multiple Trees.
+      Die Schlusskanten nach d werden nicht
+      durch diese Kantenmenge reserviert.
+    end note
+  endif
+endif
+:RoutingStructure-Liste zurückgeben\nRoutingreihenfolge: kürzester Ausgangspfad zuerst;
+stop
+@enduml

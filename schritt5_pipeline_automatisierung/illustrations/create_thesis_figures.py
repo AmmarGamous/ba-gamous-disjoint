@@ -11,7 +11,8 @@ import random
 import sys
 
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyArrowPatch
+from matplotlib.lines import Line2D
+from matplotlib.patches import FancyArrowPatch, Rectangle
 import networkx as nx
 
 
@@ -33,10 +34,22 @@ from routing_algorithms import (  # noqa: E402
 )
 
 
-DEFAULT_OUTPUT_DIR = ILLUSTRATION_ROOT / "output"
+DEFAULT_OUTPUT_DIR = STEP5_ROOT / "Output" / "illustrations"
 SOURCE = "s"
 DESTINATION = "d"
 PATH_COLORS = list(dict.fromkeys(result_analysis.ALGORITHM_COLORS.values()))
+BRANCH_COLOR = "#d62728"
+THESIS_PATH_COLORS = [
+    color for color in PATH_COLORS if color.lower() != BRANCH_COLOR
+]
+THESIS_LAYOUT_SEED = 195
+THESIS_COMPARISON_CONFIG = {
+    "graph_type": "erdos_renyi",
+    "nodes": 10,
+    "p": 0.35,
+    "degree": 4,
+    "seed": 430,
+}
 ALGORITHM_CHOICES = [
     "none",
     "edp_paths",
@@ -46,115 +59,12 @@ ALGORITHM_CHOICES = [
     "ndp_one_tree",
     "ndp_multiple_trees",
 ]
-NODE_POSITIONS = {
-    "s": (0.0, 0.0),
-    "a": (1.0, 1.2),
-    "b": (1.0, -1.2),
-    "x": (2.0, 0.0),
-    "c": (3.0, 1.2),
-    "e": (3.0, -1.2),
-    "d": (4.0, 0.0),
-    "u": (2.0, 2.2),
-    "v": (2.0, -2.2),
-}
 
 
-def edge_id(edge):
-    """Liefert eine stabile ID für eine ungerichtete Kante."""
-    return "--".join(sorted(map(str, edge)))
-
-
-def add_base_attributes(graph, title):
-    """Ergänzt Rollen und neutrale Attribute für GraphML und Zeichnung."""
+def set_graph_title(graph, title):
+    """Speichert den Titel einer erzeugten Illustrationsszene."""
     graph.graph["title"] = title
-    for node in graph.nodes:
-        graph.nodes[node]["role"] = "source" if node == SOURCE else "destination" if node == DESTINATION else "normal"
-        graph.nodes[node]["failed"] = False
-    for first, second in graph.edges:
-        graph.edges[first, second]["failed"] = False
-        graph.edges[first, second]["edp_index"] = 0
-        graph.edges[first, second]["ndp_index"] = 0
-        graph.edges[first, second]["structure_index"] = 0
-        graph.edges[first, second]["structure_kind"] = ""
-        graph.edges[first, second]["failure_model"] = ""
     return graph
-
-
-def mark_path(graph, path, attribute, index):
-    """Markiert alle Kanten eines Pfads mit einem Attributwert."""
-    for first, second in zip(path, path[1:]):
-        graph.edges[first, second][f"{attribute}_index"] = index
-
-
-def mark_structure(graph, structure, index):
-    """Markiert eine Pfad- oder Baumstruktur eines konkreten Algorithmus."""
-    kind = "Baum" if structure.is_tree else "Pfad"
-    structure_edges = list(structure.graph.edges)
-    structure_edges.extend((exit_node, DESTINATION) for exit_node in structure.exits)
-    for first, second in structure_edges:
-        if graph.has_edge(first, second):
-            graph.edges[first, second]["structure_index"] = index
-            graph.edges[first, second]["structure_kind"] = kind
-
-
-def mark_failed_edges(graph, edges, failure_model):
-    """Markiert ausgefallene Kanten im Graphen."""
-    failed = {frozenset(edge) for edge in edges}
-    for first, second in graph.edges:
-        if frozenset((first, second)) in failed:
-            graph.edges[first, second]["failed"] = True
-            graph.edges[first, second]["failure_model"] = failure_model
-
-
-def mark_failed_nodes(graph, nodes, failure_model):
-    """Markiert ausgefallene Knoten im Graphen."""
-    for node in nodes:
-        graph.nodes[node]["failed"] = True
-        graph.nodes[node]["failure_model"] = failure_model
-
-
-def create_shared_node_graph():
-    """Erzeugt einen Graphen, in dem EDPs einen inneren Knoten teilen können."""
-    graph = nx.Graph()
-    graph.add_edges_from(
-        [
-            ("s", "a"),
-            ("a", "x"),
-            ("x", "c"),
-            ("c", "d"),
-            ("s", "b"),
-            ("b", "x"),
-            ("x", "e"),
-            ("e", "d"),
-            ("a", "u"),
-            ("u", "c"),
-            ("b", "v"),
-            ("v", "e"),
-        ]
-    )
-    return add_base_attributes(graph, "EDP-Beispiel mit gemeinsamem inneren Knoten")
-
-
-def create_node_disjoint_graph():
-    """Erzeugt einen Graphen mit klar getrennten NDPs."""
-    graph = nx.Graph()
-    graph.add_edges_from(
-        [
-            ("s", "a"),
-            ("a", "u"),
-            ("u", "c"),
-            ("c", "d"),
-            ("s", "b"),
-            ("b", "v"),
-            ("v", "e"),
-            ("e", "d"),
-            ("a", "x"),
-            ("x", "b"),
-            ("c", "x"),
-            ("x", "e"),
-        ]
-    )
-    return add_base_attributes(graph, "NDP-Beispiel mit getrennten inneren Knoten")
 
 
 def create_disjointness_strength_graph():
@@ -181,7 +91,7 @@ def create_disjointness_strength_graph():
         },
         copy=True,
     )
-    graph = add_base_attributes(
+    graph = set_graph_title(
         graph,
         "Stärke der Disjunktheit: EDP im Vergleich zu NDP",
     )
@@ -223,6 +133,21 @@ def analyze_disjointness_routing(graph):
     }
 
 
+def failure_comparison_scene():
+    """Vergleicht einen gezielten Kanten- und Knotenausfall im Kerngraphen."""
+    graph = create_disjointness_strength_graph()
+    failed_node = graph.graph["shared_node"]
+    node_failed_edges = node_failures_to_edges(graph, [failed_node])
+    link_failed_edge = next(
+        edge for edge in node_failed_edges if SOURCE in edge
+    )
+    return graph, {
+        "failed_node": failed_node,
+        "link_failed_edges": [link_failed_edge],
+        "node_failed_edges": node_failed_edges,
+    }
+
+
 def first_paths(paths, count):
     """Wählt optional höchstens `count` Pfade in stabiler Reihenfolge aus."""
     return list(paths if count is None or count <= 0 else paths[:count])
@@ -236,14 +161,9 @@ def create_configured_graph(graph_type, nodes, p, degree, seed):
     elif graph_type == "random_regular":
         graph = experiment.create_graph(graph_type, nodes, degree, seed)
         title = f"Random-Regular n={nodes}, degree={degree}, seed={seed}"
-    elif graph_type == "complete":
-        # Vollständige Graphen sind für Schritt 7/Illustrationen nützlich, aber
-        # aktuell nicht Teil der Experiment-Graph-Registry.
-        graph = nx.complete_graph(nodes)
-        title = f"Vollständiger Graph n={nodes}"
     else:
         raise ValueError(f"Unbekannter Graph-Typ: {graph_type}")
-    return add_base_attributes(graph, title)
+    return set_graph_title(graph, title)
 
 
 def choose_source_destination(graph, seed):
@@ -268,7 +188,10 @@ def relabel_endpoints(graph, source, destination):
         if node not in mapping and node in (SOURCE, DESTINATION):
             mapping[node] = f"v{node}"
     relabeled = nx.relabel_nodes(graph, mapping, copy=True)
-    return add_base_attributes(relabeled, graph.graph.get("title", "Konfigurierter Graph"))
+    return set_graph_title(
+        relabeled,
+        graph.graph.get("title", "Konfigurierter Graph"),
+    )
 
 
 def safe_disjoint_paths(graph, path_type, max_paths):
@@ -336,8 +259,6 @@ def configured_scene(
             structure_type,
             retain_growth_stage=True,
         )
-        for index, structure in enumerate(structures, start=1):
-            mark_structure(graph, structure, index)
 
     path_types = (
         []
@@ -347,8 +268,6 @@ def configured_scene(
     for current_path_type in path_types:
         paths = safe_disjoint_paths(graph, current_path_type, max_paths)
         paths_by_type[current_path_type] = paths
-        for index, path in enumerate(paths, start=1):
-            mark_path(graph, path, current_path_type, index)
 
     nr_failures = (
         random_failure_count(graph, failure_type, fail_factor)
@@ -369,8 +288,6 @@ def configured_scene(
             failure_drop,
             random.Random(seed),
         )
-    mark_failed_edges(graph, failed_edges, f"{failure_model}_{failure_type}")
-    mark_failed_nodes(graph, failed_nodes, f"{failure_model}_{failure_type}")
     routing_result = None
     if algorithm != "none":
         routing_result = route_algorithm(
@@ -417,81 +334,50 @@ def configured_scene(
     }
 
 
-def edp_example():
-    """Erzeugt das Beispiel für Edge-Disjoint Paths."""
-    graph = create_shared_node_graph()
-    paths = first_paths(get_disjoint_paths(graph, SOURCE, DESTINATION, "edp"), 2)
-    for index, path in enumerate(paths, start=1):
-        mark_path(graph, path, "edp", index)
-    return "edp_paths", graph, {"paths": paths, "title": "Edge-Disjoint Paths"}
-
-
-def ndp_example():
-    """Erzeugt das Beispiel für Node-Disjoint Paths."""
-    graph = create_node_disjoint_graph()
-    paths = first_paths(get_disjoint_paths(graph, SOURCE, DESTINATION, "ndp"), 2)
-    for index, path in enumerate(paths, start=1):
-        mark_path(graph, path, "ndp", index)
-    return "ndp_paths", graph, {"paths": paths, "title": "Node-Disjoint Paths"}
-
-
-def random_link_failure_example(seed):
-    """Erzeugt ein Beispiel für zufällige Link Failures."""
-    graph = create_node_disjoint_graph()
-    failed_edges, failed_nodes = select_failures(
-        graph, SOURCE, DESTINATION, "link", "random", 2, 0.0, 0.3, random.Random(seed)
+def thesis_comparison_scene():
+    """Berechnet den gemeinsamen Graphen für die drei Vergleichsabbildungen."""
+    config = THESIS_COMPARISON_CONFIG
+    graph = create_configured_graph(
+        config["graph_type"],
+        config["nodes"],
+        config["p"],
+        config["degree"],
+        config["seed"],
     )
-    mark_failed_edges(graph, failed_edges, "random_link")
-    mark_failed_nodes(graph, failed_nodes, "random_link")
-    return "random_link_failure", graph, {
-        "failed_edges": failed_edges,
-        "failed_nodes": failed_nodes,
-        "title": "Random Link Failure",
+    source, destination = choose_source_destination(graph, config["seed"])
+    graph = relabel_endpoints(graph, source, destination)
+    paths = {
+        path_type: safe_disjoint_paths(graph, path_type, max_paths=0)
+        for path_type in ("edp", "ndp")
+    }
+    structures = {
+        f"{path_type}_{structure_type}": build_structures(
+            graph,
+            SOURCE,
+            DESTINATION,
+            paths[path_type],
+            structure_type,
+            retain_growth_stage=True,
+        )
+        for path_type in ("edp", "ndp")
+        for structure_type in ("one_tree", "multiple_trees")
+    }
+    return graph, {
+        "config": dict(config),
+        "paths": paths,
+        "structures": structures,
     }
 
 
-def random_node_failure_example(seed):
-    """Erzeugt ein Beispiel für zufällige Node Failures."""
-    graph = create_node_disjoint_graph()
-    failed_edges, failed_nodes = select_failures(
-        graph, SOURCE, DESTINATION, "node", "random", 1, 0.0, 0.3, random.Random(seed)
-    )
-    mark_failed_edges(graph, failed_edges, "random_node")
-    mark_failed_nodes(graph, failed_nodes, "random_node")
-    return "random_node_failure", graph, {
-        "failed_edges": failed_edges,
-        "failed_nodes": failed_nodes,
-        "title": "Random Node Failure",
-    }
-
-
-def clustered_link_failure_example(seed):
-    """Erzeugt ein Beispiel für geclusterte Link Failures um das Ziel."""
-    graph = create_node_disjoint_graph()
-    failed_edges, failed_nodes = select_failures(
-        graph, SOURCE, DESTINATION, "link", "clustered", 0, 0.9, 0.3, random.Random(seed)
-    )
-    mark_failed_edges(graph, failed_edges, "clustered_link")
-    mark_failed_nodes(graph, failed_nodes, "clustered_link")
-    return "clustered_link_failure", graph, {
-        "failed_edges": failed_edges,
-        "failed_nodes": failed_nodes,
-        "title": "Clustered Link Failure",
-    }
-
-
-def clustered_node_failure_example(seed):
-    """Erzeugt ein Beispiel für geclusterte Node Failures um das Ziel."""
-    graph = create_node_disjoint_graph()
-    failed_edges, failed_nodes = select_failures(
-        graph, SOURCE, DESTINATION, "node", "clustered", 0, 0.9, 0.3, random.Random(seed)
-    )
-    mark_failed_edges(graph, failed_edges, "clustered_node")
-    mark_failed_nodes(graph, failed_nodes, "clustered_node")
-    return "clustered_node_failure", graph, {
-        "failed_edges": failed_edges,
-        "failed_nodes": failed_nodes,
-        "title": "Clustered Node Failure",
+def shared_inner_nodes(paths):
+    """Liefert innere Knoten, die in mehr als einem Pfad vorkommen."""
+    occurrences = {}
+    for path in paths:
+        for node in set(path[1:-1]):
+            occurrences[node] = occurrences.get(node, 0) + 1
+    return {
+        node for node, count in occurrences.items()
+        if count > 1
     }
 
 
@@ -505,6 +391,133 @@ def _structure_edges(structure):
     edges = list(structure.graph.edges)
     edges.extend((exit_node, DESTINATION) for exit_node in structure.exits)
     return edges
+
+
+def draw_pipeline_overview(output_path):
+    """Zeigt den Pipeline-Ablauf mit kurzen Beschriftungen für eine Folie."""
+    stages = (
+        ("Konfiguration", "CLI oder GUI", "Graphen und Parameter", "#2b6c99"),
+        ("Experimente", "Routingversuche", "Rohdaten als CSV", "#287a65"),
+        ("Auswertung", "Kennzahlen", "Zusammenfassung", "#906525"),
+        ("Plots", "Vergleichsdiagramme", "PNG und SVG", "#6a5c86"),
+    )
+    fig, ax = plt.subplots(figsize=(14.4, 3.2))
+    try:
+        fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
+        ax.set_xlim(0, 14.4)
+        ax.set_ylim(0, 3.2)
+        ax.axis("off")
+        width = 3.1
+        spacing = 3.6
+        for index, (title, first_line, second_line, color) in enumerate(stages):
+            left = 0.25 + index * spacing
+            center = left + width / 2
+            ax.add_patch(Rectangle(
+                (left, 1.65), width, 0.95,
+                facecolor="#f8fafb", edgecolor=color, linewidth=1.8,
+            ))
+            ax.text(
+                center, 2.125, title, ha="center", va="center",
+                fontsize=22, fontweight="bold", color="#25343c",
+            )
+            for y, label in ((1.12, first_line), (0.76, second_line)):
+                ax.text(
+                    center, y, label, ha="center", va="center",
+                    fontsize=16, color="#45545d",
+                )
+            if index < len(stages) - 1:
+                ax.add_patch(FancyArrowPatch(
+                    (left + width + 0.07, 2.125),
+                    (left + spacing - 0.07, 2.125),
+                    arrowstyle="-|>", mutation_scale=18,
+                    linewidth=1.8, color="#45545d",
+                ))
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(output_path, dpi=220, bbox_inches="tight", facecolor="white")
+    finally:
+        plt.close(fig)
+
+
+def draw_failure_comparison(graph, metadata, output_path):
+    """Zeigt beide Ausfalltypen ohne Pfadmarkierung in identischem Layout."""
+    positions = nx.spring_layout(graph, seed=21, iterations=200)
+    positions = {node: (y, -x) for node, (x, y) in positions.items()}
+    available_color = "#7a858c"
+    failed_color = "#c52b32"
+    panels = (
+        (
+            "Kantenausfall",
+            "Eine Verbindung betroffen",
+            metadata["link_failed_edges"],
+            [],
+        ),
+        (
+            "Knotenausfall",
+            "Alle angrenzenden Verbindungen betroffen",
+            metadata["node_failed_edges"],
+            [metadata["failed_node"]],
+        ),
+    )
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.8))
+    try:
+        for ax, (title, subtitle, failed_edges, failed_nodes) in zip(axes, panels):
+            failed_edge_set = {frozenset(edge) for edge in failed_edges}
+            available_edges = [
+                edge for edge in graph.edges
+                if frozenset(edge) not in failed_edge_set
+            ]
+            nx.draw_networkx_edges(
+                graph, positions, ax=ax, edgelist=available_edges,
+                edge_color=available_color, width=2,
+            )
+            nx.draw_networkx_edges(
+                graph, positions, ax=ax, edgelist=failed_edges,
+                edge_color=failed_color, width=3, style="dashed",
+            )
+            nx.draw_networkx_nodes(
+                graph, positions, ax=ax,
+                node_color=[
+                    "#f8d7da" if node in failed_nodes
+                    else "#d9edf7" if node in (SOURCE, DESTINATION)
+                    else "#ffffff"
+                    for node in graph.nodes
+                ],
+                edgecolors=[
+                    failed_color if node in failed_nodes else "#33434c"
+                    for node in graph.nodes
+                ],
+                node_size=850, linewidths=2,
+            )
+            nx.draw_networkx_labels(
+                graph, positions, ax=ax, font_size=14, font_weight="bold",
+                font_color="#25343c",
+            )
+            ax.set_title(title, fontsize=20, fontweight="bold", pad=38)
+            ax.text(
+                0.5, 1.035, subtitle, transform=ax.transAxes,
+                ha="center", va="bottom", fontsize=13, color="#33434c",
+            )
+            ax.margins(0.16)
+            ax.set_aspect("equal")
+            ax.axis("off")
+        fig.legend(
+            handles=[
+                Line2D([], [], color=available_color, linewidth=2, label="Verfügbar"),
+                Line2D(
+                    [], [], color=failed_color, linewidth=3,
+                    linestyle="--", label="Ausgefallen",
+                ),
+            ],
+            loc="lower center", ncol=2, frameon=False, fontsize=13,
+            bbox_to_anchor=(0.5, 0.015),
+        )
+        fig.subplots_adjust(left=0.02, right=0.98, bottom=0.13, top=0.81, wspace=0.16)
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(output_path, dpi=220, bbox_inches="tight", facecolor="white")
+    finally:
+        plt.close(fig)
 
 
 def _draw_nodes_and_background(
@@ -705,19 +718,10 @@ def draw_algorithm_graph(graph, title, output_path, metadata):
     )
 
     all_path_edges = [edge for path in paths for edge in _path_edges(path)]
-    all_structure_edges = [
-        edge for structure in structures for edge in _structure_edges(structure)
-    ]
     _draw_nodes_and_background(
         path_ax, graph, positions, all_path_edges, set()
     )
-    _draw_nodes_and_background(
-        structure_ax,
-        graph,
-        positions,
-        all_structure_edges,
-        set(),
-    )
+    _draw_structure_collection(structure_ax, graph, positions, structures)
     if growth_ax is not None:
         all_growth_edges = [
             edge
@@ -803,50 +807,6 @@ def draw_algorithm_graph(graph, title, output_path, metadata):
                     edge_color=color,
                     style="dotted",
                 )
-
-    for index, structure in enumerate(structures, start=1):
-        color = PATH_COLORS[(index - 1) % len(PATH_COLORS)]
-        base_edges = _path_edges(structure.original_path)
-        base_keys = {frozenset(edge) for edge in base_edges}
-        added_tree_edges = [
-            edge
-            for edge in structure.graph.edges
-            if frozenset(edge) not in base_keys
-        ]
-        additional_exits = [
-            (exit_node, DESTINATION)
-            for exit_node in structure.exits
-            if frozenset((exit_node, DESTINATION)) not in base_keys
-        ]
-        nx.draw_networkx_edges(
-            graph,
-            positions,
-            ax=structure_ax,
-            edgelist=base_edges,
-            width=3.2,
-            edge_color=color,
-            style="solid",
-        )
-        if added_tree_edges:
-            nx.draw_networkx_edges(
-                graph,
-                positions,
-                ax=structure_ax,
-                edgelist=added_tree_edges,
-                width=3.2,
-                edge_color=color,
-                style="dashdot",
-            )
-        if additional_exits:
-            nx.draw_networkx_edges(
-                graph,
-                positions,
-                ax=structure_ax,
-                edgelist=additional_exits,
-                width=3.2,
-                edge_color=color,
-                style="dotted",
-            )
 
     if route_edges:
         draw_ordered_route(route_ax, positions, route_edges)
@@ -1048,23 +1008,303 @@ def draw_disjointness_comparison(graph, output_path):
     plt.close(figure)
 
 
+def _draw_path_collection(ax, graph, positions, paths, path_type):
+    """Zeichnet eine berechnete EDP- oder NDP-Menge in ein Teilbild."""
+    path_edges = [edge for path in paths for edge in _path_edges(path)]
+    _draw_nodes_and_background(ax, graph, positions, path_edges, set())
+    for index, path in enumerate(paths, start=1):
+        nx.draw_networkx_edges(
+            graph,
+            positions,
+            ax=ax,
+            edgelist=_path_edges(path),
+            width=3.4,
+            edge_color=(
+                THESIS_PATH_COLORS[
+                    (index - 1) % len(THESIS_PATH_COLORS)
+                ]
+            ),
+            style="solid",
+        )
+
+
+def draw_thesis_path_comparison(graph, metadata, output_path):
+    """Zeichnet EDPs und NDPs mit identischer Knotenanordnung."""
+    from matplotlib.lines import Line2D
+
+    paths = metadata["paths"]
+    positions = nx.spring_layout(
+        graph,
+        seed=THESIS_LAYOUT_SEED,
+        k=1.05,
+        iterations=400,
+    )
+    figure, axes = plt.subplots(1, 2, figsize=(12.0, 5.0))
+
+    _draw_path_collection(axes[0], graph, positions, paths["edp"], "edp")
+
+    _draw_path_collection(axes[1], graph, positions, paths["ndp"], "ndp")
+
+    shared_edp_nodes = shared_inner_nodes(paths["edp"])
+    if shared_edp_nodes:
+        nx.draw_networkx_nodes(
+            graph,
+            positions,
+            ax=axes[0],
+            nodelist=sorted(shared_edp_nodes, key=str),
+            node_color="#fff2a8",
+            edgecolors="#a66b00",
+            linewidths=2.4,
+            node_size=760,
+        )
+        nx.draw_networkx_labels(
+            graph,
+            positions,
+            ax=axes[0],
+            labels={node: str(node) for node in shared_edp_nodes},
+            font_size=10,
+            font_weight="bold",
+        )
+
+    maximum_paths = max(len(paths["edp"]), len(paths["ndp"]))
+    handles = [
+        Line2D(
+            [0],
+            [0],
+            color=(
+                THESIS_PATH_COLORS[
+                    (index - 1) % len(THESIS_PATH_COLORS)
+                ]
+            ),
+            lw=3,
+            label=f"Pfad {index}",
+        )
+        for index in range(1, maximum_paths + 1)
+    ]
+    if shared_edp_nodes:
+        handles.append(
+            Line2D(
+                [0],
+                [0],
+                marker="o",
+                linestyle="none",
+                markerfacecolor="#fff2a8",
+                markeredgecolor="#a66b00",
+                markeredgewidth=1.8,
+                markersize=10,
+                label="gemeinsamer innerer EDP-Knoten",
+            )
+        )
+    figure.legend(
+        handles=handles,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.01),
+        ncol=4,
+        frameon=False,
+    )
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    figure.subplots_adjust(bottom=0.22, top=0.98, wspace=0.05)
+    figure.savefig(output_path, bbox_inches="tight")
+    plt.close(figure)
+
+
+def _draw_structure_collection(ax, graph, positions, structures):
+    """Zeichnet finale Pfad- und Baumstrukturen nach dem Trunkieren."""
+    structure_edges = [
+        edge for structure in structures for edge in _structure_edges(structure)
+    ]
+    all_base_edge_keys = {
+        frozenset(edge)
+        for structure in structures
+        for edge in _path_edges(structure.original_path)
+    }
+    _draw_nodes_and_background(ax, graph, positions, structure_edges, set())
+    for index, structure in enumerate(structures, start=1):
+        color = THESIS_PATH_COLORS[
+            (index - 1) % len(THESIS_PATH_COLORS)
+        ]
+        base_edges = _path_edges(structure.original_path)
+        base_keys = {frozenset(edge) for edge in base_edges}
+        base_nodes = set(structure.original_path[:-1])
+        added_edges = [
+            edge
+            for edge in structure.graph.edges
+            if frozenset(edge) not in base_keys
+        ]
+        additional_exits = _visible_additional_exits(
+            structure,
+            all_base_edge_keys,
+        )
+        nx.draw_networkx_edges(
+            graph,
+            positions,
+            ax=ax,
+            edgelist=base_edges,
+            width=3.1,
+            edge_color=color,
+        )
+        if added_edges:
+            nx.draw_networkx_edges(
+                graph,
+                positions,
+                ax=ax,
+                edgelist=added_edges,
+                width=3.1,
+                edge_color=BRANCH_COLOR,
+            )
+        if additional_exits:
+            path_exits = [
+                edge for edge in additional_exits if edge[0] in base_nodes
+            ]
+            branch_exits = [
+                edge for edge in additional_exits if edge[0] not in base_nodes
+            ]
+            if path_exits:
+                nx.draw_networkx_edges(
+                    graph,
+                    positions,
+                    ax=ax,
+                    edgelist=path_exits,
+                    width=3.1,
+                    edge_color=color,
+                    style="dotted",
+                )
+            if branch_exits:
+                nx.draw_networkx_edges(
+                    graph,
+                    positions,
+                    ax=ax,
+                    edgelist=branch_exits,
+                    width=3.1,
+                    edge_color=BRANCH_COLOR,
+                    style="dotted",
+                )
+
+
+def _visible_additional_exits(structure, all_base_edge_keys):
+    """Lässt farbige Basispfad-Ausgänge in der Zeichnung unverändert."""
+    return [
+        (exit_node, DESTINATION)
+        for exit_node in structure.exits
+        if frozenset((exit_node, DESTINATION)) not in all_base_edge_keys
+    ]
+
+
+def _draw_thesis_structure_comparison(
+    graph,
+    metadata,
+    output_path,
+    structure_type,
+):
+    """Vergleicht EDP- und NDP-Strukturen eines Baumverfahrens."""
+    from matplotlib.lines import Line2D
+
+    positions = nx.spring_layout(
+        graph,
+        seed=THESIS_LAYOUT_SEED,
+        k=1.05,
+        iterations=400,
+    )
+    figure, axes = plt.subplots(1, 2, figsize=(12.0, 5.4))
+    for ax, path_type in zip(axes, ("edp", "ndp")):
+        structures = metadata["structures"][f"{path_type}_{structure_type}"]
+        _draw_structure_collection(ax, graph, positions, structures)
+
+    maximum_structures = max(
+        len(metadata["structures"][f"{path_type}_{structure_type}"])
+        for path_type in ("edp", "ndp")
+    )
+    handles = [
+        Line2D(
+            [0],
+            [0],
+            color=(
+                THESIS_PATH_COLORS[
+                    (index - 1) % len(THESIS_PATH_COLORS)
+                ]
+            ),
+            lw=3,
+            label=f"Pfad {index}",
+        )
+        for index in range(1, maximum_structures + 1)
+    ]
+    handles.extend(
+        [
+            Line2D(
+                [0],
+                [0],
+                color=BRANCH_COLOR,
+                lw=3,
+                label="hinzugefügter Baumast",
+            ),
+            Line2D(
+                [0],
+                [0],
+                color=BRANCH_COLOR,
+                lw=3,
+                linestyle="dotted",
+                label="zusätzlicher Ausgang über Baumast",
+            ),
+        ]
+    )
+    figure.legend(
+        handles=handles,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.02),
+        ncol=5,
+        frameon=False,
+    )
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    figure.subplots_adjust(
+        bottom=0.18,
+        top=0.98,
+        left=0.02,
+        right=0.98,
+        wspace=0.04,
+    )
+    figure.savefig(output_path, bbox_inches="tight")
+    plt.close(figure)
+
+
+def draw_thesis_one_tree_comparison(graph, metadata, output_path):
+    """Vergleicht die EDP- und NDP-basierte One-Tree-Struktur."""
+    _draw_thesis_structure_comparison(
+        graph,
+        metadata,
+        output_path,
+        "one_tree",
+    )
+
+
+def draw_thesis_multiple_trees_comparison(graph, metadata, output_path):
+    """Vergleicht die EDP- und NDP-basierten Multiple-Trees-Strukturen."""
+    _draw_thesis_structure_comparison(
+        graph,
+        metadata,
+        output_path,
+        "multiple_trees",
+    )
+
+
 def draw_graph(graph, title, output_path, metadata=None):
     """Speichert eine erklärende Abbildung als SVG oder PNG."""
     if metadata and metadata.get("algorithm") not in (None, "none"):
         draw_algorithm_graph(graph, title, output_path, metadata)
         return
-    if all(node in NODE_POSITIONS for node in graph.nodes):
-        positions = {node: NODE_POSITIONS[node] for node in graph.nodes}
-    else:
-        positions = nx.spring_layout(graph, seed=123, k=1.2)
+    metadata = metadata or {}
+    positions = nx.spring_layout(graph, seed=123, k=1.2)
     plt.figure(figsize=(7.4, 4.6))
     ax = plt.gca()
     ax.set_title(title, fontsize=14)
     ax.axis("off")
 
-    normal_nodes = [node for node in graph.nodes if not graph.nodes[node].get("failed")]
-    failed_nodes = [node for node in graph.nodes if graph.nodes[node].get("failed")]
     source_target_nodes = [node for node in (SOURCE, DESTINATION) if node in graph]
+    failed_nodes = set(metadata.get("failed_nodes", []))
+    normal_nodes = [
+        node
+        for node in graph.nodes
+        if node not in source_target_nodes and node not in failed_nodes
+    ]
 
     nx.draw_networkx_nodes(
         graph,
@@ -1095,53 +1335,19 @@ def draw_graph(graph, title, output_path, metadata=None):
             node_size=900,
         )
 
-    failed_edges = [
-        edge for edge in graph.edges if graph.edges[edge].get("failed")
-    ]
+    failed_edges = list(metadata.get("failed_edges", []))
     path_edge_groups = []
     for path_type in ("edp", "ndp"):
-        index_key = f"{path_type}_index"
-        indexes = sorted(
-            {
-                graph.edges[edge].get(index_key, 0)
-                for edge in graph.edges
-                if graph.edges[edge].get(index_key, 0)
-            }
-        )
-        for index in indexes:
-            edges = [
-                edge for edge in graph.edges
-                if graph.edges[edge].get(index_key, 0) == index
-            ]
-            path_edge_groups.append((path_type.upper(), index, edges))
-
-    structure_edge_groups = []
-    structure_indexes = sorted(
-        {
-            graph.edges[edge].get("structure_index", 0)
-            for edge in graph.edges
-            if graph.edges[edge].get("structure_index", 0)
-        }
-    )
-    for index in structure_indexes:
-        edges = [
-            edge for edge in graph.edges
-            if graph.edges[edge].get("structure_index", 0) == index
-        ]
-        kind = next(
-            (
-                graph.edges[edge].get("structure_kind", "Struktur")
-                for edge in edges
-                if graph.edges[edge].get("structure_kind")
-            ),
-            "Struktur",
-        )
-        structure_edge_groups.append((kind, index, edges))
+        for index, path in enumerate(
+            metadata.get("paths", {}).get(path_type, []),
+            start=1,
+        ):
+            path_edge_groups.append(
+                (path_type.upper(), index, _path_edges(path))
+            )
 
     highlighted_edges = failed_edges[:]
     for _, _, edges in path_edge_groups:
-        highlighted_edges.extend(edges)
-    for _, _, edges in structure_edge_groups:
         highlighted_edges.extend(edges)
     highlighted = {frozenset(edge) for edge in highlighted_edges}
     normal_edges = [
@@ -1166,17 +1372,6 @@ def draw_graph(graph, title, output_path, metadata=None):
             edge_color=color,
             style=style,
         )
-    for color_index, (kind, index, edges) in enumerate(structure_edge_groups):
-        color = PATH_COLORS[color_index % len(PATH_COLORS)]
-        style = "solid" if kind == "Pfad" else "dashdot"
-        nx.draw_networkx_edges(
-            graph,
-            positions,
-            edgelist=edges,
-            width=3.3,
-            edge_color=color,
-            style=style,
-        )
     nx.draw_networkx_edges(
         graph,
         positions,
@@ -1192,10 +1387,6 @@ def draw_graph(graph, title, output_path, metadata=None):
         color = PATH_COLORS[color_index % len(PATH_COLORS)]
         style = "-" if path_type_label == "EDP" else "-."
         legend_items.append((f"{path_type_label} {index}", color, style))
-    for color_index, (kind, index, _) in enumerate(structure_edge_groups):
-        color = PATH_COLORS[color_index % len(PATH_COLORS)]
-        style = "-" if kind == "Pfad" else "-."
-        legend_items.append((f"{kind} {index}", color, style))
     if failed_edges or failed_nodes:
         legend_items.append(("Ausfall", "#d62728", "--"))
     if legend_items:
@@ -1220,44 +1411,6 @@ def draw_graph(graph, title, output_path, metadata=None):
     plt.close()
 
 
-def write_graphml(graph, output_path):
-    """Schreibt optional eine GraphML-Datei mit den gesetzten Erklärattributen."""
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    nx.write_graphml(graph, output_path)
-
-
-def create_examples(
-    output_dir=DEFAULT_OUTPUT_DIR,
-    formats=("svg", "png"),
-    seed=123,
-    write_graphml_files=False,
-):
-    """Erzeugt alle BA-Beispielbilder und gibt die geschriebenen Dateien zurück."""
-    output_dir = Path(output_dir)
-    figure_dir = output_dir / "figures"
-    graphml_dir = output_dir / "graphml"
-    examples = [
-        edp_example(),
-        ndp_example(),
-        random_link_failure_example(seed),
-        random_node_failure_example(seed),
-        clustered_link_failure_example(seed),
-        clustered_node_failure_example(seed),
-    ]
-
-    written = []
-    for name, graph, metadata in examples:
-        if write_graphml_files:
-            graphml_path = graphml_dir / f"{name}.graphml"
-            write_graphml(graph, graphml_path)
-            written.append(graphml_path)
-        for file_format in formats:
-            figure_path = figure_dir / f"{name}.{file_format}"
-            draw_graph(graph, metadata["title"], figure_path)
-            written.append(figure_path)
-    return written
-
-
 def create_disjointness_comparison_files(
     output_dir=DEFAULT_OUTPUT_DIR,
     formats=("svg", "png"),
@@ -1270,6 +1423,65 @@ def create_disjointness_comparison_files(
         figure_path = figure_dir / f"disjointness_edp_vs_ndp.{file_format}"
         draw_disjointness_comparison(graph, figure_path)
         written.append(figure_path)
+    return written
+
+
+def create_pipeline_overview_files(
+    output_dir=DEFAULT_OUTPUT_DIR,
+    formats=("svg", "png"),
+):
+    """Schreibt die Ablaufgrafik ohne Experimente oder Routing auszuführen."""
+    figure_dir = Path(output_dir) / "figures"
+    written = []
+    for file_format in formats:
+        figure_path = figure_dir / f"pipeline_overview.{file_format}"
+        draw_pipeline_overview(figure_path)
+        written.append(figure_path)
+    return written
+
+
+def create_failure_comparison_files(
+    output_dir=DEFAULT_OUTPUT_DIR,
+    formats=("svg", "png"),
+):
+    """Schreibt den Kanten-/Knotenausfallvergleich für die Präsentation."""
+    graph, metadata = failure_comparison_scene()
+    figure_dir = Path(output_dir) / "figures"
+    written = []
+    for file_format in formats:
+        figure_path = figure_dir / f"failure_comparison_link_node.{file_format}"
+        draw_failure_comparison(graph, metadata, figure_path)
+        written.append(figure_path)
+    return written
+
+
+def create_thesis_comparison_files(
+    output_dir=DEFAULT_OUTPUT_DIR,
+    formats=("svg", "png"),
+):
+    """Erzeugt drei gemeinsame Vergleichsabbildungen für die Ausarbeitung."""
+    figure_dir = Path(output_dir) / "figures"
+    graph, metadata = thesis_comparison_scene()
+    figures = (
+        (
+            "thesis_comparison_edp_ndp_paths",
+            draw_thesis_path_comparison,
+        ),
+        (
+            "thesis_comparison_edp_ndp_one_tree",
+            draw_thesis_one_tree_comparison,
+        ),
+        (
+            "thesis_comparison_edp_ndp_multiple_trees",
+            draw_thesis_multiple_trees_comparison,
+        ),
+    )
+    written = []
+    for stem, draw_function in figures:
+        for file_format in formats:
+            figure_path = figure_dir / f"{stem}.{file_format}"
+            draw_function(graph, metadata, figure_path)
+            written.append(figure_path)
     return written
 
 
@@ -1345,8 +1557,11 @@ def parse_args(argv=None):
     )
     parser.add_argument(
         "--scene",
-        choices=["examples", "disjointness", "configured", "all"],
-        default="examples",
+        choices=[
+            "disjointness", "comparison", "failure_comparison",
+            "pipeline", "configured", "all",
+        ],
+        default="comparison",
         help="Welche Abbildungen erzeugt werden.",
     )
     parser.add_argument(
@@ -1359,7 +1574,7 @@ def parse_args(argv=None):
     parser.add_argument("--seed", type=int, default=123)
     parser.add_argument(
         "--graph-type",
-        choices=["erdos_renyi", "random_regular", "complete"],
+        choices=["erdos_renyi", "random_regular"],
         default="erdos_renyi",
     )
     parser.add_argument("--nodes", type=int, default=12)
@@ -1419,11 +1634,6 @@ def parse_args(argv=None):
         default=0.3,
         help="Abnahme der Failure Rate pro Cluster-Schicht.",
     )
-    parser.add_argument(
-        "--write-graphml",
-        action="store_true",
-        help="Schreibt zusätzlich GraphML-Dateien mit Erklärattributen.",
-    )
     return parser.parse_args(argv)
 
 
@@ -1431,18 +1641,24 @@ def main(argv=None):
     """Erzeugt alle Dateien und gibt die Pfade aus."""
     args = parse_args(argv)
     written = []
-    if args.scene in ("examples", "all"):
+    if args.scene in ("pipeline", "all"):
         written.extend(
-            create_examples(
-                args.output_dir,
-                tuple(args.formats),
-                args.seed,
-                write_graphml_files=args.write_graphml,
-            )
+            create_pipeline_overview_files(args.output_dir, tuple(args.formats))
+        )
+    if args.scene in ("failure_comparison", "all"):
+        written.extend(
+            create_failure_comparison_files(args.output_dir, tuple(args.formats))
         )
     if args.scene in ("disjointness", "all"):
         written.extend(
             create_disjointness_comparison_files(
+                args.output_dir,
+                tuple(args.formats),
+            )
+        )
+    if args.scene in ("comparison", "all"):
+        written.extend(
+            create_thesis_comparison_files(
                 args.output_dir,
                 tuple(args.formats),
             )

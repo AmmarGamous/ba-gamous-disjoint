@@ -8,9 +8,14 @@ from pathlib import Path
 import random
 from typing import Iterable, Sequence
 
+from environment_check import check_dependencies
+
+check_dependencies(("networkx",))
+
 import networkx as nx
 
 from failures import (
+    FAILURE_MODEL_SPECS,
     failure_model_csv_prefix,
     failure_parameter_key,
     node_sort_key,
@@ -20,6 +25,7 @@ from failures import (
 )
 from routing_algorithms import (
     ALGORITHMS,
+    BASE_ALGORITHMS,
     algorithm_path_type,
     get_disjoint_paths,
     run_algorithms,
@@ -52,6 +58,9 @@ CSV_FIELDNAMES = [
     "stretch",
 ]
 
+DEFAULT_OUTPUT_DIR = Path(__file__).resolve().parents[1] / "Output"
+BASE_FAILURE_MODELS = ("random", "clustered")
+
 
 # Schritt-7-Erweiterungspunkt: neue synthetische Graphen bekommen hier
 # eine Builder-Funktion, einen Parameter-Eintrag und optional einen Validator.
@@ -80,6 +89,20 @@ def _validate_random_regular_graph(label, nodes, graph_param):
         raise ValueError(f"{label}: nodes * degree must be even")
 
 
+def choose_complete_graph_endpoints(graph, rng):
+    """Erlaubt benachbarte Endpunkte ausschließlich in vollständigen Graphen."""
+    nodes = sorted(graph.nodes, key=node_sort_key)
+    if (
+        len(nodes) < 2
+        or graph.is_directed()
+        or graph.is_multigraph()
+        or nx.number_of_selfloops(graph)
+        or graph.number_of_edges() != len(nodes) * (len(nodes) - 1) // 2
+    ):
+        raise ValueError("Die Endpunktregel benötigt einen vollständigen einfachen Graphen mit n >= 2")
+    return rng.choice(list(combinations(nodes, 2)))
+
+
 # Registrierung der Graph-Erzeugung. Neue Graphen zuerst hier aufnehmen.
 GRAPH_BUILDERS = {
     "erdos_renyi": _create_erdos_renyi_graph,
@@ -96,6 +119,10 @@ GRAPH_VALIDATORS = {
     "random_regular": _validate_random_regular_graph,
 }
 GRAPH_TYPES = tuple(GRAPH_BUILDERS)
+# Schritt-7-Erweiterungspunkt: selector(graph, rng) nur für neue Grapharten
+# eintragen, z.B. "complete_graph": choose_complete_graph_endpoints.
+# Ohne Eintrag bleibt die bisherige nicht benachbarte Endpunktauswahl erhalten.
+GRAPH_ENDPOINT_SELECTORS = {}
 
 
 def graph_parameter_from_dataset(dataset):
@@ -118,6 +145,8 @@ def validate_graph_parameters(graph_type, nodes, graph_param, label="dataset"):
     except KeyError as exc:
         raise ValueError(f"{label}: unknown graph_type {graph_type}") from exc
     validator(label, nodes, graph_param)
+    if graph_type in GRAPH_ENDPOINT_SELECTORS and not callable(GRAPH_ENDPOINT_SELECTORS[graph_type]):
+        raise ValueError(f"{label}: GRAPH_ENDPOINT_SELECTORS benötigt eine aufrufbare Funktion")
 
 
 def shortest_path_after_failures(graph, source, destination, failed_edges):
@@ -139,7 +168,7 @@ def create_instance_rows(
     failure_type: str,
     failure_model: str,
     failed_nodes: Iterable = (),
-    algorithms: Iterable[str] = ALGORITHMS,
+    algorithms: Iterable[str] = BASE_ALGORITHMS,
     graph_type: str = "",
     graph_param="",
     graph_name: str = "",
@@ -246,6 +275,20 @@ def choose_endpoints(graph, rng):
     return rng.choice(candidates)
 
 
+def choose_graph_endpoints(graph, rng, graph_type):
+    """Nutzt eine ausdrücklich registrierte Regel oder die unveränderte Basisregel."""
+    selector = GRAPH_ENDPOINT_SELECTORS.get(graph_type, choose_endpoints)
+    return selector(graph, rng)
+
+
+def report_progress(callback, message, **details):
+    """Meldet Fortschritt an eine Oberfläche oder unmittelbar an die CLI."""
+    if callback is None:
+        print(message, flush=True)
+    else:
+        callback({"message": message, **details})
+
+
 def format_parameter(value):
     """Formatiert Parameterwerte stabil für Dateinamen."""
     return "0" if value == 0 else str(value)
@@ -341,7 +384,7 @@ def run_experiment_series(
     runs,
     failure_types,
     failure_models,
-    algorithms=ALGORITHMS,
+    algorithms=BASE_ALGORITHMS,
     graph_type="erdos_renyi",
     nodes=25,
     graph_param=0.15,
@@ -350,11 +393,12 @@ def run_experiment_series(
     fail_factors=(0.8,),
     failure_starts=(0.9,),
     failure_drop=0.3,
-    output_dir="output",
+    output_dir=DEFAULT_OUTPUT_DIR,
     seed=None,
     resume=False,
+    progress_callback=None,
 ):
-    """Erzeugt gepaarte Reihen; jede CSV enthält sechs Zeilen je Instanz."""
+    """Erzeugt gepaarte Reihen und meldet vollständig gespeicherte Wiederholungen."""
     configurations = build_configurations(
         failure_types, failure_models, fail_factors, failure_starts
     )
@@ -375,15 +419,21 @@ def run_experiment_series(
         )
         for csv_path in paths.values():
             truncate_to_completed_reps(csv_path, completed_reps)
-        if completed_reps:
-            print(f"resume: {completed_reps} complete repetitions found")
-        if completed_reps >= runs:
-            return [str(path) for path in paths.values()]
     else:
         completed_reps = 0
         for csv_path in paths.values():
             if csv_path.exists():
                 csv_path.unlink()
+
+    completed = min(completed_reps, runs)
+    report_progress(
+        progress_callback,
+        f"Wiederholungen: {completed}/{runs} abgeschlossen ({completed} aus Resume)",
+        phase="experiment", completed=completed, total=runs, resumed=completed,
+    )
+    if completed_reps >= runs:
+        return [str(path) for path in paths.values()]
+    progress_interval = max(1, min(100, (runs + 9) // 10))
 
     master_rng = random.Random(seed)
     loaded_graph = nx.Graph(nx.read_graphml(graphml_path)) if graphml_path else None
@@ -397,7 +447,7 @@ def run_experiment_series(
                 graph_type, nodes, graph_param, graph_seed
             )
             try:
-                source, destination = choose_endpoints(graph, master_rng)
+                source, destination = choose_graph_endpoints(graph, master_rng, effective_graph_type)
                 edps = get_disjoint_paths(graph, source, destination, "edp")
                 ndps = get_disjoint_paths(graph, source, destination, "ndp")
                 break
@@ -464,6 +514,11 @@ def run_experiment_series(
                 rows,
                 append=True,
             )
+        if rep % progress_interval == 0 or rep == runs:
+            report_progress(
+                progress_callback, f"Wiederholungen: {rep}/{runs} abgeschlossen",
+                phase="experiment", completed=rep, total=runs, resumed=completed,
+            )
     return [str(path) for path in paths.values()]
 
 
@@ -473,9 +528,12 @@ def parse_args(argv=None):
         description="Run the six routing algorithms on paired instances"
     )
     parser.add_argument("--runs", type=int, default=100)
-    parser.add_argument("--algorithms", nargs="+", choices=ALGORITHMS, default=list(ALGORITHMS))
+    parser.add_argument("--algorithms", nargs="+", choices=ALGORITHMS, default=list(BASE_ALGORITHMS))
     parser.add_argument("--failure-type", choices=["link", "node", "both"], default="both")
-    parser.add_argument("--failure-model", choices=["random", "clustered", "both"], default="both")
+    parser.add_argument(
+        "--failure-model", choices=[*FAILURE_MODEL_SPECS, "both"], default="both",
+        help="Registriertes Modell; both wählt weiterhin nur random und clustered.",
+    )
     parser.add_argument("--graph-type", choices=GRAPH_TYPES, default="erdos_renyi")
     parser.add_argument("--nodes", type=int, default=25)
     parser.add_argument("--p", type=float, default=None)
@@ -487,7 +545,7 @@ def parse_args(argv=None):
     parser.add_argument("--failure-drop", type=float, default=0.3)
     parser.add_argument(
         "--output-dir",
-        default=str(Path(__file__).resolve().parents[1] / "output"),
+        default=str(DEFAULT_OUTPUT_DIR),
     )
     parser.add_argument("--seed", type=int, default=None)
     parser.add_argument(
@@ -501,7 +559,7 @@ def parse_args(argv=None):
 def run_from_args(args):
     """Übersetzt CLI-Argumente in den Aufruf der Experimentserie."""
     failure_types = ["link", "node"] if args.failure_type == "both" else [args.failure_type]
-    failure_models = ["random", "clustered"] if args.failure_model == "both" else [args.failure_model]
+    failure_models = list(BASE_FAILURE_MODELS) if args.failure_model == "both" else [args.failure_model]
     if args.graphml:
         graph_param = args.graph_name or Path(args.graphml).stem
     elif args.graph_type == "erdos_renyi":

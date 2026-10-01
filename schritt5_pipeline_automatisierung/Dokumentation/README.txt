@@ -1,273 +1,228 @@
 Pipeline-Automatisierung
 
-Diese Pipeline führt die Schritt-4-Experimente konfigurationsgetrieben aus und
-erzeugt danach automatisch Summary-CSV sowie PNG/SVG-Plots.
+## 1. Einstieg und Voraussetzungen
 
-Der Ordner ist eigenständig nutzbar: Der Experiment-Code liegt unter `src/`,
-die Plot-Auswertung unter `evaluation/` und die benötigten Real-World-Graphen
-unter `data/topology_zoo/`. Relative Datenpfade in JSON-Konfigurationen werden
-vom Schritt-5-Ordner aus aufgelöst. Relative Ausgabepfade landen ebenfalls im
-Schritt-5-Ordner, standardmäßig unter `Output/`.
+CLI und Streamlit-GUI führen dieselbe Pipeline aus: Routingexperimente,
+Rohdaten-CSV, Summary und Vergleichsplots als PNG/SVG. Der Schritt-5-Ordner
+enthält alle Projektmodule und die drei Real-World-Topologien; frühere Schritte
+werden nicht benötigt.
 
-Der Ordner `Dokumentation/` enthält Protokolle für alle Python-Module.
-Die Datei `Dokumentation/Modulenübersicht.txt` dient als Übersicht. Der
+Die bereitgestellten Bibliotheken benötigen Python ab 3.11. Geprüft wurde
+Windows mit Python 3.11.3; andere Systeme und Versionen sind dadurch nicht
+automatisch geprüft. Für bestehende Versuchsreihen die ursprüngliche Umgebung
+beibehalten.
 
-## Schnellstart
+Alle Befehle beginnen im Elternordner von `schritt5_pipeline_automatisierung/`
+(normalerweise im Repository-Hauptordner). Wer bereits im Schritt-5-Ordner
+arbeitet, lässt diesen Präfix in den Befehlen weg.
 
-Vom Repository-Root:
+## 2. Installation
 
+`Dokumentation/requirements.txt` ist der Startpunkt: Sie enthält kommentierte
+Einrichtungsschritte und alle 44 festgelegten Paketversionen für CLI, GUI,
+Auswertung und Illustrationen. Python selbst muss vorher installiert werden,
+etwa von https://www.python.org/downloads/ oder über die Systempaketverwaltung.
+`venv` gehört zu Python, nicht in die pip-Paketliste. Unter Linux kann dafür
+ein zusätzliches, zur Python-Version passendes venv-Systempaket nötig sein.
+
+Eine neue virtuelle Umgebung erstellen und aktivieren. Existiert `.venv`
+bereits für andere Versuche, einen anderen Namen und entsprechende Pfade wählen.
+
+Windows / PowerShell:
 ```powershell
-python schritt5_pipeline_automatisierung/pipeline.py --config schritt5_pipeline_automatisierung/config/pilot.json
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
 ```
 
-Falls Windows auf den Microsoft-Store-Alias `WindowsApps/python.exe` zeigt und
-der Start mit "Zugriff verweigert" scheitert, denselben Befehl mit einer
-funktionierenden Python-Installation beziehungsweise auf dem Linux-Server im
-aktivierten `venv` ausführen.
-
-Vor einem langen Lauf kann mit `--dry-run` der geplante Jobplan ohne Berechnung
-angezeigt werden:
-
-```powershell
-python schritt5_pipeline_automatisierung/pipeline.py --config schritt5_pipeline_automatisierung/config/full.json --dry-run
-```
-
-Vor dem eigentlichen Lauf kann mit `--preflight` geprüft werden, ob die
-Konfiguration technisch ausführbar ist:
-
-```powershell
-python schritt5_pipeline_automatisierung/pipeline.py --config schritt5_pipeline_automatisierung/config/full.json --preflight
-```
-
-## GUI
-
-Die Streamlit-GUI ist eine zusätzliche Bedienoberfläche. Sie erzeugt eine
-JSON-Konfiguration im Ausgabeordner und startet danach dieselbe Pipeline wie die CLI.
-
-Installation, falls Streamlit noch fehlt. Empfohlen ist eine virtuelle
-Python-Umgebung mit `venv`, damit die GUI-Abhängigkeiten getrennt vom System
-installiert werden.
-
-```powershell
-python -m venv venv
-.\venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r schritt5_pipeline_automatisierung/Dokumentation/requirements-gui.txt
-```
-
-Auf einem Linux-Server entsprechend:
-
+Linux oder macOS / Bash:
 ```bash
-python3 -m venv venv
-source venv/bin/activate
+python3.11 -m venv .venv
+source .venv/bin/activate
+```
+
+Anschließend in beiden Fällen:
+```text
+python --version
 python -m pip install --upgrade pip
-python -m pip install -r schritt5_pipeline_automatisierung/Dokumentation/requirements-gui.txt
+python -m pip install -r schritt5_pipeline_automatisierung/Dokumentation/requirements.txt
+python -m pip check
 ```
 
-Start:
+Fehlt `py -3.11` bzw. `python3.11`, den Pfad einer geeigneten Python-Installation
+verwenden. Ist die PowerShell-Aktivierung gesperrt, statt `python` direkt
+`.\.venv\Scripts\python.exe` aufrufen; keine Änderung der Sicherheitsrichtlinie nötig.
 
-```powershell
-streamlit run schritt5_pipeline_automatisierung/gui.py
+## 3. Erster CLI-Lauf
+
+Zunächst prüfen, dann mit einem bisher unbenutzten Laufnamen starten:
+```text
+python schritt5_pipeline_automatisierung/pipeline.py --config schritt5_pipeline_automatisierung/config/pilot.json --run-name feedback_pilot --preflight
+python schritt5_pipeline_automatisierung/pipeline.py --config schritt5_pipeline_automatisierung/config/pilot.json --run-name feedback_pilot
 ```
 
-Alternativ:
+`pilot.json` verwendet Erdős-Rényi mit `n=25, p=0.15` und ATT-MPLS, fünf
+Wiederholungen, sechs Algorithmen und vier Failure-Kombinationen. Beide Datasets
+nutzen failFactor 0.8/4.0/8.0, failureStart 0.3/0.6/0.9 und failureDrop 0.3.
+Erwartet werden im frischen Ausgabeordner ohne Erweiterungen:
+- acht Jobs und 24 Rohdaten-CSVs mit je 30 Ergebniszeilen;
+- eine Summary-CSV mit 144 Ergebniszeilen (jeweils ohne Kopfzeile);
+- 24 Vergleichsabbildungen als PNG und SVG, also 48 Plotdateien;
+- `used_config.json` und `manifest.json`.
 
-```powershell
+Ausgabe: `schritt5_pipeline_automatisierung/Output/feedback_pilot/`.
+Der vollständige Lauf ist in `config/full.json` mit 1000 Wiederholungen
+konfiguriert. Vor einem solchen Lauf zuerst den Pilotversuch prüfen.
+
+## 4. GUI verwenden
+
+```text
 python -m streamlit run schritt5_pipeline_automatisierung/gui.py
 ```
 
-Die GUI bietet Auswahlfelder für:
+Für einen kleinen Test fünf Wiederholungen, einen neuen Laufnamen und zunächst
+ein Dataset wählen. Über `+ Hinzufügen` Erdős-Rényi (`n`, `p`) oder Real-World
+(ATT-MPLS, Oteglobe, Cogentco) konfigurieren und mit `Graph speichern` übernehmen.
+Beide Graphkategorien bieten Parameterbereiche für Random- und Clustered-Failure.
+`Experiment starten` speichert `gui_config.json` und startet die Pipeline.
 
-- Algorithmen
-- Fehlertypen
-- `+ Hinzufügen` unter `Graphen`
-- Random-Graphen als Erdos-Renyi mit frei wählbarem `n`, `p`,
-  Failure-Rate-Bereichen und Schrittgrößen
-- Real-World-Graphen: `Small: ATT-MPLS`, `Medium: Oteglobe`, `Large: Cogentco`
-- `runs`, Failureparameter, `failureDrop` und Metriken
+`Paper-Graphsets` lädt die sechs vorbereiteten Datasets. Für vollständige
+Paper-Läufe 1000 Wiederholungen einstellen. Die sechs Basisalgorithmen und vier
+Basisfälle bleiben auch nach Erweiterungen vorausgewählt; Zusatzverfahren
+müssen ausdrücklich ausgewählt werden. Der GUI-Seed ist fest `123`.
+Details zu den GUI-Funktionen: `Dokumentation/gui.txt`.
 
-Der Seed ist in der GUI fest auf `123` gesetzt. Dadurch bleiben wiederholte
-GUI-Läufe mit derselben Konfiguration reproduzierbar. Über die CLI kann der
-Seed weiterhin überschrieben werden.
-Die Pipeline sortiert Endpunkt-, Kanten- und Knotenkandidaten stabil, bevor
-zufällig ausgewählt wird. Dadurch führen gleiche Konfiguration, gleiche
-Inputdaten, gleiche Codeversion und gleicher Seed zu denselben Routing-Szenen.
+## 5. Konfiguration und Parameter
 
-Der Button `Experiment starten` schreibt zuerst `gui_config.json` und startet
-dann die Pipeline. Dadurch bleiben GUI-Läufe genauso nachvollziehbar wie
-CLI-Läufe.
+Die JSON-Datei enthält `run_name`, `runs`, `seed`, `resume`, `algorithms`,
+`failures`, `datasets` und `metrics`; optional `output_root` und `plot_groups`.
+`runs` gilt je Dataset und Failure-Konfiguration, nicht für den gesamten Lauf.
+Bei Erdős-Rényi stehen `nodes` für n und `p` für die Kantenwahrscheinlichkeit.
+Random-Regular ist über JSON/CLI mit `degree` verfügbar, nicht im GUI-Graphdialog.
+Graphparameter ändern keine eingelesenen Real-World-Topologien.
 
-Mit `+ Hinzufügen` wird zuerst eine neue Graph-Konfiguration geöffnet. Danach
-wird zwischen `Random (Erdos-Renyi)` und `Real-World` gewählt. Durch erneutes
-Hinzufügen können mehrere Graph-Sets in einem Lauf kombiniert werden.
+Die wichtigsten Failure-Parameter:
+- `fail_factors` / `--fail-factor`: skaliert bei Random Failure die Ausfallzahl
+  als `round(max(k - 1, 0) * failFactor)`, begrenzt auf verfügbare Kandidaten.
+  Dabei ist k die Anzahl der EDPs bei Link- und der NDPs bei Knotenausfällen.
+- `failure_starts` / `--failure-start`: anfänglicher Auswahlanteil bei
+  Clustered Failure; zulässig `0 < Wert <= 1`.
+- `failure_drop` / `--failure-drop`: Abnahme dieses Anteils pro Runde,
+  ebenfalls `0 < Wert <= 1`. Beispielsweise ergeben 0.8 und 0.3 die Raten
+  0.8, 0.5 und 0.2. Details zur Auswahl: `Dokumentation/src_failures.txt`.
 
-Jede neue Graph-Konfiguration hat zwei Failure-Blöcke:
+Vorrang für Failure-Parameter: CLI > Dataset > globale JSON-Werte. Die GUI
+speichert diese Werte je Dataset. Die Plotachse `Failure Rate` bezeichnet
+failFactor oder failureStart, keine einheitliche prozentuale Ausfallrate.
 
-- `Random-Failure`: `Failure Rate` bedeutet `failFactor`.
-- `Clustered-Failure`: `Failure Rate` bedeutet `failureStart`.
-- `failureDrop` kann pro Graph-Konfiguration gesetzt werden.
-
-Wenn alle Läufe analog zu Schritt 4 vorbereitet werden sollen, in der GUI:
-
-- unter `Graphen` den Button `Paper-Graphsets` drücken
-- `runs` auf `1000` setzen
-- alle sechs Algorithmen und alle vier Fehlertypen aktiviert lassen
-
-Die GUI verwendet dafür diese Schritt-4-Defaults:
-
-- Erdos-Renyi `n=25,p=0.15`: Random-Failfactor `0.8` bis `8.8` in `0.8`-Schritten
-- Erdos-Renyi `n=50,p=0.15`: Random-Failfactor `0.8` bis `16.8` in `0.8`-Schritten
-- Erdos-Renyi `n=100,p=0.02`: Random-Failfactor `0.8` bis `49.6` in `0.8`-Schritten
-- Real-World `ATT-MPLS`, `Cogentco`, `Oteglobe`: Random-Failfactor `1.0` bis `10.0` in `1.0`-Schritten
-- Clustered-Failures für alle Graph-Sets: `failure_start = 0.3` bis `0.9` in `0.1`-Schritten, `failure_drop = 0.3`
-
-Plots aus GUI-Konfigurationen werden automatisch getrennt:
-
-- `plots/random_graphs/` für Random-Graphen
-- `plots/real_world/` für Real-World-Graphen
-
-Wenn jeweils drei Graphen ausgewählt sind, hat jede Plotdatei drei Teilplots.
-Dadurch bleiben Random-Graphen und Real-World-Graphen getrennt lesbar.
-
-Die GUI bietet diese Ausführungsmodi:
-
-- `Experiment + Plots`: erzeugt Rohdaten, Summary und Plots.
-- `Nur Experimente`: erzeugt nur Rohdaten-CSV-Dateien.
-- `Nur Plots`: nutzt vorhandene Rohdaten und erzeugt Summary/Plots.
-- `Dry Run`: zeigt nur den geplanten Jobplan.
-- `Preflight`: prüft, ob die Konfiguration technisch ausführbar ist.
-
-Die GUI kann zwei Arten von Ausführungsort vorbereiten:
-
-- `Lokal ausführen`: rechnet auf dem Rechner, auf dem Streamlit läuft.
-- `Server vorbereiten`: schreibt `gui_config.json` und `run_on_server.sh`, startet
-  aber keinen entfernten Prozess.
-
-Für echte Serverausführung gibt es zwei saubere Wege:
-
-- Streamlit direkt auf dem Server starten; dann rechnet die GUI auf dem Server.
-- Lokal die Config erzeugen und den angezeigten CLI-Befehl auf dem Server im
-  Repository ausführen.
-
-Ein lokaler Browser kann ohne SSH-/Scheduler-Integration nicht von selbst einen
-Serverjob starten.
-
-## Auswahl
-
-Die JSON-Dateien steuern:
-
-- `algorithms`: Auswahl aus `edp_paths`, `edp_one_tree`, `edp_multiple_trees`, `ndp_paths`, `ndp_one_tree`, `ndp_multiple_trees`
-- `failures`: Auswahl aus `random_link`, `random_node`, `clustered_link`, `clustered_node`
-- `datasets`: synthetische Graphen mit `graph_type` (`erdos_renyi` mit `p`,
-  `random_regular` mit `degree`) oder GraphML-Topologien
-- `runs`, `seed`, `fail_factors`, `failure_starts`, `failure_drop`
-
-`fail_factors`, `failure_starts` und `failure_drop` können pro Dataset gesetzt
-werden. Alte oder manuell geschriebene JSON-Dateien dürfen diese Werte auch
-global angeben; Dataset-Werte überschreiben solche globalen Fallbacks. Die GUI
-schreibt die tatsächlich gewählten Failure-Parameter direkt in das jeweilige
-Dataset, damit die Konfiguration eindeutig lesbar bleibt.
-
-Die JSON ist die Basis-Konfiguration. Häufige Parameter können direkt beim
-Aufruf überschrieben werden; die effektiv verwendete Konfiguration wird danach
-als `used_config.json` in den Ausgabeordner geschrieben.
-
-Auswahlen können auf der CLI eingeschränkt werden:
-
-```powershell
-python schritt5_pipeline_automatisierung/pipeline.py --config schritt5_pipeline_automatisierung/config/pilot.json --algorithms edp_paths ndp_paths --failures random_link --datasets synthetic_n8_p04
+Beispiel für Overrides (einzeilig in PowerShell und Bash ausführbar):
+```text
+python schritt5_pipeline_automatisierung/pipeline.py --config schritt5_pipeline_automatisierung/config/pilot.json --run-name quick_n50 --runs 5 --seed 123 --nodes 50 --p 0.15 --failures random_link random_node --fail-factor 1 2 3
 ```
 
-Typische Testvariante ohne JSON-Änderung:
-
-```powershell
-python schritt5_pipeline_automatisierung/pipeline.py `
-  --config schritt5_pipeline_automatisierung/config/pilot.json `
-  --run-name quick_n50_p015 `
-  --runs 10 `
-  --nodes 50 `
-  --p 0.15 `
-  --failures random_link random_node `
-  --fail-factor 1 2 3
+Graphparameter betreffen nur ausgewählte synthetische Datasets. Alle Optionen:
+```text
+python schritt5_pipeline_automatisierung/pipeline.py --help
 ```
 
-Weitere direkte Overrides:
+## 6. Ausführungsmodi
 
-- `--seed 123`
-- `--output-root Output/mein_lauf`
-- `--failure-start 0.3 0.6 0.9`
-- `--failure-drop 0.3`
-- `--graph-type erdos_renyi --nodes 25 --p 0.15`
-- `--graph-type random_regular --nodes 25 --degree 4`
+- Normaler Aufruf: Experimente, Summary und Plots erzeugen.
+- `--dry-run`: Jobplan anzeigen, ohne Experimente oder neue Ausgabedateien.
+- `--preflight`: grundlegende Konfigurations-, Datei- und Schreibprüfungen;
+  kann den Ausgabeordner anlegen, startet aber keine Experimente.
+- `--only-experiments`: Rohdaten und Metadaten erzeugen, keine Plots.
+- `--only-plots`: vollständige Rohdaten derselben Konfiguration und desselben
+  Laufordners neu aggregieren und plotten; liest nicht die Summary-CSV.
 
-Graphparameter-Overrides wirken auf die ausgewählten synthetischen Datasets;
-GraphML-Real-World-Datasets bleiben dabei unverändert.
+Diese Modi sind auch in der GUI auswählbar. Die GUI schreibt jedoch auch bei
+Dry Run vorher `gui_config.json`; der direkte CLI-Dry-Run tut dies nicht.
+Dry Run und Preflight sowie
+Only Experiments und Only Plots sind jeweils nicht miteinander kombinierbar.
+Die Vorabprüfungen erfolgen auch vor normalen Läufen, ersetzen aber keine
+Funktionstests neuer Erweiterungen. Details: `Dokumentation/pipeline.txt`.
 
-CLI-Overrides für `--fail-factor`, `--failure-start` und `--failure-drop`
-überschreiben auch dataset-spezifische Werte für den aktuellen Lauf.
-Numerisch gleiche Failure-Parameter wie `1` und `1.0` werden für die
-Zufallsinitialisierung gleich behandelt.
+## 7. Ergebnisdateien und Plotgruppen
 
-## Dry Run und Preflight
+Standardziel ist `Output/<run_name>/` innerhalb des Schritt-5-Ordners:
+- `raw/<dataset>/`: einzelne Versuchsergebnisse;
+- `summaries/`: aggregierte Ergebnis-CSV;
+- `plots/`: PNG- und SVG-Abbildungen;
+- `used_config.json` und `manifest.json`: Konfiguration und Laufmetadaten.
 
-`--dry-run` zeigt den geplanten Jobplan, ohne Experimente oder Plots zu
-erzeugen. Damit lässt sich prüfen, welche Datasets, Fehlertypen,
-Graphparameter und Ausgabeordner verwendet würden.
+`--run-name` setzt auch den Standardausgabeordner neu. Ein eigenes `output_root`
+bzw. `--output-root` kann relativ zum Schritt-5-Ordner oder absolut sein.
+Vorhandene Ordner werden nicht automatisch umbenannt; unter Linux sind `Output` und `output`
+verschiedene Verzeichnisse.
 
-`--preflight` prüft ohne Experimente:
+CLI und GUI trennen standardmäßig `plots/random_graphs/` und `plots/real_world/`
+mit höchstens drei Datasets je Gruppe. Jede Abbildung zeigt eine Metrik und
+eine Failure-Kombination. Eigene JSON-`plot_groups` umgehen die automatische
+Dreieraufteilung; für denselben Aufbau maximal drei Datasets derselben Kategorie
+je Gruppe eintragen. Die ausgegebene Plotanzahl zählt PNG und SVG einzeln.
 
-- Run-Anzahl und ausgewählte Algorithmen
-- Failureparameter und Metriken
-- synthetische Graphparameter (`n`, `p`, (`degree` bei random_regular))
-- Existenz von GraphML-Dateien
-- Schreibbarkeit des Ausgabeordners
+Resilience berücksichtigt alle Szenen, Average Hops und Stretch nur erfolgreiche
+Routings. Stretch ist die additive Differenz zur kürzesten verbleibenden Route.
+Details zur Auswertung: `Dokumentation/evaluation_result_analysis.txt`.
 
-Kurz gesagt:
+## 8. Wiederholbarkeit und lange Läufe
+
+Für reproduzierbare Ergebnisse müssen Seed, Konfiguration, Inputgraphen,
+Codeversion, Python und relevante Bibliotheksversionen übereinstimmen.
+Bei Real-World-Graphen bleibt die Topologie fest; der Seed steuert weiterhin
+Start-/Zielknoten und Ausfälle. Bei synthetischen Graphen steuert er zusätzlich
+die Graphgenerierung.
+
+Beide Beispielkonfigurationen aktivieren Resume. Ein erneuter Aufruf setzt
+gespeicherte Wiederholungen fort. ACHTUNG: `--no-resume` entfernt vorhandene
+Rohdaten der betroffenen Konfiguration vor der Neuberechnung. Für geänderte
+Parameter oder unabhängige Wiederholungstests immer neue Laufnamen verwenden.
+
+Zum Vergleich denselben Pilotbefehl aus Abschnitt 3 mit zwei neuen Namen
+ausführen und entsprechende Rohdaten sowie numerische Summary-Werte vergleichen.
+Ein abgeschlossener Resume-Lauf ist kein Neuberechnungstest. Zeitstempel und
+Ausgabepfade in den Metadaten dürfen sich unterscheiden.
+
+Das Manifest protokolliert Paketversionen und Code-/GraphML-Prüfsummen des
+aktuellen Aufrufs, nicht nachträglich die Herkunft wiederverwendeter Rohdaten.
+Ursprüngliche Konfigurationen, Code und Manifeste deshalb aufbewahren.
+CLI-Auswahl- und Resume-Overrides werden als wirksame Werte in `used_config.json`
+und im Manifest gespeichert. Vor Summary und Plots gleicht die Pipeline alle
+erwarteten Parametergruppen mit den vorhandenen Ergebnissen ab. Vorhandene Gruppen
+müssen außerdem für jeden ausgewählten Algorithmus die erwartete Zeilenzahl besitzen.
+Die Eindeutigkeit der Wiederholungsnummern wird noch nicht geprüft
+(Details: Dokumentation/evaluation_result_analysis.txt).
+CLI und GUI zeigen Job- und Wiederholungsfortschritt in Blöcken; einzelne
+langsame Wiederholungen liefern keine Zwischenmeldung oder Restzeitschätzung.
+
+## 9. Serverausführung
+
+`Lokal ausführen` rechnet dort, wo Streamlit läuft, gegebenenfalls auf dem Server.
+`Server vorbereiten` erzeugt `gui_config.json` und `run_on_server.sh`, startet
+aber keinen entfernten Prozess. Konfiguration übertragen und dort per CLI
+ausführen oder Streamlit direkt auf dem Server starten. Serverzugang und dort
+installierte Abhängigkeiten sind erforderlich; SSH ist nicht in die GUI eingebaut.
+
+## 10. Tests und weitere Hilfe
 
 ```text
---dry-run   = Was würde laufen?
---preflight = Kann das so laufen?
+python -m unittest discover -s schritt5_pipeline_automatisierung/tests -p "test_*.py" -v
 ```
 
-Bei Erfolg erscheint eine kurze Zusammenfassung, z. B.:
+Mit Streamlit laufen auch die GUI-AppTests; ohne Streamlit werden sie
+übersprungen. Sie ersetzen keinen visuellen Browsertest oder unabhängigen
+Wiederholungstest.
 
-```text
-preflight ok datasets=1, jobs=4, output_root=...
-```
+Häufige Startprobleme:
+- Importfehler: Pakete mit `python -m pip` in derselben Umgebung installieren.
+- Falsches Python / WindowsApps-Fehler: den tatsächlichen Interpreter der
+  virtuellen Umgebung verwenden und `python --version` prüfen.
+- `JSONDecodeError`: Kommentare und Kommas hinter letzten Listeneinträgen
+  sind in JSON nicht erlaubt.
+- Fehlende Plotlabels oder Farben: Metadaten des Zusatzalgorithmus in
+  `evaluation/result_analysis.py` ergänzen; siehe zugehöriges Modulprotokoll.
 
-## Ausgabe
-
-Standardausgabe für `pilot.json`:
-
-```text
-schritt5_pipeline_automatisierung/Output/pilot/
-  raw/
-  plots/
-  summaries/
-  manifest.json
-  used_config.json
-```
-
-`manifest.json` dokumentiert die verwendeten Algorithmen, Datasets, Seeds,
-Python-Version, erzeugten CSVs und Plot-Dateien. Das ist der zentrale Nachweis
-für Repeatability.
-
-Die Rohdaten-CSV-Dateien unter `raw/` verwenden ein langes Format mit einer
-Zeile pro Algorithmus, Wiederholung und Failure-Konfiguration. 
-Bei Link-Failure zählt `nrFailedEdges` die ausgefallenen Kanten; bei
-Node-Failure zählt `nrFailedNodes` die ausgefallenen Knoten und
-`nrFailedEdges` die dadurch betroffenen inzidenten Kanten.
-
-## Lange Läufe
-
-`config/full.json` beschreibt die vollständige 1000-Run-Pipeline für drei
-synthetische Graphgrößen und drei Real-World-GraphML-Topologien. Für
-Serverläufe ist `resume` aktiviert. Unterbrochene Reihen werden dann mit
-denselben Parametern fortgesetzt.
-
-Einzelne Phasen:
-
-```powershell
-python schritt5_pipeline_automatisierung/pipeline.py --config schritt5_pipeline_automatisierung/config/full.json --only-experiments
-python schritt5_pipeline_automatisierung/pipeline.py --config schritt5_pipeline_automatisierung/config/full.json --only-plots
-```
+Weiterführende Dokumentation (Pfade relativ zum Schritt-5-Ordner):
+- `Dokumentation/Modulübersicht.txt`: Projektmodule und ihre Protokolle.
+- `Dokumentation/Feedback_Ueberarbeitung.txt`: Feedbackänderungen und Testnachweise.
+- `illustrations/README.txt`: einzelne Graph- und Routingabbildungen.
+- `../schritt7_erweiterung/ERWEITERUNG.txt`: Erweiterungsanleitung und Checkliste.

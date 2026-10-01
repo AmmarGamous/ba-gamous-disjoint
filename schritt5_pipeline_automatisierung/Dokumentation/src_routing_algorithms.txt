@@ -14,17 +14,27 @@ Aufgaben
 - Ergebnisse als `RoutingResult` zurückgeben
 
 Wichtige Klassen
-- `RoutingStructure`: beschreibt eine Pfad- oder Baumstruktur für ein Source-Destination-Paar.
+- `RoutingStructure`: speichert `graph` ohne Zielknoten, `original_path`, `exits`,
+  `is_tree` und optional `grown_graph` für die Darstellung vor der Trunkierung.
+  Start und Ziel werden der Routingroutine als Argumente übergeben; die Klasse
+  ist eine interne Datenstruktur, keine erzeugte Routingtabelle.
 - `RoutingResult`: beschreibt Erfolg, Hops, Route und Strukturanzahl eines Algorithmus.
 
 Wichtige Strukturen
 - `BASE_ALGORITHMS`: die sechs bestehenden Varianten.
 - `EXTRA_ALGORITHM_RUNNERS`: Erweiterungspunkt für einfache Zusatzalgorithmen.
 - `ALGORITHMS`: sichtbare Gesamtauswahl aus Basis- und Zusatzalgorithmen.
+- `BASE_ALGORITHMS` bleibt die Vorauswahl von `run_algorithms(...)`. Zusätze
+  müssen ausdrücklich über `algorithms` übergeben werden.
 
 Wichtige Funktionen
 - `get_disjoint_paths(...)`: berechnet EDPs oder NDPs.
 - `build_structures(...)`: baut Paths, One Tree oder Multiple Trees.
+- `_grow_tree(...)`: erweitert innere Grundpfadknoten und neu erreichte Knoten.
+- `truncate_tree(...)`: behält die Baumwege von der Quelle zu Ausgängen nach d.
+- `_rooted_children(...)`: wurzelt die Struktur an der Quelle.
+- `_distance_to_exit(...)`: berechnet die minimale Entfernung im Teilbaum
+  zu einem Ausgang, ohne Berücksichtigung der späteren Ausfälle.
 - `route_structure(...)`: routet über eine konkrete Struktur.
 - `route_algorithm(...)`: führt genau einen Algorithmus aus.
 - `run_algorithms(...)`: vergleicht ausgewählte Algorithmen auf derselben Instanz.
@@ -34,20 +44,80 @@ Erweiterungspunkte
   implementiert und in `EXTRA_ALGORITHM_RUNNERS` registriert.
 - Für solche Zusatzalgorithmen wird kein EDP-/NDP-Pfadcache benötigt.
 
-Besonderheiten
-- Das Ziel `destination` ist nicht Teil der gespeicherten Baumstruktur.
-- Beim One Tree bildet der längste disjunkte Pfad das Baumgrundgerüst. Kanten
-  und innere Knoten der übrigen disjunkten Pfade bleiben für deren separate
-  Ausweichstrukturen reserviert.
-- Bei Multiple Trees bildet jeder disjunkte Pfad das Grundgerüst eines Baums.
-- Das Baumwachstum startet ausschließlich an den inneren Knoten des jeweiligen
-  Grundpfads. Diese werden vom ersten Innenknoten neben `source` bis zum letzten
-  Innenknoten `d-1` verarbeitet. Die Quelle gehört zur Struktur, wird aber
-  nicht als Startpunkt für neue Baumäste verwendet.
-- Für den Baumaufbau werden die Grundpfade längenabsteigend verarbeitet. Bei
-  One Tree wird nur der längste Pfad erweitert; bei Multiple Trees werden alle
-  Pfade in dieser Reihenfolge erweitert.
-- Beim Routing werden die finalen Strukturen wieder längenaufsteigend getestet,
-  sodass zunächst die Struktur des kürzesten Grundpfads verwendet wird.
-- Kanten werden intern als `frozenset` normalisiert.
-- Fehlgeschlagene Routen erhalten `hops = -1`.
+Ein- und Rückgabevertrag
+- `run_algorithms(graph, source, destination, failures, algorithms)` liefert
+  eine Liste von `RoutingResult` in der angeforderten Algorithmusreihenfolge.
+- Der Eingabegraph wird zwischen den Verfahren geteilt. Zusatzalgorithmen
+  dürfen ihn nicht verändern und arbeiten bei Bedarf mit `graph.copy()`.
+- `failures` enthält ungerichtete Kanten mit jeweils zwei Endpunkten. Der
+  gemeinsame Einstieg materialisiert sie als Tupel von Zweiertupeln.
+- Der Hook ruft `runner(graph, source, destination, failures)` auf. Er bekommt
+  keinen eigenen Zufallsgenerator. Globale ungesetzte Zufallsquellen vermeiden.
+- Ein Runner muss ein `RoutingResult` mit dem registrierten Namen in `algorithm`
+  zurückgeben. Eine automatische Typprüfung des Rückgabewerts findet nicht statt.
+  Weitere Felder sind `success`, `hops`, `route`, `nr_paths` und
+  `nr_structures`. Bei Erfolg zählt `hops` die chronologischen Routenkanten;
+  bei Fehlschlag steht dort -1. Eine erfolglose Teilroute darf gespeichert bleiben.
+- `nr_paths` ist bei den Basisverfahren die Anzahl vorbereiteter EDPs/NDPs.
+  `nr_structures` wird aktuell mit der Gesamtzahl erzeugter Strukturen belegt,
+  nicht mit der Zahl tatsächlich getesteter Strukturen. Die Rohdaten-CSV
+  schreibt `nrPaths`, aber derzeit keine entsprechende Strukturzähler-Spalte.
+- Zusatzalgorithmen müssen ihre Zählerkonvention dokumentieren. Ein kürzester
+  Pfad ist keine maximale Menge disjunkter Pfade.
+
+Prüfung einer Erweiterung
+Label und Farbe zusätzlich in GUI bzw. Auswertung ergänzen. Funktionen und
+Registrierung müssen vor der Bildung von `ALGORITHMS` stehen; Defaultargumente
+werden bereits beim Import gebunden. Einen neuen Prozess für den Test starten.
+Alte Defaultauswahlen und identische Eingabegraphen durch Regressionstests prüfen.
+Der Erweiterungsleitfaden enthält ein Shortest-Path-Beispiel mit klarer Abgrenzung
+zum lokalen Failover: Es kennt den gesamten Restgraphen.
+
+Baumaufbau und Disjunktheit
+Die EDP-/NDP-Berechnung verwendet NetworkX und sortiert die resultierenden Pfade
+nach Länge, dann nach den Zeichenketten ihrer Knoten. `build_structures(...)`
+kennt keinen eigenen EDP-/NDP-Schalter: Die Wachstumsregeln sind für beide gleich.
+Sie verwenden den Graphen vor den Ausfällen; ausgefallene Kanten werden erst
+beim Routing ausgeschlossen.
+
+Bei One Tree wird nur der längste Pfad erweitert. Die Kanten der Grundpfade
+ohne deren letzte Kante zu d sind reserviert. Innere Knoten der übrigen Pfade
+werden zusätzlich geschützt, soweit sie nicht bereits im längsten Pfad liegen.
+Bereits geteilte innere EDP-Knoten werden also nicht entfernt. Die übrigen
+Pfade bleiben eigenständige Pfadstrukturen.
+
+Bei Multiple Trees werden alle Grundpfade vom längsten zum kürzesten erweitert.
+Ihre Kanten ohne die letzte Kante zu d sind von Beginn an global reserviert;
+neu hinzugefügte Baumkanten werden ebenfalls reserviert. Knoten werden hingegen
+nicht global reserviert, auch nicht in der NDP-Variante. Die erweiterten
+NDP-Bäume müssen deshalb nicht intern knotendisjunkt sein. Ausgangskanten nach d
+gehören nicht zu dieser Reservierung und können von mehreren Strukturen genutzt werden.
+
+Das Wachstum beginnt am ersten inneren Grundpfadknoten und verarbeitet dessen
+Warteschlange einschließlich neuer Knoten, bevor der nächste Grundpfadknoten
+folgt. Die Quelle ist kein Wachstumsstart. Ein Ast kann mehrere Kanten umfassen;
+der neue Nachbar darf jedoch weder d, ein geschützter noch ein bereits im
+aktuellen Baum vorhandener Knoten sein. Nach dem Wachstum jedes einzelnen
+Baums wird sofort trunkiert. Dabei entfernte Kanten bleiben bei Multiple Trees
+global reserviert und werden für spätere Bäume nicht wieder freigegeben.
+
+Routingreihenfolge und Hopzählung
+Die fertigen Strukturen werden nach Grundpfadlänge aufsteigend getestet.
+Bei One Tree kommen somit zuerst die verbliebenen Pfade, dann der Baum.
+Bei Multiple Trees werden ausschließlich Bäume getestet, nicht zuvor alle
+Basispfade nochmals separat.
+
+`visit(node)` in `route_structure(...)` führt eine geordnete Tiefensuche aus.
+Eine intakte Ausgangskante nach d wird sofort verwendet. Andernfalls ordnet
+sie die Kinder nach Vorrang des ursprünglichen Pfads (nur beim One Tree),
+minimaler Teilbaumdistanz zum Ausgang und Knotendarstellung als Gleichstandsregel.
+Ausgefallene Kanten werden übersprungen; durchlaufene Hin- und Rückkanten
+zählen als Hops. `route_algorithm(...)` summiert auch vorher erfolglose
+Strukturversuche. `route_structure(...)` gibt dagegen selbst bei Fehlschlag
+die tatsächlich gelaufene Hopanzahl zurück; erst der vollständige Fehlschlag
+des Algorithmus erhält `hops=-1`.
+
+Dies beschreibt die eigene deterministische Ordnung, nicht eine identische
+Implementierung der Referenzfunktionen `rankTree`, `rankDfs` oder `getTreeOrder`.
+Ungerichtete Kanten werden für Ausfall- und Reservierungsvergleiche als
+`frozenset` normalisiert, Routenkanten bleiben geordnete Zweiertupel.

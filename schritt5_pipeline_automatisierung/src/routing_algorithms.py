@@ -379,7 +379,7 @@ def run_algorithms(
     source,
     destination,
     failures: Iterable[Sequence],
-    algorithms: Iterable[str] = ALGORITHMS,
+    algorithms: Iterable[str] = BASE_ALGORITHMS,
 ) -> list[RoutingResult]:
     """Vergleicht ausgewählte Algorithmen mit identischen Pfaden und Ausfällen."""
     algorithms = tuple(algorithms)

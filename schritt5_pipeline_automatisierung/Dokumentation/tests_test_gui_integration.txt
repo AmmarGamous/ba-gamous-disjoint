@@ -1,0 +1,22 @@
+tests/test_gui_integration.py
+
+Zweck
+Optionale Integrationstests mit streamlit.testing.v1.AppTest.
+Ohne installiertes Streamlit werden diese Tests übersprungen.
+
+Geprüfte Bereiche
+- Neue Optionen sind in der Oberfläche vorhanden, bleiben aber unausgewählt.
+- Ein unbekannter Graphdialog erzeugt keine Real-World-Konfiguration.
+- Ein kleiner GUI-Lauf mit einem Dataset und einer Wiederholung prüft im
+  geschriebenen Manifest vier Rohdaten-Pfade, 24 Plotpfade und den Code-Fingerabdruck.
+  Die einzelnen Dateien und Bildinhalte werden in diesem Test nicht separat geprüft.
+- Nach dem Lauf stehen Balkenwert und Meldung auf 100 Prozent bzw.
+  `Pipeline abgeschlossen`. Zwischenstände und deren zeitliche Reihenfolge
+  werden durch diesen AppTest nicht kontrolliert.
+
+Der Testlauf ist unabhängig von der editierbaren config/pilot.json. Die dort
+angegebenen Datei- und Zeilenzahlen gelten daher nicht für diesen AppTest.
+
+Die Tests bedienen die Streamlit-Elemente und prüfen Ergebnisse in temporären
+Ordnern. Sie starten keinen externen Browser und prüfen keine Bildschirmgestaltung.
+Die vollständige Testsuite läuft über den in README.txt angegebenen unittest-Befehl.

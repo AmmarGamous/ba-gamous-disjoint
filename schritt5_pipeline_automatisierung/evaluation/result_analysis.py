@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+from matplotlib.colors import is_color_like
 import pandas as pd
 
 
@@ -25,6 +26,21 @@ ALGORITHM_COLORS = {
     "ndp_one_tree": "#d62728",
     "ndp_multiple_trees": "#8c564b",
 }
+
+
+def validate_plot_metadata(algorithms):
+    """Prüft Beschriftungen und Farben vor jeder Erzeugung von Plotdateien."""
+    for algorithm in algorithms:
+        label = ALGORITHM_LABELS.get(algorithm)
+        if not isinstance(label, str) or not label.strip():
+            raise ValueError(f"{algorithm}: Plotbeschriftung in ALGORITHM_LABELS fehlt")
+        if not is_color_like(ALGORITHM_COLORS.get(algorithm)):
+            raise ValueError(f"{algorithm}: gültige Plotfarbe in ALGORITHM_COLORS fehlt")
+
+
+def failure_model_label(failure_model):
+    """Formatiert Modellnamen lesbar; interne Schlüssel und Dateinamen bleiben gleich."""
+    return failure_model.replace("_", " ").title()
 
 
 def load_result_directories(directories):
@@ -85,12 +101,26 @@ def completeness_table(summary):
     )
 
 
-def validate_summary(summary, expected_runs, algorithms):
-    """Bricht ab, wenn eine Serverkonfiguration unvollständig ist."""
-    expected_algorithms = set(algorithms)
-    grouped = summary.groupby(
-        ["dataset", "failureType", "failureModel", "failureParameter"]
+def validate_summary(summary, expected_runs, algorithms, expected_groups):
+    """Prüft vorhandene Zeilen und alle laut Experimentplan erwarteten Gruppen."""
+    group_columns = [
+        "dataset",
+        "failureType",
+        "failureModel",
+        "failureParameter",
+    ]
+    actual_groups = set(
+        summary[group_columns].itertuples(index=False, name=None)
     )
+    missing_groups = set(expected_groups) - actual_groups
+    if missing_groups:
+        examples = ", ".join(str(group) for group in sorted(missing_groups)[:5])
+        remainder = len(missing_groups) - 5
+        suffix = f" (+{remainder} weitere)" if remainder > 0 else ""
+        raise ValueError(f"Fehlende Parametergruppen: {examples}{suffix}")
+
+    expected_algorithms = set(algorithms)
+    grouped = summary.groupby(group_columns)
     for key, rows in grouped:
         if set(rows["algorithm"]) != expected_algorithms:
             raise ValueError(f"Incomplete algorithms for {key}")
@@ -113,6 +143,8 @@ def plot_all_comparisons(
     show=True,
 ):
     """Erzeugt paper-ähnliche Vergleiche jeweils als PNG und SVG."""
+    algorithms = tuple(algorithms)
+    validate_plot_metadata(algorithms)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     default_metrics = [
@@ -159,7 +191,7 @@ def plot_all_comparisons(
                     ax.set_ylim(*ylim)
             axes[0].set_ylabel(ylabel)
             fig.suptitle(
-                f"{title_prefix}: {failure_model.title()} "
+                f"{title_prefix}: {failure_model_label(failure_model)} "
                 f"{failure_type.title()} Failures (runs={runs})",
                 fontsize=15,
             )

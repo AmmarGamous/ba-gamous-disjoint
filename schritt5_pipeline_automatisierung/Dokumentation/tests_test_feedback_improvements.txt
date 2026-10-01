@@ -1,0 +1,33 @@
+tests/test_feedback_improvements.py
+
+Zweck
+Regressionstests für die nach dem Artefaktfeedback überarbeiteten Punkte 1 bis 10.
+
+Geprüfte Bereiche
+- Basis-Vorauswahl trotz zusätzlich registrierter Algorithmen und Fehlermodelle
+- explizite Auswahl neuer Einträge und Ablehnung leerer Auswahlen
+- ungültige Runner, Graphregistrierungen und Failure-Metadaten
+- Clusterparameterprüfung für neue Modellnamen sowie endliche Random-Faktoren
+- Abbruch vor Experimenten bei fehlenden oder ungültigen Plotmetadaten
+- Rohdatenmodus ohne Plotmetadaten und Dry Run ohne Output
+- Vorhandensein von Paketversionen sowie Code- und GraphML-Prüfsummen im Manifest
+- Nur-Plots-Lauf ohne ursprüngliche GraphML-Datei mit fehlender Prüfsumme
+- verständliche Fehler für fehlende Pakete und zu altes Python
+- neue Modellnamen in der direkten CLI bei unveränderter Bedeutung von `both`
+- ausdrücklich registrierte und begrenzte Endpunktregel für vollständige Graphen
+- frühe Plotmetadatenprüfung auch bei direkten Plotaufrufen
+- einheitliche Standardausgabe unter `Output/`
+- widersprüchliche Ausführungsmodi beim direkten Python-Aufruf
+- Fortschritt, Unterbrechung und bytegleiche CSVs nach Resume in der Testkonfiguration
+- wirksame Algorithmus-, Failure- und Resume-Overrides in Rückgabe,
+  `used_config.json` und Manifest
+- Abbruch vor Summary und Plots, wenn eine vollständige Parametergruppe fehlt
+
+Die Tests verwenden temporäre Ordner und verändern keine vorhandenen Ergebnisse.
+Ihre kleine feste Testkonfiguration ist unabhängig von der editierbaren pilot.json.
+Sie prüfen Integrationsverträge, nicht die Qualität eines neuen Routingalgorithmus.
+Die Summary-Prüfung gleicht inzwischen vollständig fehlende Parametergruppen mit
+dem Experimentplan ab. Sie kontrolliert weiterhin nicht die Eindeutigkeit aller
+Wiederholungsnummern. Diese Grenze ist in evaluation_result_analysis.txt dokumentiert.
+Die ergänzenden Streamlit-AppTests stehen in einem eigenen Modul; siehe
+tests_test_gui_integration.txt.

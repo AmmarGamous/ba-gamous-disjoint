@@ -15,11 +15,30 @@ Geprüfte Bereiche
 - getrennte Plotgruppen
 - stabile CSV-Dateinamen
 - getrennte Zählung von `nrFailedEdges` und `nrFailedNodes`
+- sortierte Endpunktauswahl und Random-Failure-Auswahl bei geänderter
+  Einfügereihenfolge sowie kanonische numerische RNG-Tokens
+- Schutz von s und Rücklaufschutz für d bei Clustered Link
+- One-Tree-Reservierung, Erhalt der Multiple-Trees-Grundpfade, Wachstumsreihenfolge,
+  kein Wachstumsstart an s und optionale Kopie vor der Trunkierung
 
- Wichtige Klasse
-- `Step5PipelineTest`: bündelt alle Pipeline-Unit-Tests.
+Wichtige Klasse
+- `Step5PipelineTest`: bündelt die Tests dieses Moduls; zusätzliche Pipeline-
+  Regressionstests stehen in test_feedback_improvements.py.
 
 Besonderheiten
 - Tests verwenden temporäre Ordner.
 - Kleine Graphen und wenige Runs halten die Laufzeit kurz.
-- Die Tests sichern auch die Erweiterungshelfer aus Schritt 7 ab.
+- Der Dateinamentest prüft die bestehenden Random-/Clustered-Präfixe nach der
+  Einführung der Erweiterungshelfer, nicht alle Erweiterungen aus Schritt 7.
+
+Abgrenzung und Aufruf
+Die Tests prüfen einzelne konkrete Szenen, keine allgemeine Gleichheit mit
+TREE oder für alle möglichen Graphen. Insbesondere enthält der Test zur
+Einfügereihenfolge keinen allgemeinen Nachweis für Clustered-Ausfälle oder
+für die Auswahl der disjunkten Pfade durch NetworkX.
+
+Aufruf der vollständigen Suite: README.txt, Abschnitt 10.
+Registrierungen, Metadaten, Unterbrechung und Resume:
+tests_test_feedback_improvements.txt. Streamlit-Oberfläche:
+tests_test_gui_integration.txt. Die Checkliste für zusätzliche Erweiterungstests
+steht in ../../schritt7_erweiterung/ERWEITERUNG.txt.

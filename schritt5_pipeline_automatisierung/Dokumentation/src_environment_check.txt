@@ -1,0 +1,19 @@
+src/environment_check.py
+
+Zweck
+Gemeinsame frühe Prüfung der Python-Umgebung für Pipeline, GUI und Experimente.
+
+Schnittstelle
+`check_dependencies(modules=("networkx", "pandas", "matplotlib"), gui=False)`
+prüft zunächst Python >= 3.10 und importiert anschließend die angegebenen Module.
+Bei Erfolg wird nichts zurückgegeben. Bei ungeeignetem Python oder einem
+Import-/Ladefehler wird RuntimeError mit einer Installationshilfe ausgelöst.
+CLI und GUI verweisen auf dieselbe Datei `Dokumentation/requirements.txt`.
+Der Parameter `gui` bleibt für bestehende Aufrufe erhalten; die Auswahl der
+Installationsdatei hängt nicht mehr von ihm ab.
+
+Grenzen
+Die festgelegten Referenzpakete benötigen Python >= 3.11. Ein erfolgreicher
+Import prüft nicht die vollständige Kompatibilität oder Funktionalität der
+Pakete. Hierfür dienen pip check, Tests und kleine vollständige Läufe.
+Die Funktion installiert oder aktualisiert selbst keine Pakete.

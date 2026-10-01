@@ -1,0 +1,44 @@
+@startuml
+!pragma layout smetana
+!include _style.iuml
+left to right direction
+class RoutingStructure <<dataclass>> {
+  graph : nx.Graph
+  original_path : tuple
+  exits : tuple
+  is_tree : bool
+  grown_graph : nx.Graph | None
+}
+class RoutingResult <<dataclass>> {
+  algorithm : str
+  success : bool
+  hops : int
+  route : list[tuple]
+  nr_paths : int
+  nr_structures : int
+}
+RoutingStructure -[hidden]right-> RoutingResult
+note top of RoutingStructure
+  build_structures() erzeugt eine Liste dieser Objekte.
+  route_structure() verarbeitet jeweils eine Struktur.
+end note
+note top of RoutingResult
+  route_algorithm() erzeugt ein Ergebnisobjekt.
+  run_algorithms() liefert eine Liste dieser Ergebnisse.
+end note
+note bottom of RoutingStructure
+  graph enthält d nicht.
+  exits enthält mögliche Knoten mit Verbindung zu d.
+  original_path enthält den gesamten Ausgangspfad.
+  grown_graph ist eine optionale Diagnosekopie;
+  in normalen Experimenten ist sie None.
+end note
+note bottom of RoutingResult
+  success: Ziel erreicht?
+  hops: Gesamthops, bei Fehlschlag -1.
+  route: tatsächlich durchlaufene Kanten inkl. Rückwegen.
+  nr_paths: Anzahl disjunkter Basispfade.
+  nr_structures: Anzahl vorbereiteter Strukturen.
+  experiment.py übernimmt ausgewählte Felder in CSV.
+end note
+@enduml

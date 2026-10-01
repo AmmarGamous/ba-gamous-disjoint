@@ -1,0 +1,37 @@
+@startuml
+!include _style.iuml
+start
+partition "route_structure(): Vorbereitung" {
+  :Eingabe: RoutingStructure, s, d, failed_edges,\nFlag zur Bevorzugung des ursprünglichen Pfads;
+  if (s in der Struktur?) then (nein)
+    :Rückgabe: False, 0, leere Route;
+    stop
+  endif
+  :_rooted_children(): Struktur bei s wurzeln\nAusgänge, Pfadnachfolger und Distanzcache vorbereiten;
+  :visit(s) aufrufen;
+}
+partition "Rekursiver Ablauf von visit(node)" {
+  if (node ist Ausgang und Kante nach d verfügbar?) then (ja)
+    :(node, d) zur Route hinzufügen\nTrue an den Aufrufer zurückgeben;
+  else (nein)
+    :Kindknoten sortieren\n1. Ursprünglicher Pfad, nur beim One-Tree-Baum\n2. _distance_to_exit(): kleinste Distanz im Teilbaum\n3. Knotendarstellung als Gleichstandsregel;
+    while (Weiteres Kind und noch kein Erfolg?) is (ja)
+      if (Kante (node, child) ausgefallen?) then (ja)
+        :Ast überspringen, kein Hop;
+      else (nein)
+        :(node, child) zur Route hinzufügen\nvisit(child) rekursiv aufrufen;
+        if (Rekursiver Aufruf erfolgreich?) then (ja)
+          :Erfolg nach oben weitergeben\nKeine weiteren Kinder besuchen;
+        else (nein)
+          :(child, node) als Rückweg zur Route hinzufügen;
+        endif
+      endif
+    endwhile (nein)
+    :True bei Erfolg, sonst False\nan den Aufrufer zurückgeben;
+  endif
+}
+partition "route_structure(): Rückgabe nach visit(s)" {
+  :success, len(route), route\nJede durchlaufene Kante zählt, auch jeder Rückweg;
+}
+stop
+@enduml

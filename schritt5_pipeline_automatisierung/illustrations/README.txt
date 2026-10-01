@@ -1,154 +1,143 @@
 Illustrationen für die Ausarbeitung
 ===================================
 
-Dieser Ordner enthält ein separates Hilfsmodul für erklärende Abbildungen.
-Es gehört nicht zur Experiment-Pipeline, verwendet aber dieselben Kernfunktionen
-für EDPs, NDPs und Failure-Auswahl.
+Das Modul erzeugt erklärende Abbildungen getrennt von der Experiment-Pipeline.
+Graphen, Endpunkte, Pfade, Baumstrukturen, Ausfälle und Routen werden mit den
+Kernfunktionen aus `src/` berechnet. Nur Layout und Darstellung befinden sich
+in `create_thesis_figures.py`.
 
-Genutzte Schritt-5-Module
--------------------------
+Verwendete Kernmodule
+---------------------
 
-- `src/experiment.py`: synthetische Graph-Erzeugung und Source-Destination-Auswahl
-- `src/routing_algorithms.py`: EDP-/NDP-Berechnung und Aufbau von Pfad-/Baumstrukturen
-- `src/failures.py`: Random- und Clustered-Failure-Auswahl
-- `evaluation/result_analysis.py`: Algorithmusnamen und Farben
+- `src/experiment.py`: Graphen sowie Auswahl von Start- und Zielknoten
+- `src/routing_algorithms.py`: EDPs, NDPs, Baumaufbau und Routing
+- `src/failures.py`: zufällige und geclusterte Ausfälle
+- `evaluation/result_analysis.py`: Algorithmusfarben und Beschriftungen
 
-Nur die eigentliche Zeichnung der erklärenden Bilder bleibt in diesem Modul,
-weil sie andere Anforderungen hat als die Ergebnisplots der Pipeline.
+Ausgabe
+-------
 
-Ausführen
----------
+Standardordner:
 
-Aus dem Repository-Wurzelordner:
+schritt5_pipeline_automatisierung/Output/illustrations/figures
+
+SVG eignet sich für die Ausarbeitung, PNG für eine schnelle Vorschau. Ein
+abweichender Zielordner kann mit `--output-dir` angegeben werden.
+
+Vergleichsabbildungen
+---------------------
+
+Der Aufruf ohne weitere Optionen erzeugt die drei zentralen Abbildungen als
+SVG und PNG:
 
 python schritt5_pipeline_automatisierung/illustrations/create_thesis_figures.py
 
-Ausgaben
---------
+Explizit lautet derselbe Aufruf:
 
-Standardmäßig entstehen die Dateien unter:
+python schritt5_pipeline_automatisierung/illustrations/create_thesis_figures.py --scene comparison --formats svg png
 
-schritt5_pipeline_automatisierung/illustrations/output/figures
+Verwendet wird reproduzierbar ein Erdős-Rényi-Graph mit `n=10`, `p=0.35`
+und `seed=430`. Es entstehen:
 
-Der Seed steht im Titel und im Dateinamen. Dadurch überschreiben Abbildungen
-mit unterschiedlichen Zufallsgraphen einander nicht.
+- `thesis_comparison_edp_ndp_paths`: EDPs und NDPs
+- `thesis_comparison_edp_ndp_one_tree`: EDP/NDP One Tree
+- `thesis_comparison_edp_ndp_multiple_trees`: EDP/NDP Multiple Trees
 
-Erzeugt werden Beispiele für:
+Alle Teilbilder verwenden denselben Graphen und dieselben Knotenpositionen.
+Die Abbildungen enthalten keine Überschriften. In allen drei Vergleichen steht
+die EDP-Variante links und die NDP-Variante rechts. Jeder Ausgangspfad erhält
+eine eigene Farbe und wird mit einer durchgezogenen Linie dargestellt.
+Hinzugefügte Baumäste werden einheitlich rot und ebenfalls mit durchgezogenen
+Linien dargestellt. Führt ein neuer Ast zu einem zusätzlichen Ausgang nach
+`d`, wird auch diese gepunktete Verbindung rot gezeichnet. Gehört die
+Ausgangskante bereits zu einem farbigen Basispfad, wird sie nicht rot
+überzeichnet. Die
+Knotendisjunktheit gilt für die NDP-Ausgangspfade; hinzugefügte Baumäste können
+gemeinsame innere Knoten enthalten.
 
-- Edge-Disjoint Paths
-- Node-Disjoint Paths
-- Random Link Failure
-- Random Node Failure
-- Clustered Link Failure
-- Clustered Node Failure
-- direkter Vergleich der Stärke von EDP- und NDP-Disjunktheit
-
-Die Bilddateien sind für die direkte Verwendung in der Ausarbeitung gedacht.
-Standardmäßig werden SVG- und PNG-Dateien erzeugt.
-Jeder markierte Pfad erhält eine eigene Farbe. NDP-Pfade werden zusätzlich
-strichpunktiert dargestellt, damit sie von EDP-Pfaden unterscheidbar bleiben.
-
-Optionen
---------
-
-Anderer Ausgabeordner:
-
-python schritt5_pipeline_automatisierung/illustrations/create_thesis_figures.py --output-dir C:/tmp/ba_figures
-
-Nur SVG erzeugen:
-
-python schritt5_pipeline_automatisierung/illustrations/create_thesis_figures.py --formats svg
-
-Anderer Seed für die Failure-Beispiele:
-
-python schritt5_pipeline_automatisierung/illustrations/create_thesis_figures.py --seed 42
-
-EDP und NDP auf demselben Beispielgraphen vergleichen:
+Direkter Disjunktheitsvergleich
+-------------------------------
 
 python schritt5_pipeline_automatisierung/illustrations/create_thesis_figures.py --scene disjointness --formats svg png
 
-Der Graph wird nicht manuell im Illustrationsmodul aufgebaut. Die Abbildung
-verwendet die vollständige Modulkette:
+Diese Abbildung nutzt einen über `experiment.create_graph(...)` erzeugten
+Erdős-Rényi-Graph mit `n=8`, `p=0.3` und `seed=21`. Zwei EDPs teilen dort einen
+inneren Knoten, während nur ein NDP existiert. Zusätzlich wird das Routing vor
+und nach dem Ausfall dieses Knotens verglichen.
 
-- `experiment.create_graph(...)`: Erdős-Rényi-Graph mit `n=8`, `p=0.3` und
-  `seed=21`
-- `experiment.choose_endpoints(...)`: reproduzierbare Auswahl von `s` und `d`
-- `routing_algorithms.get_disjoint_paths(...)`: Berechnung der EDPs und NDPs
-- `failures.node_failures_to_edges(...)`: Abbildung des Ausfalls von `x`
-- `routing_algorithms.route_algorithm(...)`: Routing vor und nach dem Ausfall
+Kanten- und Knotenausfall vergleichen
+------------------------------------
 
-Die linke Seite zeigt zwei EDPs, die keine Kante gemeinsam verwenden, aber den
-inneren Knoten `x` teilen. Da jeder Weg von `s` nach `d` über `x` führt, kann
-auf der rechten Seite nur ein NDP berechnet werden. Der Ausfall von `x` lässt
-beide EDPs gleichzeitig scheitern. Damit zeigt die Abbildung, dass
-Knotendisjunktheit eine stärkere Bedingung als Kantendisjunktheit ist.
+python schritt5_pipeline_automatisierung/illustrations/create_thesis_figures.py --scene failure_comparison --formats svg png
 
-Konfigurierbare Routing-Szene erzeugen:
+Die Datei `failure_comparison_link_node` zeigt denselben Graphen nebeneinander:
+links einen Kantenausfall, rechts einen Knotenausfall mit allen inzidenten
+Kanten. Die kurzen Beschriftungen eignen sich für eine Präsentationsfolie.
+Die Knotenpositionen sind identisch. Verfügbare Kanten sind grau und
+durchgezogen, ausgefallene Kanten rot und gestrichelt. Der ausgefallene
+Knoten ist zusätzlich rot hervorgehoben. Pfade werden nicht eingezeichnet.
 
-python schritt5_pipeline_automatisierung/illustrations/create_thesis_figures.py --scene configured --graph-type erdos_renyi --nodes 14 --p 0.3 --path-type edp --failure-type link --failure-model random --fail-factor 0.8 --formats svg
+Verwendet wird der obige Kernmodul-Graph mit n=8, p=0.3 und seed=21.
+Für dieses erklärende Beispiel sind die Ausfälle gezielt gewählt: links
+die Kante zwischen s und x, rechts der innere Knoten x. Dessen fünf
+inzidente Kanten bestimmt `node_failures_to_edges(...)` aus `src/failures.py`.
+Es handelt sich nicht um eine zufällig gezogene Ausfallmenge oder eine
+Failure-Rate-Auswertung. Die Originaltopologie bleibt unverändert; Ausfälle
+werden in der Abbildung markiert, nicht aus dem gezeichneten Graphen entfernt.
+Die Graph- und Failure-Parameter der konfigurierbaren Szene gelten hier nicht.
 
-Konfigurierbare Szene mit NDP und Node Failure:
+Ablaufgrafik der Experimentpipeline
+-----------------------------------
 
-python schritt5_pipeline_automatisierung/illustrations/create_thesis_figures.py --scene configured --graph-type erdos_renyi --nodes 14 --p 0.3 --path-type ndp --failure-type node --failure-model random --fail-factor 0.8 --formats svg
+python schritt5_pipeline_automatisierung/illustrations/create_thesis_figures.py --scene pipeline --formats svg png
 
-Konfigurierbare Szene mit geclustertem Ausfall:
+`pipeline_overview.svg` und `pipeline_overview.png` zeigen vier Stationen:
+Konfiguration -> Experimente -> Auswertung -> Plots. Kurze Stichworte unter
+den Stationen erläutern Bedienung und Ausgaben. Die Szene erzeugt nur eine
+schematische Präsentationsgrafik; sie startet keine Routingexperimente und
+liest keine Versuchsergebnisse ein. Die Standardauswahl bleibt `comparison`.
 
-python schritt5_pipeline_automatisierung/illustrations/create_thesis_figures.py --scene configured --graph-type random_regular --nodes 12 --degree 3 --path-type both --failure-type node --failure-model clustered --failure-start 0.8 --failure-drop 0.3 --formats svg
+Konfigurierbare Szenen
+----------------------
 
-Nur Graph und Ausfälle ohne Pfadmarkierung:
+`--scene configured` unterstützt Erdős-Rényi- und Random-Regular-Graphen, alle
+sechs Basisalgorithmen sowie zufällige und geclusterte Link- und Node-Failures.
+
+Nur Graph und Ausfälle:
 
 python schritt5_pipeline_automatisierung/illustrations/create_thesis_figures.py --scene configured --graph-type erdos_renyi --nodes 25 --p 0.15 --path-type none --failure-type link --failure-model clustered --failure-start 0.8 --failure-drop 0.3 --formats svg png
 
-Nur Graph ohne Ausfälle:
+Pfade ohne Ausfälle:
 
-python schritt5_pipeline_automatisierung/illustrations/create_thesis_figures.py --scene configured --graph-type erdos_renyi --nodes 25 --p 0.15 --path-type none --failure-model none --formats svg png
+python schritt5_pipeline_automatisierung/illustrations/create_thesis_figures.py --scene configured --graph-type random_regular --nodes 10 --degree 4 --path-type both --failure-model none --seed 4 --formats svg
 
-Einzelnen Algorithmus ohne Ausfälle zeichnen:
+Ein Algorithmus ohne Ausfälle:
 
-Bei One Tree und Multiple Trees enthält eine Abbildung vier Teilbilder:
+python schritt5_pipeline_automatisierung/illustrations/create_thesis_figures.py --scene configured --graph-type random_regular --nodes 10 --degree 4 --algorithm ndp_one_tree --failure-model none --seed 4 --formats svg png
 
-- links alle berechneten EDPs beziehungsweise NDPs ohne Ausfälle
-- danach das Baumwachstum ohne Ausfälle; bei One Tree wird der längste Pfad,
-  bei Multiple Trees werden alle Pfade längenabsteigend erweitert
-- anschließend die finalen Strukturen nach dem Trunkieren, weiterhin ohne
-  Ausfälle
-- zusätzliche direkte Ausgänge zum Ziel `d` als gepunktete Linien
-- rechts die Ausfälle und die von `routing_algorithms.route_algorithm(...)`
-  tatsächlich ausgeführte Route; Pfeile und Nummern zeigen ihre Reihenfolge
+Zulässige Algorithmen:
 
-Innerhalb eines Grundpfads beginnt das Baumwachstum beim inneren Knoten neben
-`s` und läuft in Richtung des letzten inneren Knotens `d-1`. Das spätere
-Routing probiert die finalen Strukturen dagegen nach der Länge ihres
-Grundpfads aufsteigend und damit den kürzesten Pfad zuerst aus.
+- `edp_paths`, `edp_one_tree`, `edp_multiple_trees`
+- `ndp_paths`, `ndp_one_tree`, `ndp_multiple_trees`
 
-Sind mehrere Pfade maximal lang, wird der durch die stabile Sortierung gewählte
-One-Tree-Grundpfad mit `Längengleichstand` gekennzeichnet. Dadurch wird nicht
-fälschlich behauptet, dass es genau einen längsten Pfad gibt.
+Bei One Tree und Multiple Trees zeigt die Algorithmusabbildung vier Phasen:
 
-Standardmäßig werden alle berechneten Pfade berücksichtigt. Mit
-`--max-paths N` kann die Darstellung bei sehr großen Graphen auf höchstens N
-Pfade begrenzt werden.
+1. alle berechneten EDPs beziehungsweise NDPs,
+2. Baumwachstum vor dem Trunkieren,
+3. finale Strukturen nach dem Trunkieren,
+4. Ausfälle und tatsächlich ausgeführte Route.
 
-python schritt5_pipeline_automatisierung/illustrations/create_thesis_figures.py --scene configured --graph-type erdos_renyi --nodes 25 --p 0.15 --algorithm edp_paths --failure-model none --formats svg
+Mit `--max-paths N` kann die Zahl dargestellter Pfade begrenzt werden. Der
+Standardwert `0` berücksichtigt alle berechneten Pfade.
 
-python schritt5_pipeline_automatisierung/illustrations/create_thesis_figures.py --scene configured --graph-type erdos_renyi --nodes 25 --p 0.15 --algorithm ndp_paths --failure-model none --formats svg
+Failure-Parameter
+-----------------
 
-python schritt5_pipeline_automatisierung/illustrations/create_thesis_figures.py --scene configured --graph-type erdos_renyi --nodes 25 --p 0.15 --algorithm edp_one_tree --failure-model none --formats svg
+- Random Failure: `--fail-factor`; die Anzahl wird wie in der Pipeline aus
+  EDP- beziehungsweise NDP-Anzahl berechnet.
+- Clustered Failure: `--failure-start` und `--failure-drop`.
+- Ohne Ausfälle: `--failure-model none`.
 
-python schritt5_pipeline_automatisierung/illustrations/create_thesis_figures.py --scene configured --graph-type erdos_renyi --nodes 25 --p 0.15 --algorithm edp_multiple_trees --failure-model none --formats svg
+Alle verfügbaren Szenen gemeinsam erzeugen:
 
-python schritt5_pipeline_automatisierung/illustrations/create_thesis_figures.py --scene configured --graph-type erdos_renyi --nodes 25 --p 0.15 --algorithm ndp_one_tree --failure-model none --formats svg
-
-python schritt5_pipeline_automatisierung/illustrations/create_thesis_figures.py --scene configured --graph-type erdos_renyi --nodes 25 --p 0.15 --algorithm ndp_multiple_trees --failure-model none --formats svg
-
-Hinweis zu Failure-Parametern:
-
-- Bei `--failure-model random` steuert `--fail-factor` die Ausfallanzahl wie in der Pipeline:
-  `round((Konnektivität - 1) * failFactor)`.
-- Für Link-Failures wird dafür die Anzahl der EDPs verwendet.
-- Für Node-Failures wird dafür die Anzahl der NDPs verwendet.
-- Bei `--failure-model clustered` steuern `--failure-start` und `--failure-drop` die Failure Rate.
-
-Optional zusätzlich GraphML schreiben:
-
-python schritt5_pipeline_automatisierung/illustrations/create_thesis_figures.py --write-graphml
+python schritt5_pipeline_automatisierung/illustrations/create_thesis_figures.py --scene all --formats svg png

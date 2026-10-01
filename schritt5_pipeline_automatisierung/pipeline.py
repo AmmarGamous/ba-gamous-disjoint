@@ -7,15 +7,16 @@ und paper-nahe PNG/SVG-Plots.
 """
 
 import argparse
+import hashlib
 import importlib
+from importlib import metadata
 import json
+import math
 from pathlib import Path
 import platform
 import sys
+import tempfile
 from datetime import datetime, timezone
-
-import networkx as nx
-
 
 PIPELINE_ROOT = Path(__file__).resolve().parent
 REPO_ROOT = PIPELINE_ROOT.parent
@@ -41,6 +42,13 @@ def _import_local_module(module_name, expected_path):
     return module
 
 
+environment_check = _import_local_module(
+    "environment_check", STEP5_SRC / "environment_check.py"
+)
+environment_check.check_dependencies()
+
+import networkx as nx
+
 failures = _import_local_module("failures", STEP5_SRC / "failures.py")
 routing_algorithms = _import_local_module(
     "routing_algorithms", STEP5_SRC / "routing_algorithms.py"
@@ -50,6 +58,7 @@ result_analysis = _import_local_module(
     "result_analysis", STEP5_EVALUATION / "result_analysis.py"
 )
 ALGORITHMS = routing_algorithms.ALGORITHMS
+DEFAULT_ALGORITHMS = routing_algorithms.BASE_ALGORITHMS
 
 
 # Schritt-7-Erweiterungspunkt: neue auswählbare Failure-Kombinationen hier
@@ -60,7 +69,8 @@ FAILURE_COMBINATIONS = {
     "clustered_link": ("clustered", "link"),
     "clustered_node": ("clustered", "node"),
 }
-DEFAULT_FAILURES = tuple(FAILURE_COMBINATIONS)
+# Neue Registrierungen verändern die ursprünglichen Versuchsdefaults nicht.
+DEFAULT_FAILURES = ("random_link", "random_node", "clustered_link", "clustered_node")
 
 
 def resolve_repo_path(value):
@@ -100,7 +110,7 @@ def load_config(config_path):
     config.setdefault("runs", 5)
     config.setdefault("seed", 123)
     config.setdefault("resume", True)
-    config.setdefault("algorithms", list(ALGORITHMS))
+    config.setdefault("algorithms", list(DEFAULT_ALGORITHMS))
     config.setdefault("failures", list(DEFAULT_FAILURES))
     config.setdefault("metrics", ["resilience", "avgHops", "avgStretch"])
     if not config.get("datasets"):
@@ -140,7 +150,11 @@ def apply_config_overrides(
 
 def selected_algorithms(config, override=None):
     """Validiert und liefert die Algorithmusauswahl."""
-    algorithms = list(override or config.get("algorithms", ALGORITHMS))
+    algorithms = list(
+        override if override is not None else config.get("algorithms", DEFAULT_ALGORITHMS)
+    )
+    if not algorithms:
+        raise ValueError("Mindestens ein Algorithmus muss ausgewählt sein")
     unknown = sorted(set(algorithms) - set(ALGORITHMS))
     if unknown:
         raise ValueError(f"Unknown algorithms: {unknown}")
@@ -149,12 +163,19 @@ def selected_algorithms(config, override=None):
 
 def selected_failures(config, override=None):
     """Validiert und liefert Failure-Kombinationen als (model, type)."""
-    names = list(override or config.get("failures", DEFAULT_FAILURES))
+    names = list(override if override is not None else config.get("failures", DEFAULT_FAILURES))
+    if not names:
+        raise ValueError("Mindestens eine Failure-Kombination muss ausgewählt sein")
     unknown = sorted(set(names) - set(FAILURE_COMBINATIONS))
     if unknown:
         raise ValueError(f"Unknown failures: {unknown}")
     selected = [(name, FAILURE_COMBINATIONS[name]) for name in names]
-    for _, (failure_model, _) in selected:
+    for name, combination in selected:
+        if not isinstance(combination, (tuple, list)) or len(combination) != 2:
+            raise ValueError(f"{name}: erwartet (Fehlermodell, Ausfalltyp)")
+        failure_model, failure_type = combination
+        if failure_type not in ("link", "node"):
+            raise ValueError(f"{name}: Ausfalltyp muss link oder node sein")
         failures.failure_model_spec(failure_model)
     return selected
 
@@ -341,11 +362,44 @@ def build_experiment_plan(config, algorithms=None, failures=None, datasets=None)
     return plan
 
 
-def run_experiments(config, plan, resume_override=None):
+def expected_summary_groups(plan):
+    """Leitet alle erwarteten Summary-Gruppen aus dem Experimentplan ab."""
+    groups = set()
+    for item in plan:
+        values = (
+            item["fail_factors"]
+            if failures.uses_failure_count(item["failure_model"])
+            else item["failure_starts"]
+        )
+        groups.update(
+            (
+                item["dataset"]["name"],
+                item["failure_type"],
+                item["failure_model"],
+                float(value),
+            )
+            for value in values
+        )
+    return groups
+
+
+def run_experiments(config, plan, resume_override=None, progress_callback=None):
     """Führt alle geplanten Experimentserien aus."""
     generated = []
-    for item in plan:
+    for job_index, item in enumerate(plan, 1):
         failure_model = item["failure_model"]
+
+        def on_progress(event):
+            """Ergänzt die Meldung der synchronen Serie um den aktuellen Job."""
+            details = {key: value for key, value in event.items() if key != "message"}
+            experiment.report_progress(
+                progress_callback,
+                f"Job {job_index}/{len(plan)} | {item['dataset']['name']} | "
+                f"{item['failure']} | {event['message']}",
+                **details, job_index=job_index, job_total=len(plan),
+                dataset=item["dataset"]["name"], failure=item["failure"],
+            )
+
         outputs = experiment.run_experiment_series(
             runs=int(config["runs"]),
             failure_types=[item["failure_type"]],
@@ -362,12 +416,13 @@ def run_experiments(config, plan, resume_override=None):
             output_dir=item["output_dir"],
             seed=config.get("seed"),
             resume=config["resume"] if resume_override is None else resume_override,
+            progress_callback=on_progress,
         )
         generated.extend(outputs)
     return generated
 
 
-def write_summary_and_plots(config, datasets, algorithms, failures):
+def write_summary_and_plots(config, datasets, algorithms, failures, plan):
     """Aggregiert CSVs und erzeugt Summary sowie PNG/SVG-Plots."""
     output_root = resolve_repo_path(config["output_root"])
     directories = {
@@ -380,7 +435,12 @@ def write_summary_and_plots(config, datasets, algorithms, failures):
     }
     raw, _ = result_analysis.load_result_directories(directories)
     _, summary = result_analysis.aggregate_results(raw)
-    result_analysis.validate_summary(summary, int(config["runs"]), algorithms)
+    result_analysis.validate_summary(
+        summary,
+        int(config["runs"]),
+        algorithms,
+        expected_summary_groups(plan),
+    )
 
     summary_dir = output_root / "summaries"
     summary_dir.mkdir(parents=True, exist_ok=True)
@@ -424,17 +484,71 @@ def write_used_config(config, output_root):
     return destination
 
 
-def validate_preflight(config, plan):
+def validate_registrations(algorithms, selected_failure_models, datasets):
+    """Prüft die Metadaten und aufrufbaren Teile der gewählten Erweiterungen."""
+    for algorithm in algorithms:
+        if algorithm not in DEFAULT_ALGORITHMS and not callable(
+            routing_algorithms.EXTRA_ALGORITHM_RUNNERS.get(algorithm)
+        ):
+            raise ValueError(f"{algorithm}: aufrufbarer EXTRA_ALGORITHM_RUNNER fehlt")
+    for model in selected_failure_models:
+        spec = failures.failure_model_spec(model)
+        if not isinstance(spec, dict):
+            raise ValueError(f"{model}: FAILURE_MODEL_SPECS muss ein Dictionary enthalten")
+        count = spec.get("uses_failure_count")
+        cluster = spec.get("uses_cluster_parameters")
+        if type(count) is not bool or type(cluster) is not bool or count == cluster:
+            raise ValueError(f"{model}: genau eine der beiden Parameterarten muss aktiviert sein")
+        parameter = "fail_factor" if count else "failure_start"
+        if (
+            spec.get("parameter") != parameter
+            or not isinstance(spec.get("csv_prefix"), str)
+            or not spec["csv_prefix"].strip()
+        ):
+            raise ValueError(f"{model}: parameter oder csv_prefix ist ungültig")
+    for dataset in datasets:
+        if dataset.get("type", "synthetic") != "synthetic":
+            continue
+        graph_type = dataset.get("graph_type", "erdos_renyi")
+        spec = experiment.GRAPH_PARAMETER_SPECS.get(graph_type)
+        if not callable(experiment.GRAPH_BUILDERS.get(graph_type)) or not callable(
+            experiment.GRAPH_VALIDATORS.get(graph_type)
+        ):
+            raise ValueError(f"{graph_type}: aufrufbarer Graph-Builder oder Validator fehlt")
+        if (
+            not isinstance(spec, dict)
+            or "config_key" not in spec
+            or not callable(spec.get("cast"))
+        ):
+            raise ValueError(f"{graph_type}: GRAPH_PARAMETER_SPECS ist unvollständig")
+        if graph_type in experiment.GRAPH_ENDPOINT_SELECTORS and not callable(
+            experiment.GRAPH_ENDPOINT_SELECTORS[graph_type]
+        ):
+            raise ValueError(f"{graph_type}: GRAPH_ENDPOINT_SELECTORS benötigt eine aufrufbare Funktion")
+
+
+def validate_plot_metadata(algorithms):
+    """Prüft Legenden und Farben, bevor Experimente für Plots gestartet werden."""
+    result_analysis.validate_plot_metadata(algorithms)
+
+
+def validate_preflight(config, plan, check_plots=True, check_inputs=True):
     """Prüft Konfiguration, Eingabedateien und Output-Ziel vor dem Lauf."""
     if int(config["runs"]) <= 0:
         raise ValueError("runs must be greater than 0")
+    if not plan:
+        raise ValueError("Der Experimentplan darf nicht leer sein")
 
     metric_specs(config.get("metrics", []))
-    output_root = resolve_repo_path(config["output_root"])
-    output_root.mkdir(parents=True, exist_ok=True)
-    probe = output_root / ".preflight_write_check"
-    probe.write_text("ok", encoding="utf-8")
-    probe.unlink()
+    if check_plots:
+        if not config.get("metrics"):
+            raise ValueError("Mindestens eine Metrik muss ausgewählt sein")
+        validate_plot_metadata({algorithm for item in plan for algorithm in item["algorithms"]})
+    validate_registrations(
+        {algorithm for item in plan for algorithm in item["algorithms"]},
+        {item["failure_model"] for item in plan},
+        [item["dataset"] for item in plan],
+    )
 
     for item in plan:
         dataset = item["dataset"]
@@ -445,10 +559,13 @@ def validate_preflight(config, plan):
             raise ValueError(f"{dataset['name']}: fail_factors must not be empty")
         if not item["failure_starts"]:
             raise ValueError(f"{dataset['name']}: failure_starts must not be empty")
-        if item["failure_model"] == "random":
-            if any(float(value) < 0 for value in item["fail_factors"]):
-                raise ValueError(f"{dataset['name']}: fail_factors must be >= 0")
-        if item["failure_model"] == "clustered":
+        if failures.uses_failure_count(item["failure_model"]):
+            if any(
+                not math.isfinite(float(value)) or float(value) < 0
+                for value in item["fail_factors"]
+            ):
+                raise ValueError(f"{dataset['name']}: fail_factors must be finite and >= 0")
+        if failures.uses_cluster_parameters(item["failure_model"]):
             for failure_start in item["failure_starts"]:
                 failures.validate_cluster_parameters(
                     float(failure_start),
@@ -456,21 +573,28 @@ def validate_preflight(config, plan):
                 )
 
         if dataset_type == "synthetic":
-            experiment.validate_graph_parameters(
-                item["graph_type"],
-                item["nodes"],
-                item["graph_param"],
-                dataset["name"],
-            )
+            if check_inputs:
+                experiment.validate_graph_parameters(
+                    item["graph_type"],
+                    item["nodes"],
+                    item["graph_param"],
+                    dataset["name"],
+                )
         elif dataset_type == "graphml":
             graphml_path = Path(item["graphml_path"])
-            if not graphml_path.is_file():
+            if check_inputs and not graphml_path.is_file():
                 raise FileNotFoundError(
                     f"{dataset['name']}: GraphML file not found: {graphml_path}"
                 )
         else:
             raise ValueError(f"{dataset['name']}: unknown dataset type {dataset_type}")
 
+    output_root = resolve_repo_path(config["output_root"])
+    output_root.mkdir(parents=True, exist_ok=True)
+    # Eine eigene temporäre Datei vermeidet Konflikte gleichzeitiger Prüfungen.
+    with tempfile.TemporaryFile(dir=output_root) as probe:
+        probe.write(b"ok")
+        probe.flush()
     return [
         f"datasets={len({item['dataset']['name'] for item in plan})}",
         f"jobs={len(plan)}",
@@ -478,7 +602,42 @@ def validate_preflight(config, plan):
     ]
 
 
-def write_manifest(config, config_path, plan, generated_csvs, summary_path, plot_paths):
+def collect_run_provenance(plan):
+    """Erfasst Paketversionen und Datei-Prüfsummen vor Beginn der Berechnung."""
+    paths = list(PIPELINE_ROOT.glob("*.py"))
+    for directory in ("src", "evaluation", "illustrations"):
+        paths.extend((PIPELINE_ROOT / directory).rglob("*.py"))
+    paths.extend((PIPELINE_ROOT / "Dokumentation").glob("requirements*.txt"))
+    hashes = {
+        path.relative_to(PIPELINE_ROOT).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in sorted(set(paths)) if path.is_file()
+    }
+    packages = {
+        distribution.metadata["Name"]: distribution.version
+        for distribution in metadata.distributions() if distribution.metadata["Name"]
+    }
+    graph_paths = sorted({Path(item["graphml_path"]) for item in plan if item["graphml_path"]})
+    return {
+        "captured_at_utc": datetime.now(timezone.utc).isoformat(),
+        "scope": (
+            "Aktueller Pipeline-Aufruf; kein Herkunftsnachweis für bei Resume "
+            "oder Nur Plots wiederverwendete Rohdaten"
+        ),
+        "package_versions": dict(sorted(packages.items())),
+        "code_fingerprint": {
+            "algorithm": "sha256",
+            "scope": "Python-Dateien im Pipeline-Kern und Illustrationsmodul sowie requirements*.txt",
+            "files": hashes,
+            "digest": hashlib.sha256(json.dumps(hashes, sort_keys=True).encode("utf-8")).hexdigest(),
+        },
+        "input_graphs": {
+            str(path): hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
+            for path in graph_paths
+        },
+    }
+
+
+def write_manifest(config, config_path, plan, generated_csvs, summary_path, plot_paths, provenance=None):
     """Schreibt Metadaten für Repeatability und spätere Kontrolle."""
     output_root = resolve_repo_path(config["output_root"])
     manifest = {
@@ -486,7 +645,8 @@ def write_manifest(config, config_path, plan, generated_csvs, summary_path, plot
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "python": sys.version,
         "platform": platform.platform(),
-        "config_path": str(Path(config_path).resolve()),
+        "config_path": str(resolve_config_path(config_path).resolve()),
+        "provenance": provenance if provenance is not None else collect_run_provenance(plan),
         "runs": int(config["runs"]),
         "seed": config.get("seed"),
         "resume": bool(config.get("resume", False)),
@@ -546,10 +706,13 @@ def run_pipeline(
     p_override=None,
     degree_override=None,
     preflight=False,
+    progress_callback=None,
 ):
     """Haupteinstieg für Tests und CLI."""
     if dry_run and preflight:
         raise ValueError("dry_run and preflight cannot be combined")
+    if only_experiments and only_plots:
+        raise ValueError("only_experiments and only_plots cannot be combined")
 
     config = load_config(config_path)
     apply_config_overrides(
@@ -575,10 +738,21 @@ def run_pipeline(
         failure_starts_override=failure_starts_override,
         failure_drop_override=failure_drop_override,
     )
+    config["algorithms"] = list(algorithms)
+    config["failures"] = [name for name, _ in failures]
     config["datasets"] = datasets
+    if resume_override is not None:
+        config["resume"] = bool(resume_override)
+    validate_registrations(algorithms, {model for _, (model, _) in failures}, datasets)
     plan = build_experiment_plan(config, algorithms, failures, datasets)
 
-    preflight_messages = validate_preflight(config, plan) if preflight else []
+    checks = (
+        validate_preflight(
+            config, plan, check_plots=not only_experiments, check_inputs=not only_plots
+        )
+        if not dry_run else []
+    )
+    preflight_messages = checks if preflight else []
 
     if dry_run or preflight:
         return {
@@ -593,22 +767,30 @@ def run_pipeline(
         }
 
     output_root = resolve_repo_path(config["output_root"])
+    experiment.report_progress(progress_callback, "Lauf wird vorbereitet", phase="preparation")
+    provenance = collect_run_provenance(plan)
     write_used_config(config, output_root)
 
     generated_csvs = []
     if not only_plots:
-        generated_csvs = run_experiments(config, plan, resume_override)
+        generated_csvs = run_experiments(
+            config, plan, progress_callback=progress_callback
+        )
 
     summary_path = None
     plot_paths = []
     if not only_experiments:
+        experiment.report_progress(
+            progress_callback, "CSV-Auswertung und Ploterstellung laufen", phase="analysis"
+        )
         summary_path, plot_paths = write_summary_and_plots(
-            config, datasets, algorithms, failures
+            config, datasets, algorithms, failures, plan
         )
 
     manifest_path = write_manifest(
-        config, config_path, plan, generated_csvs, summary_path, plot_paths
+        config, config_path, plan, generated_csvs, summary_path, plot_paths, provenance
     )
+    experiment.report_progress(progress_callback, "Pipeline abgeschlossen", phase="complete")
     return {
         "config": config,
         "plan": plan,

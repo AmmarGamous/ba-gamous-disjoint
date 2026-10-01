@@ -4,7 +4,8 @@ gui.py
 Zweck
 `gui.py` stellt eine Streamlit-Oberfläche für die Pipeline bereit. Die GUI
 ersetzt die Pipeline nicht, sondern sammelt Einstellungen, schreibt eine
-JSON-Konfiguration und startet oder vorbereitet danach denselben Pipeline-Kern.
+JSON-Konfiguration und startet danach denselben Pipeline-Kern oder bereitet
+einen Serveraufruf vor.
 
 Aufgaben
 - Algorithmen, Fehlertypen, Metriken und Ausführungsmodus auswählbar machen
@@ -23,24 +24,66 @@ Wichtige Konstanten
 - `ALGORITHM_LABELS` und `FAILURE_LABELS`: sichtbare Namen für Auswahlfelder.
 
 Wichtige Funktionen
-- `build_failure_rate_range(...)`: erzeugt inklusive Failure-Rate-Listen.
+- `build_failure_rate_range(...)`: erzeugt Failure-Rate-Listen; der Endwert
+  gehört nur dazu, wenn die Schrittgröße ihn erreicht.
 - `build_gui_random_dataset(...)`: erzeugt ein GUI-Dataset für Erdős-Rényi.
 - `build_gui_real_world_dataset(...)`: erzeugt ein GUI-Dataset für GraphML-Topologien.
-- `build_plot_groups(...)`: trennt Plots in Random- und Real-World-Gruppen.
+- `build_plot_groups(...)`: delegiert an `pipeline.default_plot_groups(...)`;
+  Gruppierungsregeln und Grenzen stehen in pipeline.txt.
 - `build_gui_config(...)`: baut die Pipeline-JSON aus GUI-Eingaben.
 - `write_gui_config(...)`: schreibt `gui_config.json`.
 - `build_server_command(...)`: erzeugt einen wiederholbaren Serverbefehl.
 - `_render_graph_builder(...)`: rendert die Graph-Auswahl mit mehreren Graph-Konfigurationen.
+- `_render_pipeline_progress(...)`: aktualisiert Balken und Job-/Wiederholungsanzeige.
 - `main(...)`: startet die Streamlit-Anwendung.
 
 Erweiterungspunkte
-- Neue Algorithmusnamen werden in `ALGORITHM_LABELS` ergänzt.
-- Neue Failure-Auswahlen werden in `FAILURE_LABELS` ergänzt.
+- Algorithmus- und Failure-Namen zuerst in den zuständigen Kernmodulen
+  registrieren, dann Anzeigenamen in `ALGORITHM_LABELS` bzw. `FAILURE_LABELS`
+  ergänzen. Nur ein Anzeigename macht noch keine neue Option ausführbar.
 - Neue GUI-Graph-Typen werden in `GRAPH_TYPE_LABELS` ergänzt und im Graph-Builder gerendert.
+
+Dataset-Vertrag und neue Graphen
+Die Builder liefern Dictionaries für `config.datasets`, keine Graphinstanzen.
+Synthetische Datasets enthalten `name`, `display_name`, `type=synthetic`,
+`graph_type`, `nodes`, gegebenenfalls `p` bzw. `degree` und Failure-Parameter.
+GraphML-Datasets enthalten dagegen `type=graphml`, `graphml` und `graph_name`.
+`build_gui_config(...)` liefert die Pipeline-Konfiguration als Dictionary und
+setzt `resume=True`. Die Oberfläche verwendet Seed 123; direkte Python-Aufrufe
+dieses Builders können einen anderen Seed übergeben. `metrics=None` oder eine
+leere Metrikliste wird hier durch alle drei Standardmetriken ersetzt.
+Der vorhandene Helper `build_random_regular_dataset(...)` wird vom aktuellen
+Graphdialog nicht angeboten.
+
+Ein Eintrag in `GRAPH_TYPE_LABELS` allein genügt nicht. `_render_graph_builder(...)`
+behandelt `random_erdos` und `real_world` ausdrücklich.
+Ein dritter Typ braucht eigene Parameterfelder, eine Dataset-Builder-Funktion
+und einen ausdrücklichen Zweig. Vor allem den gespeicherten Dataset-Typ prüfen:
+Unbekannte Typen zeigen eine Fehlermeldung und keinen Speichern-Knopf. Sie
+werden nicht mehr automatisch in eine Real-World-Konfiguration umgewandelt.
+`_append_graph(...)` übernimmt und benennt die gespeicherten Datasets eindeutig.
+
+Die Multiselect-Optionen lesen alle registrierten Algorithmen und Failure-
+Kombinationen. Die Vorauswahl verwendet dagegen `DEFAULT_ALGORITHMS` und
+`DEFAULT_FAILURES` mit den sechs Basisalgorithmen und vier Basisfällen.
+Neue Einträge sind daher nicht automatisch ausgewählt.
+Nach Codeänderungen speichern, Streamlit neu starten und die erzeugte JSON prüfen.
 
 Besonderheiten
 - Die GUI schreibt Failure-Parameter direkt in jedes Dataset.
-- Der Modus `Dry Run` zeigt nur den geplanten Jobplan.
-- Der Modus `Preflight` prüft die technische Ausführbarkeit.
+- Alle Modi werden über `mode_to_pipeline_flags(...)` an die Pipeline übergeben;
+  ihre Bedeutung steht in README.txt. Wichtig: Die GUI schreibt `gui_config.json`
+  bereits vor dem Aufruf, auch bei Dry Run und Preflight. Nur der direkte
+  Pipeline-Dry-Run ist ohne neue Ausgabedateien.
 - Die GUI zeigt PNG-Plots nach dem Lauf an, wenn diese erzeugt wurden.
-- Die Option `Server vorbereiten` startet keinen entfernten Prozess, sondern erzeugt eine Config und ein Hilfsskript.
+- Bei lokalen Läufen zeigt sie Job-/Wiederholungsfortschritt und anschließend
+  die Auswertungsphase. 100 Prozent werden erst nach Schreiben des Manifests erreicht.
+  Der Balken schätzt keine Restlaufzeit. Dry Run und Preflight erhalten keinen Laufbalken.
+- Nach erfolgreichem Aufbau und Speichern einer neuen Config wird das vorige
+  Ergebnis zurückgesetzt. Schlägt bereits dieser Schritt fehl, kann das alte
+  Sitzungsergebnis weiterhin angezeigt werden; es gehört dann nicht zum neuen Lauf.
+- `Server vorbereiten` erzeugt nur Config und Hilfsskript. Das Skript leitet den
+  Schritt-5-Ordner über zwei Elternverzeichnisse ab und setzt damit die Ablage
+  `Output/<run_name>/` voraus. Bei anderen Ausgabeorten oder Dateipfaden mit
+  Leerzeichen muss der erzeugte Befehl vor dem Serveraufruf angepasst werden.
+  Serverzugang und eine passende installierte Umgebung stellt es nicht her.

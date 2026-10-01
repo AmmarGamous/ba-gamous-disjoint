@@ -16,6 +16,7 @@ if str(PIPELINE_ROOT) not in sys.path:
     sys.path.insert(0, str(PIPELINE_ROOT))
 
 STEP5_MODULES = (
+    "environment_check",
     "pipeline",
     "experiment",
     "failures",
@@ -587,7 +588,7 @@ def _render_graph_builder(st):
                 if save_cols[1].button("Abbrechen", key="cancel_random_erdos"):
                     st.session_state.add_graph_open = False
                     st.rerun()
-            else:
+            elif graph_kind == "real_world":
                 key = st.selectbox(
                     "Real-World Graph",
                     options=list(REAL_WORLD_DATASETS),
@@ -633,6 +634,11 @@ def _render_graph_builder(st):
                 if save_cols[1].button("Abbrechen", key="cancel_real_world"):
                     st.session_state.add_graph_open = False
                     st.rerun()
+            else:
+                st.error(f"Für den Graph-Typ '{graph_kind}' ist kein Eingabedialog implementiert.")
+                if st.button("Abbrechen", key="cancel_unknown_graph"):
+                    st.session_state.add_graph_open = False
+                    st.rerun()
 
     with selected_col:
         st.write("Ausgewählte Graph-Konfigurationen")
@@ -652,15 +658,23 @@ def _render_graph_builder(st):
                 st.rerun()
 
 
+def _render_pipeline_progress(progress_bar, event):
+    """Zeigt Job-/Wiederholungsfortschritt; 100 Prozent erst nach dem Manifest."""
+    phase = event["phase"]
+    if phase == "experiment":
+        fraction = (
+            event["job_index"] - 1 + event["completed"] / event["total"]
+        ) / event["job_total"]
+        value = 0.9 * fraction
+    else:
+        value = {"preparation": 0.0, "analysis": 0.9, "complete": 1.0}[phase]
+    progress_bar.progress(value, text=event["message"])
+
+
 def main():
     """Startet die Streamlit-GUI für die Schritt-5-Pipeline."""
-    try:
-        import streamlit as st
-    except ModuleNotFoundError as exc:
-        raise SystemExit(
-            "Streamlit is not installed. Install it with "
-            "`pip install streamlit` or run the CLI pipeline instead."
-        ) from exc
+    pipeline.environment_check.check_dependencies(("streamlit",), gui=True)
+    import streamlit as st
 
     st.set_page_config(page_title="Schritt 5 Pipeline", layout="wide")
     _init_session_state(st)
@@ -692,13 +706,13 @@ def main():
         algorithms = st.multiselect(
             "Algorithmen",
             options=list(pipeline.ALGORITHMS),
-            default=list(pipeline.ALGORITHMS),
+            default=list(pipeline.DEFAULT_ALGORITHMS),
             format_func=lambda key: ALGORITHM_LABELS[key],
         )
         failures = st.multiselect(
             "Fehlertypen",
             options=list(pipeline.FAILURE_COMBINATIONS),
-            default=list(pipeline.FAILURE_COMBINATIONS),
+            default=list(pipeline.DEFAULT_FAILURES),
             format_func=lambda key: FAILURE_LABELS[key],
         )
         metrics = st.multiselect(
@@ -734,6 +748,7 @@ def main():
             st.session_state.last_config_path = str(config_path)
             st.session_state.last_server_command = None
             st.session_state.last_server_script = None
+            st.session_state.last_result = None
             st.info(f"Konfiguration: {config_path}")
             if target == "Server vorbereiten":
                 script_path, command = write_server_command(config_path, mode)
@@ -741,9 +756,14 @@ def main():
                 st.session_state.last_server_command = command
                 st.session_state.last_result = None
             else:
+                progress_bar = (
+                    None if mode in ("Dry Run", "Preflight")
+                    else st.progress(0.0, text="Pipeline wird gestartet")
+                )
                 with st.spinner("Pipeline läuft..."):
                     st.session_state.last_result = pipeline.run_pipeline(
                         config_path,
+                        progress_callback=lambda event: _render_pipeline_progress(progress_bar, event),
                         **mode_to_pipeline_flags(mode),
                     )
         except Exception as exc:
