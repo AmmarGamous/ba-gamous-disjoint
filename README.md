@@ -11,7 +11,7 @@ und geclusterte Knotenausfälle betrachtet. Eine automatisierte Pipeline führt
 die Versuche reproduzierbar aus, speichert die Ergebnisse und erstellt die
 zugehörigen Vergleichsplots.
 
-![Ablauf der Experimentpipeline](schritt5_pipeline_automatisierung/Output/illustrations/figures/pipeline_overview.svg)
+![Ablauf der Experimentpipeline](schritt5_pipeline_automatisierung/Output/illustrations/figures/pipeline_overview.png)
 
 ## Autor
 
@@ -185,11 +185,3 @@ Angaben und Prüfsummen im Laufordner.
 Für unabhängige Wiederholungstests sollten neue Laufnamen verwendet werden.
 Ein erneuter Aufruf mit aktiviertem Resume verwendet bereits gespeicherte
 Ergebnisse und stellt daher keine unabhängige Neuberechnung dar.
-
-## Lizenz und Quellenhinweis
-
-Der in [`external/TREE/`](external/TREE/) enthaltene TREE-Referenzcode ist
-unter der MIT-Lizenz veröffentlicht. Für die übrigen Bestandteile dieses
-Bachelorarbeits-Repositorys ist keine separate Nutzungslizenz hinterlegt.
-Die wissenschaftlichen Quellen und verwendeten Datensätze sind in der
-Bachelorarbeit dokumentiert.
