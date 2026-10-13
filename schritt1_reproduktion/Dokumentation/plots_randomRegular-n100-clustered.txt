@@ -1,0 +1,9 @@
+Überarbeitung von plots_randomRegular-n100-clustered
+
+Durchgeführte Änderungen:
+
+1. Anpassung der Dateipfade:
+   Die bisherigen relativen Pfade CSVs/randomRegular/n100-p2-clustered/, CSVs/randomRegular/n100-p4-clustered/ und CSVs/randomRegular/n100-p8-clustered/ wurden auf die aktuelle Projektstruktur ../../../../external/TREE/evaluation/output/Paper_CSVs/randomRegular/... umgestellt. Dadurch greift das Notebook aus dem Ordner evaluation/notebooks/resilience korrekt auf die erzeugten CSV-Dateien der extern eingebundenen TREE-Referenzimplementierung zu. Zusätzlich wurden auch die im Notebook vorhandenen Topology-Zoo-Pfade für random und clustered analog auf ../../../../external/TREE/evaluation/output/Paper_CSVs/... angepasst.
+
+2. Kontrolle der Auswertungs- und Plotlogik:
+   Die zentrale Auswertungsfunktion allInOne sowie die Plot-Aufrufe mit plotEval wurden nicht verändert. Auch die Übergabe der Arrays rPaths, rOne, rMult, avgHopsPaths, avgHopsOne, avgHopsMult und avgHopsSP bleibt identisch zur alten Version. Damit bleiben die Berechnung von Resilience und Average Hops sowie die Darstellung für EDPs, One Tree und Multiple Trees unverändert.

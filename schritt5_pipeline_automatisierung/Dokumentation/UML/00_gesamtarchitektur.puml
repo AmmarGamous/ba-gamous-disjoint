@@ -1,0 +1,43 @@
+@startuml
+!pragma layout smetana
+!include _style.iuml
+left to right direction
+skinparam nodesep 45
+skinparam ranksep 65
+
+component "<b>gui.py</b>\nStreamlit-Oberfläche\n\nEingabe: Benutzerauswahl\nAusgabe: gui_config.json\nErgebnis- und Fortschrittsanzeige" as GUI
+
+component "<b>pipeline.py</b>\nPlanung und Orchestrierung\nCLI-Einstieg: main()\n\nJSON + Overrides -> Experimentplan\nSchreibt Summary-CSV,\nused_config.json und manifest.json" as Pipeline
+
+component "<b>src/experiment.py</b>\nVersuchsszenen und Wiederholungen\nSeparater CLI-Einstieg ohne JSON\n\nGraphparameter / GraphML -> Szenen\nQuell-/Zielknoten, Seed und Resume\nSchreibt Rohdaten-CSVs" as Experiment
+
+component "<b>evaluation/result_analysis.py</b>\nAggregation, Prüfung und Plots\n\nRohdaten-CSVs -> DataFrame\nDataFrame -> PNG-/SVG-Plots" as Analysis
+
+component "<b>src/failures.py</b>\nVier Ausfallkombinationen\n\nGraph + Parameter + RNG\n-> ausgefallene Kanten und Knoten" as Failures
+
+component "<b>src/routing_algorithms.py</b>\nEDP-/NDP-Pfade und Bäume\nGemeinsame Routingroutine\n\nGraph + s/d + Ausfälle\n-> Liste von RoutingResult" as Routing
+
+component "<b>src/environment_check.py</b>\nPython- und Importprüfung\n\nErfolg: Aufruf kann fortfahren\nFehler: RuntimeError mit Hilfe" as EnvironmentCheck
+
+GUI ..> Pipeline : run_pipeline()
+Pipeline ..> Experiment : run_experiment_series()
+Pipeline ..> Analysis : laden, aggregieren,\nprüfen und plotten
+Experiment ..> Failures : select_failures()
+Experiment ..> Routing : Pfade berechnen\nrun_algorithms()
+Pipeline ..> EnvironmentCheck : check_dependencies()
+Analysis -[hidden]down-> EnvironmentCheck
+Failures -[hidden]down-> Routing
+
+note bottom of EnvironmentCheck
+  check_dependencies() wird auch von
+  gui.py und experiment.py verwendet.
+  Keine automatische Paketinstallation.
+end note
+
+legend bottom left
+  UML-Komponentendiagramm: gestrichelter Pfeil = nutzt / ruft auf.
+  Dargestellt sind die zentralen Abhängigkeiten der sieben Module.
+  Die zeitliche Reihenfolge zeigen die separaten Aktivitätsdiagramme.
+  Externe Bibliotheken: NetworkX, Pandas, Matplotlib und Streamlit.
+endlegend
+@enduml

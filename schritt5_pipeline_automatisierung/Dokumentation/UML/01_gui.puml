@@ -1,0 +1,35 @@
+@startuml
+!include _style.iuml
+start
+partition "Eingabe: Streamlit-Oberfläche" {
+  :main()\nAuswahl von Datasets, Algorithmen,\nFehlermodellen, Metriken und Wiederholungen;
+  :Graphdialog / Paper-Graphsets\nParameter übernehmen\nUnbekannte Grapharten abweisen;
+}
+partition "Verarbeitung: gui.py" {
+  :build_gui_config()\nKonfigurationsdictionary erzeugen\nGUI-Seed: 123, Resume: aktiviert;
+  :write_gui_config()\nOutput/<run_name>/gui_config.json speichern;
+  if (Server vorbereiten?) then (ja)
+    :write_server_command()\nCLI-Befehl und run_on_server.sh erzeugen;
+    :Ausgabe: Konfiguration + Startskript\nKein entfernter Prozess wird gestartet;
+    stop
+  else (lokal ausführen)
+    :mode_to_pipeline_flags()\nNormal / Nur Experimente / Nur Plots\nDry Run / Preflight;
+    :pipeline.run_pipeline() aufrufen\nKonfigurationspfad, Modus, Fortschritts-Callback;
+    note right
+      Die Pipeline arbeitet auf dem Rechner,
+      auf dem Streamlit läuft.
+      Fortschrittsmeldungen aktualisieren
+      den Balken während dieses Aufrufs.
+    end note
+    if (Aufruf erfolgreich?) then (ja)
+      :render_result()\nDry Run: Jobtabelle, als CSV herunterladbar\nPreflight: Prüfmeldung\nNormal: Ergebnisdateien und Plotvorschau;
+    else (Fehler)
+      :Fehlermeldung in der Oberfläche anzeigen;
+    endif
+  endif
+}
+partition "Ausgabe" {
+  :GUI-Anzeige und gui_config.json\nWeitere Dateien werden durch die Pipeline erzeugt;
+}
+stop
+@enduml

@@ -1,0 +1,6 @@
+rep,failureType,failureModel,nrNodes,nrEdges,graphType,graphParam,graphName,graphMLPath,degree,edgeProb,source,destination,nrEDPs,nrNDPs,failFactor,failureStart,failureDrop,nrFails,nrFailedNodes,spLength,hopsEDP,stretchEDP,hopsNDP,stretchNDP
+1,link,clustered,197,243,graphml,cogentco,cogentco,schritt3_knoten_disjunkte_pfade\data\topology_zoo\Cogentco.graphml,,,9,18,2,1,,0.6,0.3,3,0,-1,-1,,-1,
+2,link,clustered,197,243,graphml,cogentco,cogentco,schritt3_knoten_disjunkte_pfade\data\topology_zoo\Cogentco.graphml,,,51,185,2,2,,0.6,0.3,2,0,15,15,0,15,0
+3,link,clustered,197,243,graphml,cogentco,cogentco,schritt3_knoten_disjunkte_pfade\data\topology_zoo\Cogentco.graphml,,,15,69,2,2,,0.6,0.3,2,0,8,-1,,-1,
+4,link,clustered,197,243,graphml,cogentco,cogentco,schritt3_knoten_disjunkte_pfade\data\topology_zoo\Cogentco.graphml,,,88,146,2,2,,0.6,0.3,3,0,10,20,10,20,10
+5,link,clustered,197,243,graphml,cogentco,cogentco,schritt3_knoten_disjunkte_pfade\data\topology_zoo\Cogentco.graphml,,,51,148,2,2,,0.6,0.3,3,0,9,16,7,9,0

@@ -1,0 +1,33 @@
+@startuml
+!include _style.iuml
+start
+partition "Eingabe aus pipeline.py" {
+  :Dataset-Ausgabeordner, Algorithmen, runs\nErwartete Parametergruppen aus Experimentplan\nPlotgruppen und ausgewählte Metriken;
+}
+partition "evaluation/result_analysis.py" {
+  :load_result_directories()\nalgorithms_*.csv einlesen\ndataset und sourceFile ergänzen\nZu einem Rohdaten-DataFrame zusammenführen;
+  :aggregate_results()\nNumerische Spalten umwandeln\nErfolgreiche Hops/Stretch markieren\nfailureParameter aus failFactor oder failureStart;
+  :Nach Dataset, Fehlertyp, Fehlermodell,\nFailure-Parameter und Algorithmus gruppieren\nresilience = mean(success)\navgHops / avgStretch = mean(erfolgreiche Werte)\nsamples = Zeilenanzahl\nsuccesses = sum(success);
+  :validate_summary()\nMit erwarteten Gruppen vergleichen\nAlgorithmusauswahl, Zeilenanzahl und Resilienz prüfen;
+  if (Validierung erfolgreich?) then (nein)
+    :ValueError: Pipeline bricht ab\nKeine neue Summary und keine neuen Plots;
+    stop
+  endif
+}
+partition "Zwischenschritt in pipeline.py" {
+  :Summary-DataFrame als CSV speichern\nPlotgruppen auswählen;
+}
+partition "evaluation/result_analysis.py" {
+  :plot_all_comparisons(summary, ...)\nDataFrame im Speicher verwenden\nJe Failure-Kombination und Metrik eine Abbildung je Gruppe;
+  :Teilplots pro Dataset mit ausgewählten Algorithmuskurven\nPNG- und SVG-Dateien speichern;
+}
+partition "Ausgabe" {
+  :DataFrames und Liste der Plotpfade\nSummary-CSV schreibt die Pipeline, Plots dieses Modul;
+}
+note right
+  Die Summary-Prüfung zählt Zeilen.
+  Sie überprüft nicht die Eindeutigkeit
+  jeder Wiederholungsnummer.
+end note
+stop
+@enduml

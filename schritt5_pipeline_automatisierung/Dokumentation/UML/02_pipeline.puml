@@ -1,0 +1,41 @@
+@startuml
+!include _style.iuml
+start
+partition "Eingabe" {
+  :run_pipeline(config_path, Optionen)\nGUI/Python-Aufruf oder CLI mit --config;
+}
+partition "Planung und Prüfung" {
+  :Widersprüchliche Modi abweisen\nload_config() und Overrides anwenden\nEffektive Auswahl in config übernehmen;
+  :Registrierungen prüfen\nbuild_experiment_plan()\nEin Job pro Dataset-/Failure-Kombination;
+  if (Dry Run?) then (ja)
+    :Rückgabe: config + plan\nKeine Experimente, keine Ergebnisdateien;
+    stop
+  else (nein)
+    :validate_preflight()\nParameter, Auswahl, Pfade, Schreibbarkeit prüfen;
+    note right
+      Nur Plots: keine Graph-Eingabeprüfung.
+      Nur Experimente: keine Plotmetadatenprüfung.
+      Fehler brechen vor der Berechnung ab.
+    end note
+  endif
+  if (Preflight-Modus?) then (ja)
+    :Rückgabe: config + plan + Prüfmeldungen;
+    stop
+  endif
+}
+partition "Ausführung" {
+  :collect_run_provenance()\nwrite_used_config();
+  if (Nur Plots?) then (nein)
+    :run_experiments()\nJobs nacheinander ausführen\nexperiment.run_experiment_series();
+  endif
+  if (Nur Experimente?) then (nein)
+    :write_summary_and_plots()\nRohdaten laden, aggregieren und prüfen;
+    :Summary-CSV speichern\nPlots aus dem DataFrame erzeugen lassen;
+  endif
+  :write_manifest()\nAbschluss und Fortschritt melden;
+}
+partition "Ausgabe" {
+  :Ergebnisdictionary mit Konfiguration, Plan und Pfaden\nOutput/<run_name>/ mit den Dateien des gewählten Modus;
+}
+stop
+@enduml

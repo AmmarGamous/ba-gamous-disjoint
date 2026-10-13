@@ -1,0 +1,9 @@
+Überarbeitung von p2-allInOne-shortVSavg und Anpassung an die aktuelle Projektstruktur
+
+Durchgeführte Änderungen:
+
+1. Anpassung der Dateipfade:
+   Die bisherigen relativen Pfade aus dem lokalen Ordner CSVs/shortestVSavg/ wurden für alle drei Varianten clustered - shortest, clustered - avg und clustered - edgeCount auf die aktuelle Projektstruktur ../../../../external/TREE/evaluation/output/ umgestellt. Dadurch lädt das Notebook die benötigten CSV-Dateien direkt aus der extern eingebundenen TREE-Referenzimplementierung und vermeidet doppelt abgelegte CSV-Dateien im eigenen GitLab-Repository.
+
+2. Kontrolle der Auswertung und Ergebnisse:
+   Die zentrale Funktion allInOne, die Notebook-Struktur sowie die Abschnitte clustered - shortest, clustered - avg und clustered - edgeCount wurden nicht verändert. Die Berechnung der Resilience-Werte, Hop-Werte und Vergleichszählungen zwischen Paths, One Tree, Multiple Trees sowie Ranked und Unranked Trees bleibt identisch zur alten Version. Die fachlichen Ergebnisse bleiben dadurch unverändert; Unterschiede betreffen nur die erneut erzeugte Darstellungsgröße der Matplotlib-Figuren.

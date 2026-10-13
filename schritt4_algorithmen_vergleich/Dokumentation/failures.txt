@@ -1,0 +1,48 @@
+failures.py
+
+Datei: schritt4_algorithmen_vergleich/src/failures.py
+
+1. Aufgabe des Moduls:
+failures.py kapselt die Failure-Modelle für Schritt 4.
+Es erzeugt die konkrete Ausfallmenge für eine Experimentinstanz und liefert diese in einer Form zurück,
+die von den Routingalgorithmen direkt verarbeitet werden kann.
+Das Modul unterstützt:
+- Random Link Failures,
+- Random Node Failures,
+- Clustered Link Failures,
+- Clustered Node Failures.
+
+2. Wichtige Funktionen:
+edge_key()
+    Normalisiert eine ungerichtete Kante als frozenset.
+    Dadurch können Kanten unabhängig von ihrer Reihenfolge verglichen werden.
+
+node_failures_to_edges()
+    Übersetzt ausgefallene Knoten in alle inzidenten Kanten.
+    Das Routing selbst arbeitet anschließend einheitlich mit ausgefallenen Kanten.
+
+validate_cluster_parameters()
+    Prüft, ob failureStart im Bereich [0, 1] liegt und failureDrop positiv ist.
+
+clustered_link_failures()
+    Wählt Kanten schichtweise um den Zielknoten d aus.
+    Die  Ausfallwahrscheinlichkeit startet mit failureStart und sinkt pro Schicht um failureDrop.
+
+clustered_node_failures()
+    Wählt Knoten schichtweise um d aus.
+    Quelle und Ziel werden geschützt und können nicht als ausgefallene Knoten gewählt werden.
+
+select_failures()
+    Einheitliche Schnittstelle für alle vier Failure-Kombinationen.
+    Die Funktion liefert immer:
+    - failed_edges
+    - failed_nodes
+
+3. Fachliche Bedeutung:
+Für faire Vergleiche erhalten alle sechs Algorithmen innerhalb einer Instanz dieselbe Ausfallmenge. 
+failures.py stellt diese Ausfallmenge bereit, während experiment.py sie anschließend an run_algorithms() übergibt.
+
+4. Prüfstatus:
+Besonders abgesichert durch:
+- test_node_failures_are_converted_to_all_incident_edges
+- test_full_series_writes_all_four_failure_combinations_paired

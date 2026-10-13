@@ -1,0 +1,94 @@
+ndp_edp_real_world_runs1000.ipynb 
+
+schritt3_knoten_disjunkte_pfade/evaluation/notebooks/ndp_edp_real_world_runs1000.ipynb
+
+1. Zweck des Notebooks:
+Dieses Notebook ist die zentrale Auswertung für alle Real-World-Graph Experimente in Schritt 3.
+Es liest ausschließlich vorhandene CSVs aus dem src-Ordner,
+prüft deren Struktur und erstellt daraus Vergleichsplots für EDP und NDP.
+
+2. Eingelesene Daten:
+Pilot5-Reihen:
+- output_ndp_edp_zoo_random_attmpls_pilot5
+- output_ndp_edp_zoo_random_cogentco_pilot5
+- output_ndp_edp_zoo_random_oteglobe_pilot5
+- output_ndp_edp_zoo_clustered_attmpls_pilot5
+- output_ndp_edp_zoo_clustered_cogentco_pilot5
+- output_ndp_edp_zoo_clustered_oteglobe_pilot5
+- 6 Ordner
+- 36 CSV-Dateien
+- 180 Datenzeilen
+1000-Run-Reihen:
+- output_ndp_edp_zoo_random_attmpls_runs1000
+- output_ndp_edp_zoo_random_cogentco_runs1000
+- output_ndp_edp_zoo_random_oteglobe_runs1000
+- output_ndp_edp_zoo_clustered_attmpls_runs1000
+- output_ndp_edp_zoo_clustered_cogentco_runs1000
+- output_ndp_edp_zoo_clustered_oteglobe_runs1000
+- 6 Ordner
+- 102 CSV-Dateien
+- 102.000 Datenzeilen
+
+3. Topologien:
+Die GraphML-Dateien liegen unter:
+schritt3_knoten_disjunkte_pfade/data/topology_zoo
+Ausgewertete Topologien:
+- ATT-MPLS: 25 Knoten, 56 Kanten
+- Cogentco: 197 Knoten, 243 Kanten
+- Oteglobe: 93 Knoten, 103 Kanten
+In den CSV-Dateien wird graphType=graphml gespeichert.
+
+4. Validierung beim Laden:
+Das Notebook prüft vor der Auswertung:
+- Die erwarteten Ordner existieren.
+- Die erwartete Anzahl CSV-Dateien ist vorhanden.
+- Jede CSV hat 5 Zeilen bei Pilot5 oder 1000 Zeilen bei runs1000.
+- rep ist innerhalb jeder CSV eindeutig.
+- graphType ist graphml.
+- graphName entspricht der erwarteten Topologie.
+- nrNodes und nrEdges entsprechen der erwarteten Topologiegröße.
+Wenn eine dieser Bedingungen nicht stimmt, bricht das Notebook mit einem AssertionError ab.
+
+5. Berechnete Kennzahlen:
+Für jede Topologie, jedes Failure-Modell und jeden Fehlertyp werden EDP und NDP zusammengefasst:
+- resilience
+  Anteil erfolgreicher Routings.
+- meanHopsSuccessful
+  Mittlere Hop-Anzahl nur über erfolgreiche Routen.
+- meanFailures
+  Mittlere tatsächliche Anzahl ausgefallener Links oder Knoten.
+Bei Random Failures ist die x-Achse der Failure Factor.
+Bei Clustered Failures ist die x-Achse der Failure Start.
+
+6. Ausgaben:
+Plotordner:
+schritt3_knoten_disjunkte_pfade/evaluation/output/ndp_edp_real_world_runs1000
+Erzeugte Plots:
+- ndp_edp_real_world_pilot5_random_link.png
+- ndp_edp_real_world_pilot5_random_node.png
+- ndp_edp_real_world_pilot5_clustered_link.png
+- ndp_edp_real_world_pilot5_clustered_node.png
+- ndp_edp_real_world_runs1000_random_link.png
+- ndp_edp_real_world_runs1000_random_node.png
+- ndp_edp_real_world_runs1000_clustered_link.png
+- ndp_edp_real_world_runs1000_clustered_node.png
+Insgesamt:
+8 PNG-Dateien.
+
+7. Notebook-Aufbau:
+Das Notebook enthält 10 Zellen:
+- 5 Codezellen
+- 5 Markdownzellen
+Alle Codezellen wurden ausgeführt.
+Es gibt keine Error-Outputs.
+Das Notebook enthält read_csv-Aufrufe.
+Das Notebook enthält keine to_csv-Aufrufe.
+
+8. Hinweise zur Interpretation:
+Cogentco ist deutlich größer und langsamer als ATT-MPLS und Oteglobe.
+Bei Clustered failureStart=0.3 können auf niedriggradigen Zielknoten null Ausfälle entstehen, weil die Auswahl mit floor() abgerundet wird. 
+Deshalb sollten Clustered-Plots immer zusammen mit meanFailures interpretiert werden.
+Pilot5-Reihen dienen nur zur Plausibilitätskontrolle. Die 1000-Run-Reihen sind die stabileren Ergebnisreihen.
+
+9. Ergebnis:
+Das Notebook bündelt alle Real-World-Auswertungen von Schritt 3 und ersetzt das frühere separate Real-World-Pilot-Notebook.

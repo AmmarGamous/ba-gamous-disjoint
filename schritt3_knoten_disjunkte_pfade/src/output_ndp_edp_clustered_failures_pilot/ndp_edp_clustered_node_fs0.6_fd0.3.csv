@@ -1,0 +1,6 @@
+rep,failureType,failureModel,nrNodes,nrEdges,degree,source,destination,nrEDPs,nrNDPs,failFactor,failureStart,failureDrop,nrFails,nrFailedNodes,spLength,hopsEDP,stretchEDP,hopsNDP,stretchNDP
+1,node,clustered,25,50,4,1,4,4,4,,0.6,0.3,4,4,4,-1,,6,2
+2,node,clustered,25,50,4,3,17,4,3,,0.6,0.3,5,5,3,3,0,3,0
+3,node,clustered,25,50,4,8,12,4,4,,0.6,0.3,5,5,2,2,0,2,0
+4,node,clustered,25,50,4,4,19,4,4,,0.6,0.3,5,5,3,3,0,3,0
+5,node,clustered,25,50,4,2,4,4,4,,0.6,0.3,5,5,4,15,11,6,2

@@ -1,0 +1,16 @@
+@startuml
+!include _style.iuml
+start
+partition "Eingabe: tests/test_gui.py" {
+  :unittest lädt Step5GuiTest\nGUI-Hilfsfunktionen, Beispielauswahlen und temporäre Ordner;
+}
+partition "Prüfungen (unabhängige Testmethoden)" {
+  :Parameterverarbeitung\nZahlenlisten, Failure-Bereiche und Datasets prüfen;
+  :build_gui_config()\nPflichtauswahl, Paper-Graphsets,\nGraphML-Pfade und Plotgruppen prüfen;
+  :Ausgabepfade und Ausführungsmodi\ngui_config.json, Serverbefehl,\nDry-Run-Flags und Tabellenspalten prüfen;
+}
+partition "Ausgabe" {
+  :unittest-Bericht\nKeine visuelle Browserprüfung;
+}
+stop
+@enduml

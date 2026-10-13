@@ -1,0 +1,11 @@
+rep,failureType,failureModel,nrNodes,nrEdges,degree,source,destination,nrEDPs,nrNDPs,nrFails,nrFailedNodes,spLength,hopsEDP,stretchEDP,hopsNDP,stretchNDP
+1,link,random,25,50,4,1,4,4,4,3,0,4,10,6,4,0
+2,link,random,25,50,4,8,12,4,4,3,0,2,2,0,2,0
+3,link,random,25,50,4,4,18,4,4,3,0,3,3,0,3,0
+4,link,random,25,50,4,0,1,4,4,3,0,4,6,2,6,2
+5,link,random,25,50,4,0,3,4,4,3,0,4,6,2,6,2
+6,link,random,25,50,4,10,21,4,4,3,0,2,2,0,2,0
+7,link,random,25,50,4,6,24,4,4,3,0,3,3,0,3,0
+8,link,random,25,50,4,2,17,4,4,3,0,3,3,0,3,0
+9,link,random,25,50,4,0,4,4,4,3,0,3,3,0,3,0
+10,link,random,25,50,4,11,14,4,4,3,0,3,3,0,3,0

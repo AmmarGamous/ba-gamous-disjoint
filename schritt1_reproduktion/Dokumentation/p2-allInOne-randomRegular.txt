@@ -1,0 +1,15 @@
+Überarbeitung von p2-allInOne-randomRegular und Anpassung an die aktuelle Projektstruktur
+
+Durchgeführte Änderungen:
+
+1. Anpassung der Dateipfade:
+   Die bisherigen relativen Pfade vom Typ CSVs/... wurden in allen allInOne-Aufrufen auf die aktuelle Projektstruktur ../../../../external/TREE/evaluation/output/ umgestellt. Dadurch greift die Klasse p2-allInOne-randomRegular aus dem Notebook-Ordner korrekt auf die CSV-Dateien der extern eingebundenen TREE-Referenzimplementierung zu.
+
+2. Beibehaltung der verwendeten CSV-Dateien:
+   Die Namen der verwendeten CSV-Dateien wurden nicht inhaltlich verändert. Es wurde jeweils nur der Pfad vor dem Dateinamen angepasst. Dadurch bleiben dieselben Messdaten wie in der alten Version Grundlage der Auswertung, nur werden sie nun aus dem externen TREE-Verzeichnis geladen.
+
+3. Anpassung aller allInOne-Aufrufe:
+   Insgesamt wurden 15 Aufrufe von allInOne(...) angepasst. Dazu gehören die CSV-Dateien für die random-regular-Auswertungen mit unterschiedlichen Graphgrößen und Fehlerszenarien, unter anderem n25, n93, n100, n110, n113, n149 und n197 sowie die adversarial-failure-Auswertungen mit 80% und 95%.
+
+4. Beibehaltung der Struktur, Berechnungslogik und Plot-Erzeugung:
+   Die vorhandene Notebook-Struktur, die zentrale Auswertungsfunktion allInOne und die Plot-Erzeugung wurden nicht verändert. Damit bleiben die Berechnung der Resilience-Werte, die Hop-Vergleiche und die Scatter-Plots für EDPs, One Tree, Multiple Trees und Unranked Trees identisch zur alten Version.

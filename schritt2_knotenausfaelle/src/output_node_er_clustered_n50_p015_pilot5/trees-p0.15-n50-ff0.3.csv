@@ -1,0 +1,6 @@
+rep,nrNodes,nrEdges,edgeProb,nrPaths,nrFails,nrFailedNodes,failureModel,failurePercent,hopsRanked,hopsUnranked,spLength,stretch_mult,nodeAdditions,hopsPath,stretch_path,hopsRankedOne,hopsUnrankedOne,stretch_one,overallNodeAdditionsOne,treeChoice
+5,50,196,0.15,7,,2,clustered,0.3;-0.3,3,2,2,1,10,2,0,5,2,3,2,edgeCount
+4,50,165,0.15,5,,1,clustered,0.3;-0.3,4,5,2,2,0,2,0,2,2,0,0,edgeCount
+3,50,209,0.15,7,,2,clustered,0.3;-0.3,5,5,3,2,0,3,0,3,3,0,0,edgeCount
+2,50,186,0.15,6,,1,clustered,0.3;-0.3,3,6,3,0,0,3,0,3,3,0,0,edgeCount
+1,50,162,0.15,5,,2,clustered,0.3;-0.3,3,3,2,1,14,2,0,3,2,1,4,edgeCount

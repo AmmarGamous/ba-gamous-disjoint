@@ -1,0 +1,6 @@
+rep,nrNodes,nrEdges,edgeProb,nrPaths,nrFails,nrFailedNodes,failureModel,failurePercent,hopsRanked,hopsUnranked,spLength,stretch_mult,nodeAdditions,hopsPath,stretch_path,hopsRankedOne,hopsUnrankedOne,stretch_one,overallNodeAdditionsOne,treeChoice
+5,197,243,..\data\topology_zoo\Cogentco.graphml,2,,6,clustered,0.9;-0.3,-1,-1,-1,0,2,-1,0,-1,-1,0,2,edgeCount
+4,197,243,..\data\topology_zoo\Cogentco.graphml,2,,3,clustered,0.9;-0.3,61,61,27,34,0,61,34,61,61,34,0,edgeCount
+3,197,243,..\data\topology_zoo\Cogentco.graphml,2,,8,clustered,0.9;-0.3,-1,-1,22,-23,0,-1,-23,-1,-1,-23,0,edgeCount
+2,197,243,..\data\topology_zoo\Cogentco.graphml,2,,4,clustered,0.9;-0.3,5,5,5,0,0,5,0,5,5,0,0,edgeCount
+1,197,243,..\data\topology_zoo\Cogentco.graphml,1,,1,clustered,0.9;-0.3,-1,-1,13,-14,0,-1,-14,-1,-1,-14,0,edgeCount

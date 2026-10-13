@@ -1,0 +1,374 @@
+# Erweiterungsleitfaden
+
+## 1. Ziel, Arbeitsort und Geltungsbereich
+
+Dieser Leitfaden beschreibt die Einbindung einfacher Zusatzalgorithmen,
+Fehlermodelle und Graphen. Er beschreibt den aktuellen Basiscode und nennt
+Änderungen, die für eine Erweiterung noch umzusetzen sind. Die Beispiele
+sind nicht bereits im unveränderten Framework registriert.
+
+In einer eigenen Kopie des Schritt-5-Ordners arbeiten. Die Implementierung
+wird dort unter `src/`, in `pipeline.py`, `gui.py`, `evaluation/` und `tests/`
+geändert. `schritt7_erweiterung/` enthält Anleitung und Fragebogen, keinen
+zweiten Experimentkern. Den Ausgangsstand und ursprüngliche Ergebnisse behalten.
+
+Zuerst `../schritt5_pipeline_automatisierung/Dokumentation/README.txt`, danach
+`../schritt5_pipeline_automatisierung/Dokumentation/Modulübersicht.txt` lesen.
+Alle Modulpfade im Folgenden beziehen sich auf den Schritt-5-Ordner.
+
+Die Architektur verwendet unterschiedliche Mechanismen:
+- `GRAPH_BUILDERS`, `GRAPH_PARAMETER_SPECS`, `GRAPH_VALIDATORS`: Graphen registrieren.
+- `EXTRA_ALGORITHM_RUNNERS`: Namen eines Zusatzalgorithmus auf seine Funktion abbilden.
+- `FAILURE_MODEL_SPECS`: Parameter und CSV-Namen beschreiben; die Ausfallauswahl
+  erfolgt zusätzlich über Verzweigungen in `select_failures(...)`.
+
+Erweiterungsmarkierungen finden, aus dem Elternordner von Schritt 5:
+
+```powershell
+Get-ChildItem schritt5_pipeline_automatisierung -Recurse -Filter *.py | Select-String 'Schritt-7'
+```
+
+```bash
+grep -rn --include='*.py' 'Schritt-7' schritt5_pipeline_automatisierung/src schritt5_pipeline_automatisierung/evaluation schritt5_pipeline_automatisierung/pipeline.py schritt5_pipeline_automatisierung/gui.py
+```
+
+Zusätzlich `_render_graph_builder(...)` in `gui.py` ansehen: Neue Grapharten
+benötigen dort einen eigenen Verarbeitungszweig, nicht nur einen sichtbaren Namen.
+
+## 2. Vorgehen und Schutz bestehender Experimente
+
+1. Mit der unveränderten Pilotkonfiguration beginnen und Ergebnisse aufbewahren.
+2. Festlegen, welche Erweiterung und welches Verhalten untersucht werden sollen.
+3. Zuerst den Kern ergänzen, dann CLI/GUI und Plotmetadaten einbinden.
+4. Mit einer neuen, kleinen Konfiguration und neuem Ausgabeordner prüfen.
+5. Bestehende Tests und gezielte neue Tests ausführen.
+6. Dieselbe Basiskonfiguration erneut unabhängig berechnen und Ergebnisse vergleichen.
+7. README, Modulprotokolle, Modulübersicht und Fragebogen ergänzen.
+
+`ALGORITHMS` enthält alle registrierten Verfahren; `BASE_ALGORITHMS` und
+`pipeline.DEFAULT_ALGORITHMS` bestimmen dagegen die sechs Basis-Defaults.
+`DEFAULT_FAILURES` enthält ausdrücklich nur die vier ursprünglichen Kombinationen.
+Pipeline, direkte Experiment-CLI und GUI behalten diese Vorauswahl bei. Neue
+Verfahren laufen erst nach ausdrücklicher Auswahl. Diese Trennung nicht durch
+das Ableiten neuer Defaults aus allen Registry-Einträgen wieder aufheben.
+
+Die sechs ursprünglichen Algorithmen und vier Failure-Kombinationen in den
+alten JSON-Dateien ausdrücklich stehen lassen. Änderungen der Endpunktauswahl
+oder Ausfalllogik nicht unbeabsichtigt auf bestehende Graphtypen übertragen.
+Keine neuen Ergebnisse in abgeschlossene Resume-Ordner schreiben.
+
+## 3. Neuer Algorithmus
+
+### Vertrag der Erweiterungsfunktion
+
+Der Hook ruft `runner(graph, source, destination, failures)` auf:
+- `graph` ist der ursprüngliche ungerichtete NetworkX-Graph. Er wird zwischen
+  Algorithmen geteilt. Für Änderungen immer eine Kopie anlegen.
+- `source` und `destination` sind Knotenkennungen des Graphen. GraphML-Knoten
+  können Strings statt Zahlen sein.
+- `failures` ist ein Iterable aus Kanten mit jeweils zwei Endpunkten. Über
+  `run_algorithms(...)` kommt ein Tupel aus Zweiertupeln an. Beide Richtungen
+  bezeichnen im ungerichteten Graphen dieselbe ausgefallene Kante.
+- Knotenausfälle sind bereits in inzidente Kanten übersetzt. Der Hook erhält
+  keine zusätzliche Liste ausgefallener Knoten.
+- Eingabegraph, Kanten und Endpunkte nicht verändern. Keine ungesetzte globale
+  Zufallsquelle verwenden; der vorhandene Hook hat keinen eigenen RNG-Parameter.
+- Rückgabe ist ein `RoutingResult`, kein nackter Pfad und kein Dictionary.
+
+`RoutingResult` enthält:
+- `algorithm`: exakt der registrierte Name.
+- `success`: ob das Ziel erreicht wurde.
+- `hops`: tatsächlich durchlaufene Kanten einschließlich Rückwegen; bei Fehlschlag -1.
+- `route`: chronologische Liste gerichteter Zweiertupel, beispielsweise `(s, a)`.
+  Eine fehlgeschlagene Route darf einen bereits gelaufenen Teil enthalten.
+- `nr_paths`: Pfadanzahl nach der dokumentierten Konvention des Zusatzalgorithmus.
+- `nr_structures`: Strukturanzahl nach seiner dokumentierten Konvention. Im
+  Basiscode steht hier die Zahl aller erzeugten Strukturen, nicht nur der
+  tatsächlich getesteten. Die aktuelle Rohdaten-CSV schreibt dieses Feld nicht.
+
+Für Algorithmen ohne EDP/NDP-Vorbereitung gibt es keine automatisch passende
+Pfadanzahl. Im folgenden Beispiel wird ein gefundener kürzester Pfad als eine
+Pfadstruktur gezählt, bei Fehlschlag null. Das ist keine EDP-/NDP-Konnektivität.
+Die CSV kennzeichnet Zusatzalgorithmen mit `pathType=<Name>` und `structureType=custom`.
+
+### Beispiel: Shortest Path
+
+Die Funktion in `src/routing_algorithms.py` nach `RoutingResult` und vor
+`EXTRA_ALGORITHM_RUNNERS` einfügen. NetworkX ist dort bereits als `nx` importiert.
+
+```python
+def route_shortest_path(graph, source, destination, failures):
+    remaining = graph.copy()
+    remaining.remove_edges_from(failures)
+    try:
+        path = nx.shortest_path(remaining, source, destination)
+    except (nx.NetworkXNoPath, nx.NodeNotFound):
+        return RoutingResult("shortest_path", False, -1, [], 0, 0)
+    route = list(zip(path, path[1:]))
+    return RoutingResult("shortest_path", True, len(route), route, 1, 1)
+```
+
+In das bestehende Hook-Dictionary eintragen, ohne andere Erweiterungen zu löschen:
+
+```python
+"shortest_path": route_shortest_path,
+```
+
+`ALGORITHMS = BASE_ALGORITHMS + tuple(EXTRA_ALGORITHM_RUNNERS)` bleibt danach
+stehen. Keine nachträgliche Registrierung erst unterhalb der Funktionsdefinitionen:
+Mehrere Defaultargumente übernehmen `ALGORITHMS` schon beim Import.
+Zusatzalgorithmen brauchen keinen eigenen Eintrag im EDP/NDP-Pfadcache.
+
+In `gui.py` das vorhandene `ALGORITHM_LABELS` um `"shortest_path": "Shortest Path"`
+ergänzen. In `evaluation/result_analysis.py` Label und Farbe direkt in die
+bestehenden Dictionaries am Anfang des Moduls eintragen:
+
+```python
+ALGORITHM_LABELS["shortest_path"] = "Shortest Path"
+ALGORITHM_COLORS["shortest_path"] = "#111111"
+```
+
+Die Datei speichern und laufende CLI-/Streamlit-Prozesse neu starten. Bei
+unklaren Imports `pipeline.result_analysis.__file__` kontrollieren. Eine
+fehlende oder ungültige Farbe wird bei Pipeline-Läufen mit Plots bereits vor
+der Berechnung erkannt. Preflight prüft diese Einträge ebenfalls. Direkte
+Aufrufe von `plot_all_comparisons(...)` haben keine eigene Vorabprüfung;
+deshalb weiterhin früh einen kleinen vollständigen Lauf testen.
+
+Der Beispielalgorithmus kennt den gesamten Restgraphen nach den Ausfällen.
+Er ist eine Referenz für vorhandene Verbindungen, kein lokales Fast-Failover-
+Verfahren unter denselben Informationsbedingungen wie die sechs Basisverfahren.
+Erfolgreiche Routen haben additiven Stretch null. Das ist ein Prüfkriterium,
+aber kein Beleg für eine Verbesserung des lokalen Failover-Routings.
+
+## 4. Neues Fehlermodell
+
+### Modell zuerst festlegen
+
+Für `clustered_random_center` vor dem Programmieren dokumentieren:
+- Wird das Zentrum aus dem ganzen Graphen oder nur der Komponente von s gewählt?
+- Welche Kandidaten sind zulässig, wenn neben s und d kein weiterer Knoten existiert?
+- Darf das Zentrum selbst ausfallen? Bleiben s und d geschützt?
+- Welche Kanten zu s, d und Zentrum sind in welcher Runde zulässig?
+- Wird wie bisher aus allen Schichtkandidaten expandiert oder nur aus Ausfällen?
+
+Diese Varianten liefern unterschiedliche Szenen. Es gibt im unveränderten
+Framework noch keine verbindliche Regel für ein zufälliges Zentrum. Die
+Entscheidung darf nicht durch bloßes Ersetzen von `destination` durch `center`
+versteckt werden: `destination` ist bisher gleichzeitig Zentrum und geschützter
+Endpunkt. Zentrum und tatsächliches Routingziel müssen künftig getrennt bleiben.
+
+### Metadaten und Auswahl ergänzen
+
+In `src/failures.py` diesen Eintrag in `FAILURE_MODEL_SPECS` ergänzen:
+
+```python
+"clustered_random_center": {
+    "parameter": "failure_start",
+    "csv_prefix": "clustered_random_center",
+    "uses_failure_count": False,
+    "uses_cluster_parameters": True,
+},
+```
+
+Die Parameter bedeuten dasselbe wie in README Abschnitt 5: Startanteil in der
+ersten Runde, anschließend Subtraktion von failureDrop. Beide Werte liegen
+im aktuellen Clustervertrag in `(0, 1]`. Random-Failure zählt hingegen
+`round(max(k - 1, 0) * failFactor)` Ausfälle und begrenzt auf verfügbare Kandidaten.
+
+Die konkrete Auswahl wird nicht automatisch erzeugt. Neue Hilfsfunktionen und
+zwei Verzweigungen für das neue Modell in `select_failures(...)` ergänzen.
+Dabei gelten folgende Verträge:
+- Mit dem übergebenen `rng` auswählen, nicht mit globalem `random`.
+- Zentrumskandidaten vor `rng.choice(...)` mit `unique_sorted_nodes(...)` sortieren.
+- Kanten bzw. Knoten vor dem Sampling stabil ordnen und Duplikate vermeiden.
+- `validate_cluster_parameters(...)` vor der Schichtschleife aufrufen.
+- `select_failures(...)` gibt immer `(failed_edges, failed_nodes)` zurück.
+- Link-Failure: Liste betroffener Kanten und leere Knotenliste.
+- Node-Failure: ausgefallene Knoten bestimmen und über
+  `node_failures_to_edges(graph, failed_nodes)` in betroffene Kanten übersetzen.
+- Den Eingabegraphen nicht verändern. Schutzregeln für tatsächliches s und d
+  getrennt von der gewählten Zentrumspolitik prüfen.
+
+Das bestehende Modell bleibt `clustered` und arbeitet um d. Es muss nach der
+Erweiterung unverändert auf dieselben Eingaben reagieren. Die genaue neue
+Schleife hängt von den obigen Modellentscheidungen ab; sie ist deshalb hier
+bewusst nicht als angeblich fertige Kopiervorlage angegeben.
+
+### CLI, GUI und Auswertung
+
+In `pipeline.py` unter `FAILURE_COMBINATIONS` ergänzen:
+
+```python
+"clustered_random_center_link": ("clustered_random_center", "link"),
+"clustered_random_center_node": ("clustered_random_center", "node"),
+```
+
+Die entsprechenden sichtbaren Namen in `gui.py` unter `FAILURE_LABELS` ergänzen.
+Die Vorauswahl darf dabei nicht automatisch um neue Failure-Kombinationen wachsen.
+
+`build_configurations(...)` und `configuration_filename(...)` in
+`src/experiment.py` lesen die Metadaten bereits aus `FAILURE_MODEL_SPECS`.
+Die direkte CLI liest die registrierten Modellnamen ebenfalls automatisch.
+Nach Implementierung des Auswahlzweigs ist etwa
+`--failure-model clustered_random_center` möglich. `both` bleibt als Schlüssel
+für genau die beiden Basismodelle `random` und `clustered` reserviert und
+nimmt neue Modelle nicht automatisch auf.
+
+Preflight und normale Pipeline-Läufe verwenden `uses_cluster_parameters` bzw.
+`uses_failure_count` für die Parameterprüfung, auch bei neuen Modellnamen.
+Die Registrierung verlangt genau eine aktive Parameterart und den dazu passenden
+`parameter`-Schlüssel. Diese Metadatenprüfung bestätigt jedoch nicht die
+Implementierung der Auswahlzweige oder deren inhaltliche Korrektheit.
+
+Die Auswertung gruppiert nach Modell und Typ. Für Plot-Titel ersetzt
+`failure_model_label(...)` Unterstriche durch Leerzeichen und schreibt die
+Wortanfänge groß. Die internen Schlüssel und Dateinamen ändern sich nicht.
+Fehlende Algorithmuslabels und ungültige Farben werden sowohl vor Pipeline-
+Experimenten als auch bei direkten Plotaufrufen früh mit `ValueError` abgewiesen.
+
+## 5. Neuer Graph
+
+### Builder und Parametervertrag
+
+Die Signatur lautet `builder(nodes, graph_param, seed)`, Rückgabe ein
+ungerichteter NetworkX-Graph. Vorhandene Builder erzeugen Erdős-Rényi- und
+Random-Regular-Graphen. Passende Einträge in allen drei Graph-Dictionaries
+vorsehen. Validatoren liefern bei gültigen Parametern nichts zurück und lösen
+bei ungültigen Parametern einen `ValueError` mit verständlicher Meldung aus.
+
+Beispieldefinitionen in `src/experiment.py`, vor den Graph-Dictionaries:
+
+```python
+def _create_complete_graph(nodes, graph_param, seed):
+    return nx.complete_graph(int(nodes))
+
+
+def _validate_complete_graph(label, nodes, graph_param):
+    if int(nodes) < 2:
+        raise ValueError(f"{label}: complete_graph needs at least two nodes")
+```
+
+In `GRAPH_BUILDERS` den Schlüssel `complete_graph` mit `_create_complete_graph`
+verbinden. `GRAPH_PARAMETER_SPECS` erhält dazu `{"config_key": None, "cast": str}`
+und `GRAPH_VALIDATORS` den Validator `_validate_complete_graph`.
+`GRAPH_TYPES` wird aus den Buildern gebildet; die Pipeline übernimmt die Auswahl.
+Für Graphen ohne weiteren Parameter bleibt `graphParam` standardmäßig leer.
+Der vollständige Graph ignoriert `graph_param` und `seed`; seine Topologie
+ändert sich bei festem n nicht. Zufällige Endpunkte und Ausfälle sind davon getrennt.
+
+### Endpunktauswahl ist eine eigene Modelländerung
+
+`choose_endpoints(...)` akzeptiert bisher nur verbundene, nicht direkt
+benachbarte Knotenpaare. In einem vollständigen Graphen existiert kein solches
+Paar. Nur den Builder zu registrieren reicht für einen Experimentlauf nicht.
+
+Für den neuen Graphtyp in `GRAPH_ENDPOINT_SELECTORS` ausdrücklich eintragen:
+
+```python
+"complete_graph": choose_complete_graph_endpoints,
+```
+
+Die vorhandene Hilfsfunktion akzeptiert nur vollständige einfache ungerichtete
+Graphen mit mindestens zwei Knoten. Sie wählt mit dem übergebenen RNG aus
+stabil sortierten Paaren. Der Experimentgenerator ruft die Registry über
+`choose_graph_endpoints(...)` auf. Ohne eigenen Eintrag bleibt die bisherige
+nicht benachbarte Auswahl erhalten. Im Basiscode ist die Registry leer;
+der vollständige Graph wird nicht automatisch als neues Dataset registriert.
+Eigene Selektoren haben die Signatur `(graph, rng)` und müssen unterschiedliche,
+verbundene Endpunkte liefern, ohne den Graphen zu verändern.
+Ein globaler Fallback bei leerer Kandidatenliste wäre falsch: Er könnte auch
+bisherige Erdős-Rényi- oder GraphML-Szenen verändern.
+
+Als Regressionstest prüfen: Ein vollständiger Graph benötigt seine neue
+Regel, der bisherige Graphgenerator behält dagegen seine bisherige Auswahl
+bzw. sein bisheriges Verhalten bei fehlenden Kandidaten. Den Unterschied
+nicht durch einen allgemeinen Fallback verdecken.
+
+### Eigener GUI-Zweig
+
+`GRAPH_TYPE_LABELS` bestimmt nur die sichtbaren Optionen. In
+`_render_graph_builder(...)` behandelt `random_erdos` und `real_world` ausdrücklich.
+Unbekannte Typen zeigen eine Fehlermeldung ohne Speichermöglichkeit. Für `complete_graph`
+sind deshalb alle folgenden Schritte nötig:
+1. Ein sichtbarer Eintrag in `GRAPH_TYPE_LABELS`.
+2. Eine Builder-Funktion nach dem Muster von `build_gui_random_dataset(...)`,
+   die `type=synthetic`, `graph_type=complete_graph`, `nodes` und die Failure-
+   Parameter speichert; keine `graphml`-Datei und kein erforderliches `p`.
+3. Ein ausdrücklicher eigener Zweig in `_render_graph_builder(...)` mit n,
+   beiden Failure-Bereichen und failureDrop; eindeutige Widget-Schlüssel.
+4. Speichern über `_append_graph(...)` und Prüfung der erzeugten JSON.
+5. Den Schutz für unbekannte Werte beibehalten; keine allgemeine `else`-
+   Verzweigung für Real-World einführen.
+
+Tests müssen den tatsächlich gespeicherten Dataset-Typ prüfen, nicht nur
+feststellen, dass ein neuer Name in der Auswahl sichtbar ist.
+
+## 6. Beispielkonfiguration nach Umsetzung aller drei Erweiterungen
+
+Erst nach den obigen Implementierungs- und Modellentscheidungen eine neue Datei
+unter `schritt5_pipeline_automatisierung/config/extension_test.json` anlegen:
+
+```json
+{
+  "run_name": "extension_test",
+  "runs": 5,
+  "seed": 123,
+  "resume": true,
+  "algorithms": ["shortest_path"],
+  "failures": ["clustered_random_center_link", "clustered_random_center_node"],
+  "metrics": ["resilience", "avgHops", "avgStretch"],
+  "datasets": [{
+    "name": "complete_n25",
+    "display_name": "Vollständiger Graph n=25",
+    "type": "synthetic",
+    "graph_type": "complete_graph",
+    "nodes": 25,
+    "fail_factors": [1.0],
+    "failure_starts": [0.3, 0.6, 0.9],
+    "failure_drop": 0.3
+  }]
+}
+```
+
+## 7. Prüfungen und Dokumentation
+
+Aus dem Elternordner von Schritt 5; alle Befehle sind einzeilig und funktionieren
+in PowerShell und Bash bei aktivierter geeigneter Python-Umgebung:
+
+```text
+python -m unittest discover -s schritt5_pipeline_automatisierung/tests -p "test_*.py" -v
+python schritt5_pipeline_automatisierung/pipeline.py --config schritt5_pipeline_automatisierung/config/pilot.json --preflight
+python schritt5_pipeline_automatisierung/pipeline.py --config schritt5_pipeline_automatisierung/config/extension_test.json --preflight
+python schritt5_pipeline_automatisierung/pipeline.py --config schritt5_pipeline_automatisierung/config/extension_test.json --run-name extension_check
+```
+
+Die letzten beiden Befehle setzen die selbst angelegte Beispielkonfiguration
+und alle Erweiterungen voraus. Preflight allein ersetzt keinen vollständigen Lauf.
+
+Gezielte neue Tests und Regressionstests:
+- Algorithmus akzeptiert; Erfolg bei Restpfad, Fehlschlag ohne Restpfad;
+  keine ausgefallene Kante in der Route, Eingabegraph unverändert.
+- Shortest Path: Hops gleich Restpfadlänge, Stretch bei Erfolg null.
+- Neues Fehlermodell: Zentrumsauswahl, leere Kandidaten, Parametergrenzen,
+  Endpunktschutz, Knotenausfälle korrekt in Kanten übersetzt, Seed-Wiederholung.
+- Vollständiger Graph: n Knoten und n*(n-1)/2 Kanten; neue Endpunktregel aktiv;
+  alte Graphtypen und deren Endpunktregel unverändert.
+- CLI und GUI: neue Optionen nur ausdrücklich ausgewählt; alte Basis-Defaults
+  weiterhin sechs Algorithmen und vier Failure-Kombinationen.
+- Neuer GUI-Graph: synthetisches Dataset statt versehentlich GraphML gespeichert.
+- Auswertung: neue Labels/Farben, vollständige CSV und mindestens ein PNG/SVG-Paar.
+- Zwei frische Laufordner mit gleicher Konfiguration und gleichem Seed vergleichen;
+  Resume darf nicht lediglich vorhandene Daten wiederverwenden.
+
+Zeitstempel und Ausgabepfade unterscheiden sich in den Metadaten erwartungsgemäß.
+Für Ergebnisgleichheit entsprechende Rohdaten und numerische Summary-Inhalte
+vergleichen. Die vorhandenen Unit-Tests sichern nicht automatisch jede neue
+Erweiterung ab; dazu eigene Tests, etwa `tests/test_extensions.py`, ergänzen.
+
+Danach README, betroffene Modulprotokolle und Modulübersicht nachziehen:
+Neue Parameter, Schutzregeln, Rückgabekonventionen, unterstützte CLI-/GUI-Wege
+und notwendige Tests beschreiben. Ein neues Modell ist nicht automatisch ein
+Ersatz des alten. Versionen, verwendete Hilfe und tatsächlich durchgeführte
+Prüfungen festhalten. Ursprüngliche ausgefüllte Fragebögen nicht nachträglich ändern.
+

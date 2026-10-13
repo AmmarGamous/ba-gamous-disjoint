@@ -1,0 +1,166 @@
+kResiliencePaths.py
+
+schritt3_knoten_disjunkte_pfade/src/kResiliencePaths.py
+
+1. Zweck der Datei:
+Diese Datei ist der zentrale Experimentgenerator für Schritt 3. 
+Sie erweitert die bisherige Pfadlogik um Node-Disjoint Paths (NDPs), behält Edge-Disjoint
+Paths (EDPs) als Vergleichsbasis bei und erzeugt die CSV-Dateien für die spätere Notebook-Auswertung.
+Die Notebooks erzeugen keine Experimentdaten. Alle CSV-Dateien entstehen hier.
+
+2. Node-Disjoint Paths:
+Die eigentliche NDP-Erweiterung liegt in getNodeDisjointPaths(g, s, d).
+Dort wird networkx.node_disjoint_paths(g, s, d) verwendet.
+Die berechneten Pfade dürfen Quelle s und Ziel d gemeinsam verwenden.
+Innere Knoten dürfen sie nicht teilen. Die Pfade werden nach Länge sortiert, damit
+beim Routing zuerst kurze Pfade versucht werden.
+Die Funktion kResiliencePaths(...) ruft die gemeinsame Routinglogik mit
+getNodeDisjointPaths(...) auf. 
+Dadurch ist kResiliencePaths(...) in Schritt 3 die NDP-Variante.
+
+3. Edge-Disjoint Paths als Baseline:
+Die EDP-Baseline liegt in getEdgeDisjointPaths(g, s, d), kResilienceEdgeDisjointPaths(s, d, fails, g).
+Hier wird networkx.edge_disjoint_paths(...) verwendet. 
+Die EDPs dienen nur zum Vergleich. Beide Verfahren bekommen im Experiment dieselben Ausfälle.
+
+4. Gemeinsame Routinglogik:
+Die Funktion routeDisjointPaths(...) enthält die gemeinsame Logik für NDP und EDP:
+- Der Graph wird kopiert.
+- Jede Kante erhält zunächst das Attribut "0".
+- Jede Kante eines vorberechneten Pfades bekommt eine Pfadnummer.
+- Die Pfadnummern legen die Reihenfolge fest, in der die Pfade getestet werden.
+Die Funktion routing_kResiliencePaths(...) entfernt danach die ausgefallenen Kanten
+und die Kanten, die zu keinem vorberechneten Pfad gehören.
+Anschließend wird pfadweise geprüft, ob Quelle und Ziel noch verbunden sind.
+Wenn das Ziel erreicht wird, wird die Hop-Anzahl zurückgegeben. 
+Wenn kein Pfad funktioniert, wird -1 zurückgegeben.
+
+5. Link Failures und Node Failures:
+Link Failures:
+Ausgefallene Links werden direkt als Kantenliste an das Routing übergeben.
+Node Failures:
+Das Routing arbeitet intern mit Kanten. Deshalb werden ausgefallene Knoten in
+nodeFailuresToEdgeFailures(...) in die Menge aller inzidenten Kanten umgewandelt. 
+Ein ausgefallener Knoten wird dadurch so behandelt, als wären alle
+seine angrenzenden Kanten gesperrt.
+Quelle und Ziel werden bei Node Failures geschützt.
+
+6. Random Failures:
+Random Failures werden in selectFailures(...) erzeugt.
+Bei Random Link Failures werden zufällige Kanten ausgewählt.
+Bei Random Node Failures werden zufällige Knoten ausgewählt, außer Quelle und Ziel.
+Die Anzahl der Ausfälle wird in createExperimentRow(...) berechnet:
+nrFailures = round((nrNDPs - 1) * failFactor)
+Der Failure Factor steuert also die Anzahl der zufälligen Ausfälle.
+
+7. Clustered Failures:
+Clustered Link Failures:
+getClusteredLinkFailures(...) startet bei den inzidenten Kanten des Zielknotens
+und erweitert die Kandidaten schichtweise nach außen.
+Clustered Node Failures:
+getClusteredNodeFailures(...) startet bei den Nachbarknoten des Zielknotens und
+erweitert die Kandidaten schichtweise über Nachbarn.
+Parameter:
+- failureStart: Anteil der ersten Schicht
+- failureDrop: Verringerung des Anteils pro weiterer Schicht
+
+failureStart ist keine feste Ausfallanzahl. Die tatsächliche Zahl der Ausfälle
+hängt von der lokalen Graphstruktur ab. Deshalb wird nrFails in der CSV
+gespeichert.
+
+8. Unterstützte Graphen:
+Synthetische Graphen:
+- random_regular
+- erdos_renyi
+Real-World-Graphen:
+- GraphML-Dateien über --graphml
+- optionale Beschriftung über --graph-name
+Bei GraphML wird dieselbe Topologie in jeder Wiederholung verwendet.
+Bei synthetischen Graphen wird pro Wiederholung eine neue Instanz erzeugt.
+
+9. CSV-Erzeugung:
+runExperiments(...) schreibt pro Experimentkonfiguration genau eine CSV-Datei.
+Eine Konfiguration bedeutet:
+- ein Fehlertyp: link oder node
+- ein Failure-Modell: random oder clustered
+- ein Failure Factor oder ein Failure Start
+Bei --failure-type both werden Link- und Node-Reihen erzeugt.
+Bei mehreren Failure Factors oder Failure Starts entsteht jeweils eine eigene CSV-Datei.
+Wichtige CSV-Spalten:
+- rep
+- failureType
+- failureModel
+- nrNodes, nrEdges
+- graphType, graphParam, graphName, graphMLPath
+- source, destination
+- nrEDPs, nrNDPs
+- failFactor
+- failureStart, failureDrop
+- nrFails, nrFailedNodes
+- spLength
+- hopsEDP, stretchEDP
+- hopsNDP, stretchNDP
+
+10. Gepaarte Instanzen:
+Für faire Vergleiche werden Parameterreihen mit demselben Seed erzeugt.
+Dadurch werden Graph, Quelle, Ziel, nrEDPs und nrNDPs über verschiedene Failure Factors
+bzw. Failure Starts hinweg möglichst konsistent gehalten.
+Bei gleichen Graphparametern und gleicher Seed-Verwendung entstehen dadurch gepaarte Reihen.
+Das ist wichtig, weil Unterschiede in den Plots dann nicht durch andere Graphinstanzen verursacht werden.
+
+11. Kommandozeilenparameter:
+Wichtige Parameter:
+
+--runs
+Anzahl Wiederholungen pro CSV.
+
+--failure-type
+link, node oder both.
+
+--failure-model
+random oder clustered.
+
+--graph-type
+random_regular oder erdos_renyi.
+
+--p
+Kantenwahrscheinlichkeit für Erdos-Renyi-Graphen.
+
+--graphml
+Pfad zu einer GraphML-Datei für Real-World-Graphen.
+
+--graph-name
+Name der Real-World-Topologie in der CSV.
+
+--fail-factor
+Liste von Failure Factors für Random Failures.
+
+--failure-start
+Liste von Startwerten für Clustered Failures.
+
+--failure-drop
+Abnahme pro Cluster-Schicht.
+
+--seed
+Seed für reproduzierbare und gepaarte Reihen.
+
+12. Prüfung:
+Die Datei wurde mit den Unit-Tests geprüft:
+python -m unittest discover -s schritt3_knoten_disjunkte_pfade/evaluation -p "test_*.py" -v
+Geprüft wird unter anderem:
+- NDPs teilen keine inneren Knoten.
+- Routing fällt auf alternative NDPs zurück.
+- EDP und NDP laufen auf derselben Instanz.
+- Random und Clustered Link/Node Failures werden korrekt gespeichert.
+- Erdos-Renyi-Parameter und GraphML-Metadaten werden korrekt geschrieben.
+Aktueller Teststand:
+Zum Zeitpunkt der Prüfung liefen 19 Tests erfolgreich.
+
+13. Ergebnis:
+kResiliencePaths.py erfüllt die Generatorrolle für Schritt 3:
+- NDPs sind implementiert.
+- EDP bleibt als Baseline vorhanden.
+- Link und Node Failures sind abgedeckt.
+- Random und Clustered Failure-Modelle sind abgedeckt.
+- Random Graphs und Real-World Graphs können erzeugt beziehungsweise geladen werden.
+- CSV-Dateien werden vollständig außerhalb der Notebooks erzeugt.

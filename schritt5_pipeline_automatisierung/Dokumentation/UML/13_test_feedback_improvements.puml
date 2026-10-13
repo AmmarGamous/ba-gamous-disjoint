@@ -1,0 +1,16 @@
+@startuml
+!include _style.iuml
+start
+partition "Eingabe: tests/test_feedback_improvements.py" {
+  :unittest lädt Feedback-Regressionstests\nTemporäre Konfigurationen, Graphdateien\nund isolierte Testregistrierungen;
+}
+partition "Prüfungen (unabhängige Testmethoden)" {
+  :Erweiterungen und Vorabprüfungen\nAlte Defaults, neue CLI-Modellnamen,\nPlotmetadaten und explizite Endpunktregeln prüfen;
+  :Ergebnisprüfung und Metadaten\nVollständig fehlende Parametergruppen erkennen\nEffektive Overrides in gespeicherter Konfiguration prüfen\nManifest, Pakete und Prüfsummen kontrollieren;
+  :Ausführung und Wiederholung\nFortschrittsmeldungen prüfen\nUnterbrechen + Resume mit frischem Lauf vergleichen\nImport- und Versionsfehler prüfen;
+}
+partition "Ausgabe" {
+  :unittest-Bericht\nTestregistrierungen und temporäre Dateien aufräumen;
+}
+stop
+@enduml

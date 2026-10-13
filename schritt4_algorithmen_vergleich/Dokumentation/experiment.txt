@@ -1,0 +1,83 @@
+experiment.py
+	
+Datei: schritt4_algorithmen_vergleich/src/experiment.py
+
+1. Aufgabe des Moduls:
+experiment.py ist der zentrale Experimentgenerator für Schritt 4.
+Das Modul erzeugt synthetische oder aus GraphML geladene Graphinstanzen, wählt Quelle und Ziel, 
+erzeugt Link- oder Knotenausfälle und schreibt die Ergebnisse aller
+ausgewählten Routingalgorithmen in das lange CSV-Format.
+Das Modul verbindet damit:
+- Graph-Erzeugung bzw. GraphML-Laden,
+- Failure-Auswahl,
+- Ausführung der sechs Algorithmen,
+- CSV-Ausgabe,
+- Resume-Mechanismus für Serverläufe.
+
+2. Wichtige Funktionen:
+shortest_path_after_failures()
+    Berechnet die kürzeste Restpfadlänge nach Entfernen der ausgefallenen Kanten.
+    Dieser Wert wird später zur Stretch-Berechnung genutzt.
+
+create_instance_rows()
+    Führt alle ausgewählten Algorithmen auf derselben Instanz aus und erzeugt pro Algorithmus genau eine CSV-Zeile.
+
+write_rows()
+    Schreibt Ergebniszeilen im langen CSV-Format.
+    Dieses Format ist die Grundlage für alle Notebooks.
+
+create_graph()
+    Erzeugt synthetische Graphen, aktuell Erdos-Renyi und random regular.
+
+choose_endpoints()
+    Wählt ein verbundenes, nicht direkt benachbartes Quelle-Ziel-Paar.
+
+build_configurations()
+    Erzeugt alle Kombinationen aus Failure-Typ, Failure-Modell und Parameter.
+
+configuration_filename()
+    Erzeugt reproduzierbare Dateinamen für jede Konfiguration.
+
+completed_rep_prefix()
+    Prüft, wie viele Wiederholungen in einer CSV vollständig vorhanden sind.
+
+truncate_to_completed_reps()
+    Entfernt bei --resume eine unvollständige letzte Wiederholung.
+
+run_experiment_series()
+    Hauptfunktion für Pilot- und Serverläufe. Sie erzeugt gepaarte Instanzen,
+    wählt Ausfälle und schreibt die CSV-Dateien.
+
+parse_args()
+    Definiert die Kommandozeilenoptionen.
+
+run_from_args()
+    Übersetzt CLI-Argumente in einen Aufruf von run_experiment_series().
+
+3. Parameterlogik:
+Random Failures:
+    Die Failure Rate wird intern als failFactor gespeichert.
+    Die Anzahl der Ausfälle skaliert mit der lokalen Pfadkonnektivität:
+    - Link Failures: abhängig von der Anzahl EDPs
+    - Node Failures: abhängig von der Anzahl NDPs
+Clustered Failures:
+    Die Failure Rate wird intern als failureStart gespeichert.
+    failureDrop reduziert die Ausfallwahrscheinlichkeit pro weiterer Schicht.
+
+4. Resume-Verhalten:
+Mit --resume werden vorhandene CSV-Dateien geprüft.
+ Vollständige Wiederholungen werden behalten. 
+Eine teilweise geschriebene letzte Wiederholung wird entfernt
+und anschließend reproduzierbar neu berechnet.
+Wichtig:
+- Für Resume muss derselbe Befehl mit demselben Seed und demselben Output-Ordner verwendet werden.
+- Ohne --resume werden die betroffenen CSV-Dateien neu geschrieben.
+
+5. Nutzung:
+Das Modul wird direkt auf dem Server/Rechner(lokal) verwendet:
+    python schritt4_algorithmen_vergleich/src/experiment.py ...
+Außerdem wird es in den Pilotabschnitten der Hauptnotebooks genutzt.
+
+6. Prüfstatus:
+Die Funktionen werden durch test_routing_algorithms.py indirekt und direkt geprüft. 
+Der letzte Testlauf war erfolgreich.

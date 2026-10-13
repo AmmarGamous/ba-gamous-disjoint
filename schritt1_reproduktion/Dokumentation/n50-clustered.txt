@@ -1,0 +1,21 @@
+Überarbeitung von n50-clustered und Anpassung an die aktuelle Projektstruktur
+
+Durchgeführte Änderungen:
+
+1. Anpassung der Dateipfade:
+   Der bisherige relative Pfad CSVs/n50-clustered/ wurde auf die aktuelle Projektstruktur ../../../../external/TREE/evaluation/output/ umgestellt, damit das Notebook aus dem Ordner evaluation/notebooks/resilience korrekt auf die erzeugten CSV-Dateien der extern eingebundenen TREE-Referenzimplementierung zugreift.
+
+2. Korrektur der CSV-Datei für Failure Rate 0.8:
+   Der bisher verwendete Dateiname trees-2021-09-05_18-46-22-p0.15-n50-f0.8.csv wurde durch den tatsächlich vorhandenen Dateinamen trees-2021-09-05_18-46-22-p0.15-n50-f0.7999999999999999.csv ersetzt. Dadurch kann die Datei korrekt eingelesen werden.
+
+3. Korrektur der CSV-Datei für Failure Rate 0.9:
+   analog zu (2) mit trees-2021-09-05_18-46-42-p0.15-n50-f0.8999999999999999.csv.
+
+4. Korrektur der y-Achsen-Beschriftung:
+   In der Plot-Erzeugung wurde der fehlerhafte Matplotlib-Aufruf plt.yblabel('Average Hops') durch plt.ylabel('Average Hops') ersetzt. Dadurch wird die y-Achse im Average-Hops-Plot korrekt beschriftet.
+
+5. Beibehaltung der x-Achsen-Werte:
+   Die Liste xVals bleibt weiterhin [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]. Obwohl die Dateinamen intern die Werte 0.7999999999999999 und 0.8999999999999999 enthalten, werden die Messpunkte im Plot weiterhin fachlich korrekt als 0.8 und 0.9 dargestellt.
+
+6. Kontrolle der Berechnungslogik:
+   Die zentrale Auswertungsfunktion allInOne wurde nicht verändert. Die Berechnung von Resilience und Average Hops für EDPs, One Tree und Multiple Trees bleibt daher identisch zur alten Version.

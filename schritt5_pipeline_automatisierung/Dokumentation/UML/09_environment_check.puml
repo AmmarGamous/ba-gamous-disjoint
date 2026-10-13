@@ -1,0 +1,35 @@
+@startuml
+!include _style.iuml
+start
+partition "Eingabe" {
+  :check_dependencies(modules, gui=False)\nListe der zu importierenden Bibliotheken;
+  note right
+    pipeline.py: NetworkX, Pandas, Matplotlib.
+    experiment.py: NetworkX.
+    gui.py: zusätzlich Streamlit.
+  end note
+}
+partition "Verarbeitung: environment_check.py" {
+  if (Python mindestens 3.10?) then (nein)
+    :RuntimeError mit Versions- und Installationshinweis;
+    stop
+  endif
+  while (Weiteres angefordertes Modul?) is (ja)
+    :importlib.import_module() ausführen;
+    if (ImportError oder OSError?) then (ja)
+      :RuntimeError mit Anleitung zur Installation\nüber Dokumentation/requirements.txt;
+      stop
+    endif
+  endwhile (nein)
+}
+partition "Ausgabe" {
+  :Erfolgreiche Rückkehr ohne Wert (None)\nDer aufrufende Programmteil kann fortfahren;
+}
+note right
+  Keine automatische Installation.
+  Kein Abgleich mit allen festgelegten Paketversionen.
+  Die Referenzpakete benötigen Python 3.11;
+  die Code-Mindestversion ist 3.10.
+end note
+stop
+@enduml

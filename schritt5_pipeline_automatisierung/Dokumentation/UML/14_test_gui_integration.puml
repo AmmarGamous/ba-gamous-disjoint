@@ -1,0 +1,27 @@
+@startuml
+!include _style.iuml
+start
+partition "Eingabe: tests/test_gui_integration.py" {
+  :unittest lädt GuiIntegrationTest;
+}
+if (Streamlit installiert?) then (nein)
+  :Tests als übersprungen melden;
+  stop
+endif
+partition "Drei unabhängige Streamlit-AppTests" {
+  :AppTest startet die Oberfläche ohne externen Browser;
+  :Unbekannte Graphart\nErwartete Fehlermeldung statt Real-World-Fallback prüfen;
+  :Standardauswahl\nZusatzalgorithmen und Fehlermodelle registrieren\nBestehende Vorauswahl muss erhalten bleiben;
+  :Pilotlauf\n1 Dataset, 1 Wiederholung, 6 Algorithmen,\n4 Failure-Kombinationen mit je einem Parameter\nExperiment starten und Ergebnisse prüfen;
+}
+partition "Ausgabe" {
+  :unittest-Bericht\nPilot: 4 Rohdaten-CSVs, 24 Plotdateien, Manifest\nFortschrittsanzeige am Ende 100 Prozent;
+}
+note right
+  Keine erneute Nutzerevaluation und
+  kein visueller Test im Browser.
+  Die Dateien entstehen in einem
+  temporären Ausgabeordner.
+end note
+stop
+@enduml

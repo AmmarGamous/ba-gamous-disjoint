@@ -1,0 +1,77 @@
+routing_algorithms.py
+
+Datei: schritt4_algorithmen_vergleich/src/routing_algorithms.py
+
+1. Aufgabe des Moduls:
+routing_algorithms.py enthält den algorithmischen Kern von Schritt 4.
+Das Modul bildet die sechs Kombinationen aus Pfadtyp und Strukturtyp ab:
+- edp_paths
+- edp_one_tree
+- edp_multiple_trees
+- ndp_paths
+- ndp_one_tree
+- ndp_multiple_trees
+Die Berechnung der EDPs/NDPs nutzt NetworkX.
+Die Baumkonstruktion, Trunkierung und Routinglogik sind lokal implementiert.
+
+2. Klassen:
+RoutingStructure
+    Datenklasse für eine einzelne Pfad- oder Baumstruktur. 
+    Enthält den Graphen ohne Zielknoten d, den ursprünglichen Pfad,
+    mögliche exits nach d und das Kennzeichen, ob es sich um einen Baum handelt.
+
+RoutingResult
+    Datenklasse für das Ergebnis eines Algorithmus auf einer Failure-Instanz.
+    Enthält Erfolg, Hops, Route, Anzahl Pfade und Anzahl Strukturen.
+
+3. Wichtige Funktionen:
+get_disjoint_paths()
+    Berechnet EDPs oder NDPs und sortiert sie deterministisch.
+
+_edge_key()
+    Normalisiert eine ungerichtete Kante.
+
+_base_tree()
+    Erzeugt den Ausgangspfad ohne Zielknoten d.
+
+_grow_tree()
+    Erweitert einen Pfad deterministisch zu einem Baum ohne Zyklen.
+
+truncate_tree()
+    Implementiert die Trunkierung: Es bleiben nur Äste erhalten, die zu einem erreichbaren Ausgang Richtung d führen.
+
+build_structures()
+    Konstruiert je nach Strukturtyp Paths, One Tree oder Multiple Trees.
+
+_rooted_children()
+    Wurzelt eine Struktur bei s und bereitet die Kindbeziehungen für das Routing vor.
+
+_distance_to_exit()
+    Berechnet die Distanz zum nächsten exit und dient der ranked-depth-first-Sortierung.
+
+route_structure()
+    Führt das Routing auf einer einzelnen Struktur aus.
+
+route_algorithm()
+    Führt einen der sechs Algorithmen auf einer Instanz aus.
+
+run_algorithms()
+    Führt mehrere Algorithmen mit identischen Pfaden und identischen Ausfällen aus.
+
+4. Paperbezug:
+Die Baumvarianten orientieren sich an der Methodik des TREE-Papers:
+- One Tree erweitert nur den längsten Pfad.
+- Multiple Trees erweitert alle Pfade, längste zuerst.
+- Das Ziel d wird nicht als normaler Baumknoten gespeichert.
+- Redundante Äste werden trunkiert.
+
+5. Prüfstatus:
+Abgesichert durch RoutingAlgorithmsTest, insbesondere:
+- test_one_tree_extends_only_longest_path
+- test_truncation_removes_branch_without_exit_to_destination
+- test_multiple_trees_are_edge_disjoint
+- test_path_routing_counts_return_to_source_before_fallback
+Letzter Testlauf:
+
+    Ran 15 tests
+    OK

@@ -1,0 +1,83 @@
+Schritt 3: Serverbefehle für paper-nahe Random Graphs
+
+Ausführung vom Repository-Root in einer Linux-Shell:
+
+PYTHON=python3
+
+Alternativ mit virtueller Umgebung:
+
+PYTHON=venv/bin/python
+
+Jeder Aufruf erzeugt Link- und Node-Failure-Reihen gemeinsam.
+Die Graphen werden technisch mit --graph-type erdos_renyi erzeugt, aber in den
+Plots paper-nah als Random Graphs bezeichnet.
+
+
+1. Random Failures: n=25, p=0.15
+
+$PYTHON schritt3_knoten_disjunkte_pfade/src/kResiliencePaths.py \
+  --runs 1000 --failure-type both --failure-model random \
+  --graph-type erdos_renyi --nodes 25 --p 0.15 \
+  --fail-factor $(seq 0.8 0.8 8.8) --seed 123 \
+  --output-dir schritt3_knoten_disjunkte_pfade/src/output_ndp_edp_er_random_n25_p015_runs1000
+
+
+2. Random Failures: n=50, p=0.15
+
+$PYTHON schritt3_knoten_disjunkte_pfade/src/kResiliencePaths.py \
+  --runs 1000 --failure-type both --failure-model random \
+  --graph-type erdos_renyi --nodes 50 --p 0.15 \
+  --fail-factor $(seq 0.8 0.8 16.8) --seed 123 \
+  --output-dir schritt3_knoten_disjunkte_pfade/src/output_ndp_edp_er_random_n50_p015_runs1000
+
+
+3. Random Failures: n=100, p=0.02
+
+$PYTHON schritt3_knoten_disjunkte_pfade/src/kResiliencePaths.py \
+  --runs 1000 --failure-type both --failure-model random \
+  --graph-type erdos_renyi --nodes 100 --p 0.02 \
+  --fail-factor $(seq 0.8 0.8 49.6) --seed 123 \
+  --output-dir schritt3_knoten_disjunkte_pfade/src/output_ndp_edp_er_random_n100_p002_runs1000
+
+
+4. Clustered Failures: n=25, p=0.15
+
+$PYTHON schritt3_knoten_disjunkte_pfade/src/kResiliencePaths.py \
+  --runs 1000 --failure-type both --failure-model clustered \
+  --graph-type erdos_renyi --nodes 25 --p 0.15 \
+  --failure-start 0.3 0.4 0.5 0.6 0.7 0.8 0.9 \
+  --failure-drop 0.3 --seed 123 \
+  --output-dir schritt3_knoten_disjunkte_pfade/src/output_ndp_edp_er_clustered_n25_p015_runs1000
+
+
+5. Clustered Failures: n=50, p=0.15
+
+$PYTHON schritt3_knoten_disjunkte_pfade/src/kResiliencePaths.py \
+  --runs 1000 --failure-type both --failure-model clustered \
+  --graph-type erdos_renyi --nodes 50 --p 0.15 \
+  --failure-start 0.3 0.4 0.5 0.6 0.7 0.8 0.9 \
+  --failure-drop 0.3 --seed 123 \
+  --output-dir schritt3_knoten_disjunkte_pfade/src/output_ndp_edp_er_clustered_n50_p015_runs1000
+
+
+6. Clustered Failures: n=100, p=0.02
+
+$PYTHON schritt3_knoten_disjunkte_pfade/src/kResiliencePaths.py \
+  --runs 1000 --failure-type both --failure-model clustered \
+  --graph-type erdos_renyi --nodes 100 --p 0.02 \
+  --failure-start 0.3 0.4 0.5 0.6 0.7 0.8 0.9 \
+  --failure-drop 0.3 --seed 123 \
+  --output-dir schritt3_knoten_disjunkte_pfade/src/output_ndp_edp_er_clustered_n100_p002_runs1000
+
+
+Erwartete Ausgaben
+
+Random:
+- n=25: 11 Faktoren x 2 Fehlertypen = 22 CSV-Dateien
+- n=50: 21 Faktoren x 2 Fehlertypen = 42 CSV-Dateien
+- n=100: 62 Faktoren x 2 Fehlertypen = 124 CSV-Dateien
+
+Clustered:
+- je Graph 7 Startwerte x 2 Fehlertypen = 14 CSV-Dateien
+
+Jede CSV-Datei muss 1000 Datenzeilen enthalten.

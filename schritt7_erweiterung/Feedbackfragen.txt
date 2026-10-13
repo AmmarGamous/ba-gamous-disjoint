@@ -1,0 +1,218 @@
+# Feedbackfragen: Erweiterbarkeit
+
+Ziel:
+Das Framework soll von einer anderen Person erweitert werden können. Getestet
+werden soll, ob ein einfaches neues Fehlermodell, ein neuer Graph und ein neuer
+Algorithmus nachvollziehbar ergänzt werden können.
+
+Beispiel-Erweiterungen:
+- Fehlermodell: Clustered-Ausfälle um einen zufälligen Knoten statt um `d`
+- Algorithmus: einfacher kürzester Pfad
+- Graph: vollständiger Graph aus NetworkX
+
+Bitte nutze den Erweiterungsleitfaden `ERWEITERUNG.txt`
+und notiere, an welchen Stellen du unsicher warst.
+
+## Angaben zur testenden Person
+
+Name:
+
+Studiengang / Rolle:
+
+Betriebssystem:
+
+Python-Version:
+
+Datum:
+
+Welche Erweiterung hast du getestet?
+
+## Einstieg
+
+1. War aus der Aufgabenbeschreibung klar, was erweitert werden soll?
+
+Antwort:
+
+2. War klar, dass die Erweiterung auf der Umgebung aufbaut?
+
+Antwort:
+
+3. War klar, welche Dokumentation du zuerst lesen sollst?
+
+Antwort:
+
+4. War `ERWEITERUNG.txt` verständlich aufgebaut?
+
+Antwort:
+
+## Orientierung im Code
+
+5. War klar, in welcher Datei du mit einem neuen Algorithmus beginnen musst?
+
+Antwort:
+
+6. War klar, in welcher Datei du mit einem neuen Fehlermodell beginnen musst?
+
+Antwort:
+
+7. War klar, in welcher Datei du mit einem neuen Graphen beginnen musst?
+
+Antwort:
+
+8. Waren die Kommentare mit `Schritt-7-Erweiterungspunkt` hilfreich?
+
+Antwort:
+
+9. Konntest du die relevanten Erweiterungsstellen schnell finden?
+
+Antwort:
+
+10. Welche Datei war am schwierigsten zu verstehen?
+
+Antwort:
+
+## Neuer Algorithmus
+
+11. Falls du den Algorithmus erweitert hast: War der Hook
+    `EXTRA_ALGORITHM_RUNNERS` verständlich?
+
+Antwort:
+
+12. War klar, welches Format ein neuer Algorithmus zurückgeben muss?
+
+Antwort:
+
+13. War die Klasse `RoutingResult` ausreichend verständlich dokumentiert?
+
+Antwort:
+
+14. War klar, dass für Plot-Legenden und Farben zusätzlich
+    `evaluation/result_analysis.py` angepasst werden muss?
+
+Antwort:
+
+15. Welche Stelle beim Algorithmus war unklar?
+
+Antwort:
+
+## Neues Fehlermodell
+
+16. Falls du ein Fehlermodell erweitert hast: War `FAILURE_MODEL_SPECS`
+    verständlich?
+
+Antwort:
+
+17. War klar, wann `failFactor` und wann `failureStart`/`failureDrop`
+    verwendet werden?
+
+Antwort:
+
+18. War klar, dass die konkrete Failure-Auswahl in `select_failures(...)`
+    ergänzt werden muss?
+
+Antwort:
+
+19. War klar, wie Node-Failures in betroffene Kanten umgerechnet werden?
+
+Antwort:
+
+20. Welche Stelle beim Fehlermodell war unklar?
+
+Antwort:
+
+## Neuer Graph
+
+21. Falls du einen Graphen erweitert hast: Waren `GRAPH_BUILDERS`,
+    `GRAPH_PARAMETER_SPECS` und `GRAPH_VALIDATORS` verständlich?
+
+Antwort:
+
+22. War klar, wie ein NetworkX-Graph erzeugt und registriert wird?
+
+Antwort:
+
+23. War klar, welche Graphparameter in der JSON-Konfiguration stehen müssen?
+
+Antwort:
+
+24. War klar, welche Anpassung in der GUI nötig ist, wenn der neue Graph dort
+    auswählbar sein soll?
+
+Antwort:
+
+25. Welche Stelle beim Graphen war unklar?
+
+Antwort:
+
+## Pipeline, GUI und Tests
+
+26. War klar, welche Änderung nur den Kern betrifft und welche zusätzlich für
+    CLI oder GUI nötig ist?
+
+Antwort:
+
+27. War klar, wo neue sichtbare Namen in der GUI eingetragen werden?
+
+Antwort:
+
+28. War klar, wie ein kleiner Testlauf mit `--preflight` oder `--dry-run`
+    ausgeführt wird?
+
+Antwort:
+
+29. Konntest du nach der Erweiterung einen kleinen Lauf erfolgreich starten?
+
+Antwort:
+
+## Dokumentation
+
+30. Hat `ERWEITERUNG.txt` genug konkrete Beispiele geliefert?
+
+Antwort:
+
+31. Waren die Modulprotokolle hilfreich, um den Code zu verstehen?
+
+Antwort:
+
+32. Welche Information hat in der Erweiterungsdokumentation gefehlt?
+
+Antwort:
+
+33. Welche Formulierung sollte verbessert werden?
+
+Antwort:
+
+## Aufwand und Bewertung
+
+34. Wie lange hast du ungefähr für die Erweiterung gebraucht?
+
+Antwort:
+
+35. Auf einer Skala von 1 bis 5: Wie einfach war die Erweiterung?
+
+1 = sehr schwierig, 5 = sehr einfach
+
+Antwort:
+
+36. Auf einer Skala von 1 bis 5: Wie gut war die Architektur für Erweiterungen
+    vorbereitet?
+
+1 = gar nicht vorbereitet, 5 = sehr gut vorbereitet
+
+Antwort:
+
+37. Würdest du sagen, dass eine Informatikerin oder ein Informatiker die
+    Umgebung mit vertretbarem Aufwand erweitern kann?
+
+Antwort:
+
+38. Welche drei Verbesserungen wären aus deiner Sicht am wichtigsten, damit
+    Erweiterungen noch einfacher werden?
+
+Antwort:
+
+## Freie Notizen
+
+Weitere Beobachtungen, Fehler, Verbesserungsvorschläge oder Rückfragen:
+
+Antwort:

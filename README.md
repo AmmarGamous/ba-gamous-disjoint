@@ -1,93 +1,187 @@
-# BA-Gamous-Disjoint
+# Erweiterung und reproduzierbare Evaluierung von Fast-Failover-Routingverfahren
 
+Dieses Repository enthält die Implementierung und die begleitenden Artefakte
+der Bachelorarbeit **„Erweiterung und reproduzierbare Evaluierung von
+Fast-Failover-Routingverfahren mit kanten- und knotendisjunkten Pfaden“**.
 
+Untersucht werden Routingverfahren auf Basis von kantendisjunkten Pfaden
+(Edge-Disjoint Paths, EDPs) und knotendisjunkten Pfaden (Node-Disjoint Paths,
+NDPs). Neben zufälligen und geclusterten Kantenausfällen werden auch zufällige
+und geclusterte Knotenausfälle betrachtet. Eine automatisierte Pipeline führt
+die Versuche reproduzierbar aus, speichert die Ergebnisse und erstellt die
+zugehörigen Vergleichsplots.
 
-## Getting started
+![Ablauf der Experimentpipeline](schritt5_pipeline_automatisierung/Output/illustrations/figures/pipeline_overview.png)
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## Autor
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+Die Bachelorarbeit und die darin beschriebenen Erweiterungen wurden von
+**Ammar Gamous** erstellt.
 
-## Add your files
+ORCID: [0009-0003-0981-2945](https://orcid.org/0009-0003-0981-2945)
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+## Wissenschaftlicher Ausgangspunkt
 
+Diese Arbeit basiert auf dem Verfahren **TREE (Tree Routing to Extend Edge
+Disjoint Paths)** und der dazu veröffentlichten Referenzimplementierung:
+
+- [TREE-Repository von Oliver Schweiger](https://github.com/oliver306/TREE)
+- [TREE-Paper: Improving the Resilience of Fast Failover Routing](https://arxiv.org/abs/2111.14123)
+
+TREE erweitert kantendisjunkte Pfade zu einer oder mehreren Baumstrukturen,
+um zusätzliche Ausweichwege beim Fast-Failover-Routing bereitzustellen. Die
+vorliegende Arbeit reproduziert zunächst diesen Ansatz und erweitert ihn dann
+um Knotenausfälle sowie NDP-basierte Varianten von Paths, One Tree und Multiple
+Trees.
+
+Eine lokale Kopie der TREE-Referenz befindet sich unter [`external/TREE/`](external/TREE/).
+Der dort enthaltene Referenzcode steht unter der
+[MIT-Lizenz](external/TREE/LICENSE) und behält den ursprünglichen
+Copyright-Hinweis von Oliver Schweiger.
+
+## Beitrag dieser Arbeit
+
+Die Implementierung umfasst insbesondere:
+
+- sechs Routingverfahren: EDP/NDP Paths, One Tree und Multiple Trees;
+- zufällige und geclusterte Kanten- sowie Knotenausfälle;
+- synthetische Graphen und Real-World-Topologien im GraphML-Format;
+- gemeinsame Versuchsszenen für den fairen Vergleich aller Verfahren;
+- Seed-gesteuerte Graph-, Endpunkt- und Ausfallauswahl;
+- die Metriken Resilienz, durchschnittliche Hopanzahl und additiver Stretch;
+- eine CLI und eine Streamlit-Oberfläche mit demselben Pipeline-Kern;
+- CSV-Ausgaben, Manifeste sowie automatisch erzeugte PNG- und SVG-Plots;
+- Resume-Unterstützung für unterbrochene Versuchsreihen;
+- dokumentierte Erweiterungsstellen für weitere Algorithmen, Fehlermodelle und
+  Grapharten.
+
+Die folgenden Abbildungen zeigen die in der Arbeit verglichenen Strukturen:
+
+- [EDPs und NDPs](schritt5_pipeline_automatisierung/Output/illustrations/figures/thesis_comparison_edp_ndp_paths.svg)
+- [EDP/NDP One Tree](schritt5_pipeline_automatisierung/Output/illustrations/figures/thesis_comparison_edp_ndp_one_tree.svg)
+- [EDP/NDP Multiple Trees](schritt5_pipeline_automatisierung/Output/illustrations/figures/thesis_comparison_edp_ndp_multiple_trees.svg)
+- [Kanten- und Knotenausfall](schritt5_pipeline_automatisierung/Output/illustrations/figures/failure_comparison_link_node.svg)
+
+## Empfohlener Einstieg
+
+Die finale und eigenständig ausführbare Experimentierumgebung befindet sich in
+[`schritt5_pipeline_automatisierung/`](schritt5_pipeline_automatisierung/).
+Die vorherigen Schritte dokumentieren die schrittweise Entwicklung und werden
+für die Ausführung der finalen Pipeline nicht benötigt.
+
+Voraussetzungen:
+
+- Python 3.11 oder neuer;
+- eine virtuelle Python-Umgebung;
+- die Pakete aus
+  [`Dokumentation/requirements.txt`](schritt5_pipeline_automatisierung/Dokumentation/requirements.txt).
+
+### Installation
+
+Windows / PowerShell:
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r schritt5_pipeline_automatisierung/Dokumentation/requirements.txt
+python -m pip check
 ```
-cd existing_repo
-git remote add origin https://gitlab.tu-dortmund.de/csls4nds/ls4-nds-theses/26-summer/ba-gamous-disjoint.git
-git branch -M main
-git push -uf origin main
+
+Linux oder macOS / Bash:
+
+```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r schritt5_pipeline_automatisierung/Dokumentation/requirements.txt
+python -m pip check
 ```
 
-## Integrate with your tools
+## Pilotversuch
 
-* [Set up project integrations](https://gitlab.tu-dortmund.de/csls4nds/ls4-nds-theses/26-summer/ba-gamous-disjoint/-/settings/integrations)
+Vor einem vollständigen Lauf sollte zunächst die Pilotkonfiguration geprüft
+und ausgeführt werden:
 
-## Collaborate with your team
+```text
+python schritt5_pipeline_automatisierung/pipeline.py --config schritt5_pipeline_automatisierung/config/pilot.json --run-name feedback_pilot --preflight
+python schritt5_pipeline_automatisierung/pipeline.py --config schritt5_pipeline_automatisierung/config/pilot.json --run-name feedback_pilot
+```
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+Die Ergebnisse liegen anschließend unter
+`schritt5_pipeline_automatisierung/Output/feedback_pilot/`. Dazu gehören
+Rohdaten, eine aggregierte Summary, Vergleichsplots, `used_config.json` und
+`manifest.json`.
 
-## Test and Deploy
+Die vollständige Konfiguration mit 1000 Wiederholungen befindet sich in
+[`config/full.json`](schritt5_pipeline_automatisierung/config/full.json).
 
-Use the built-in continuous integration in GitLab.
+## Grafische Oberfläche
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+Die Streamlit-Oberfläche verwendet denselben Pipeline-Kern wie die CLI:
 
-***
+```text
+python -m streamlit run schritt5_pipeline_automatisierung/gui.py
+```
 
-# Editing this README
+Über die Oberfläche können Graphen, Routingverfahren, Fehlermodelle,
+Failure-Parameter und Metriken ausgewählt werden. Dry Run und Preflight stehen
+ebenfalls in der GUI zur Verfügung.
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+## Tests
 
-## Suggestions for a good README
+Die Tests prüfen unter anderem Konfiguration und Pipeline, Routingstrukturen,
+Ausfallmodelle, Reproduzierbarkeit, Resume, Ergebnisdateien, GUI-Funktionen und
+die erzeugten Illustrationen.
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+PowerShell:
 
-## Name
-Choose a self-explaining name for your project.
+```powershell
+$env:MPLBACKEND = "Agg"
+python -m unittest discover -s schritt5_pipeline_automatisierung/tests -p "test_*.py" -v
+```
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+Bash:
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+```bash
+MPLBACKEND=Agg python -m unittest discover -s schritt5_pipeline_automatisierung/tests -p "test_*.py" -v
+```
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+Das nichtgrafische Matplotlib-Backend `Agg` ermöglicht die Plottests auch auf
+Servern ohne Desktopoberfläche. Die Streamlit-Integrationstests werden nur
+ausgeführt, wenn Streamlit installiert ist.
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+## Repository-Aufbau
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+| Ordner | Inhalt |
+|---|---|
+| `external/TREE/` | Lokale Kopie der ursprünglichen TREE-Referenzimplementierung |
+| `schritt1_reproduktion/` | Reproduktion der EDP-basierten Referenzverfahren |
+| `schritt2_knotenausfaelle/` | Modellierung und erste Auswertung von Knotenausfällen |
+| `schritt3_knoten_disjunkte_pfade/` | Berechnung und Untersuchung knotendisjunkter Pfade |
+| `schritt4_algorithmen_vergleich/` | Gemeinsamer Vergleich der sechs Routingverfahren |
+| `schritt5_pipeline_automatisierung/` | Finale Pipeline, CLI, GUI, Auswertung, Tests und Dokumentation |
+| `schritt6_reproduzierbarkeit/` | Unterlagen zur Prüfung der Experimentierumgebung |
+| `schritt7_erweiterung/` | Erweiterungsleitfaden und Rückmeldungen der Testpersonen |
+| `schritt8/` | Bachelorarbeit und Präsentationsfolien |
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+## Dokumentation
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+Die wichtigsten Einstiegspunkte sind:
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+- [Anleitung zur finalen Pipeline](schritt5_pipeline_automatisierung/Dokumentation/README.txt)
+- [Übersicht der Projektmodule](schritt5_pipeline_automatisierung/Dokumentation/Modulübersicht.txt)
+- [UML-Dokumentation](schritt5_pipeline_automatisierung/Dokumentation/UML/index.html)
+- [Leitfaden für Erweiterungen](schritt7_erweiterung/ERWEITERUNG.txt)
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+## Wiederholbarkeit
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+Ein gleicher Seed allein genügt nicht für identische Ergebnisse. Für einen
+Wiederholungslauf müssen auch Konfiguration, Eingabegraphen, Codeversion,
+Python-Version und relevante Bibliotheksversionen übereinstimmen. Die Pipeline
+speichert deshalb die tatsächlich verwendete Konfiguration sowie technische
+Angaben und Prüfsummen im Laufordner.
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+Für unabhängige Wiederholungstests sollten neue Laufnamen verwendet werden.
+Ein erneuter Aufruf mit aktiviertem Resume verwendet bereits gespeicherte
+Ergebnisse und stellt daher keine unabhängige Neuberechnung dar.

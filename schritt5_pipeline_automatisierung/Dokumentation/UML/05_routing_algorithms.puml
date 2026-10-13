@@ -1,0 +1,43 @@
+@startuml
+!include _style.iuml
+start
+partition "Eingabe" {
+  :run_algorithms(G, s, d, failed_edges, algorithms)\nEin Graph und dieselben Ausfälle für alle Verfahren;
+}
+partition "Verarbeitung: routing_algorithms.py" {
+  :get_disjoint_paths()\nBenötigte EDPs/NDPs mit NetworkX berechnen\nPfade je Pfadtyp zwischenspeichern;
+  while (Weiterer ausgewählter Algorithmus?) is (ja)
+    :route_algorithm() aufrufen;
+    if (Registriertes Zusatzverfahren?) then (ja)
+      :EXTRA_ALGORITHM_RUNNERS[algorithm] aufrufen\nRoutingResult übernehmen;
+    else (Basisverfahren)
+      :build_structures(G, s, d, paths, structure_type)\nPaths / One Tree / Multiple Trees;
+      note right
+        Aufbau verwendet den ursprünglichen Graphen.
+        failed_edges beeinflusst erst die Weiterleitung.
+        Details: Diagramm 06 (Strukturaufbau).
+      end note
+      :Ausgefallene Kanten normalisieren\nGesamtroute und Hopzähler initialisieren;
+      while (Weitere Struktur und bisher kein Erfolg?) is (ja)
+        :route_structure()\nGeordnete Tiefensuche mit Backtracking;
+        :Durchlaufene Kanten und Hops aufsummieren;
+      endwhile (nein)
+      if (Ziel erreicht?) then (ja)
+        :RoutingResult mit success=True\nund aufsummierten Hops erzeugen;
+      else (nein)
+        :RoutingResult mit success=False und hops=-1\nDurchlaufene Route bleibt im Ergebnisobjekt enthalten;
+      endif
+    endif
+    :Ergebnis an Ergebnisliste anhängen;
+  endwhile (nein)
+}
+partition "Ausgabe" {
+  :Liste von RoutingResult-Objekten\nalgorithm, success, hops, route, nr_paths, nr_structures;
+  note right
+    nr_structures zählt die vorbereiteten Strukturen,
+    nicht nur die tatsächlich getesteten.
+    Keine Datei wird in diesem Modul geschrieben.
+  end note
+}
+stop
+@enduml

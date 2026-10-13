@@ -1,0 +1,35 @@
+Modulübersicht
+
+Für Installation und den ersten Lauf zuerst README.txt lesen. Für eine
+Erweiterung anschließend ../../schritt7_erweiterung/ERWEITERUNG.txt verwenden.
+Die folgenden Protokolle liegen neben dieser Datei:
+
+- pipeline.txt: zentrale Pipeline, CLI, Planung und Ausgabe.
+- gui.txt: Streamlit-GUI und Konfigurationserzeugung.
+- src_experiment.txt: Graphgenerator, Endpunkte und Rohdaten-CSV.
+- src_environment_check.txt: Python- und Bibliotheksprüfung beim Start.
+- src_failures.txt: Fehlermodelle und Rückgabe der Ausfallmengen.
+- src_routing_algorithms.txt: Routing und Vertrag für Zusatzalgorithmen.
+- evaluation_result_analysis.txt: Summary, Plotmetadaten und Ergebnisprüfungen.
+- tests_test_pipeline.txt: Pipeline- und Regressionstests.
+- tests_test_gui.txt: Tests der GUI-Hilfsfunktionen.
+- tests_test_feedback_improvements.txt: Tests der Feedback-Anpassungen.
+- tests_test_gui_integration.txt: optionale Streamlit-AppTests.
+
+Das Illustrationsmodul und seine Tests werden in ../illustrations/README.txt
+beschrieben. Es ist für den Pipeline-Start nicht erforderlich.
+
+Zuständigkeiten der Dokumentation
+README.txt ist die kurze Bedienungsanleitung; requirements.txt der Startpunkt
+für die Installation. Jedes Modulprotokoll beschreibt seine eigene Schnittstelle
+und verweist für fremde Aufgaben auf das zuständige Protokoll. Kurze Angaben
+zu übergebenen Daten sind bewusst an beiden Seiten der Schnittstelle enthalten.
+Testprotokolle beschreiben geprüfte Fälle, nicht eine vollständige Fehlerfreiheit.
+
+Die Protokolle beschreiben den aktuellen Basiscode. Beispiele aus dem
+Erweiterungsleitfaden sind nicht automatisch bereits implementiert.
+Nach einer Erweiterung betroffene Protokolle und README mitpflegen.
+
+Feedback_Ueberarbeitung.txt dokumentiert die umgesetzten Verbesserungen aus der
+Artefaktbegutachtung, technische Testnachweise und die weiterhin separate Entscheidung über
+die Übernahme der studentischen Erweiterungsbeispiele.

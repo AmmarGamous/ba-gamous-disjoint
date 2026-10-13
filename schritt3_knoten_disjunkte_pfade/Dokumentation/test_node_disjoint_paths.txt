@@ -1,0 +1,112 @@
+test_node_disjoint_paths.py
+
+schritt3_knoten_disjunkte_pfade/evaluation/test_node_disjoint_paths.py
+
+1. Zweck der Datei:
+Diese Datei enthält die Unit-Tests für Schritt 3.
+Sie prüft, ob die neue Node-Disjoint-Path-Erweiterung korrekt arbeitet und ob die Experimentlogik in
+kResiliencePaths.py die CSV-Dateien mit den richtigen Parametern erzeugt.
+Die Tests sind keine Auswertungsexperimente. 
+Sie erzeugen nur kleine temporäre Testdaten, damit die Implementierung schnell und reproduzierbar überprüft werden kann.
+
+2. Testframework und Aufbau:
+Die Tests verwenden das Standardmodul unittest.
+Wichtige Hilfsmittel:
+- networkx für kleine Testgraphen
+- tempfile.TemporaryDirectory() für temporäre Ausgabeordner
+- csv.DictReader zum Prüfen der erzeugten CSV-Dateien
+- random.Random(...) für reproduzierbare Clustered-Failure-Auswahlen
+Am Anfang der Datei wird der src-Ordner in sys.path eingefügt. 
+Dadurch kann kResiliencePaths.py direkt als Modul (import kResiliencePaths as ndp) importiert werden.
+Alle Tests liegen in der Klasse NodeDisjointPathTest(unittest.TestCase).
+Die Methode setUp(...) erstellt einen kleinen Basisgraphen, der mehrere
+alternative Pfade zwischen Quelle 0 und Ziel 4 besitzt. 
+Dieser Graph wird für die grundlegenden Routingtests wiederverwendet.
+
+3. Geprüfte NDP-Eigenschaft:
+Der Test test_paths_only_share_source_and_destination prüft die zentrale Anforderung von Node-Disjoint Paths.
+Die Pfade dürfen Quelle und Ziel gemeinsam verwenden, aber keine inneren Knoten teilen.
+Dazu werden die inneren Knoten der gefundenen Pfade als Mengen verglichen.
+Die Mengen müssen disjunkt sein.
+
+4. EDP-Baseline:
+Der Test test_edge_disjoint_baseline_uses_at_least_as_many_paths stellt sicher,
+dass die Edge-Disjoint-Path-Baseline weiterhin berechnet wird.
+
+Da EDPs nur Kantendisjunktheit verlangen und NDPs zusätzlich innere
+Knotendisjunktheit verlangen, kann die EDP-Menge mindestens so groß sein wie
+die NDP-Menge. Dieser Test schützt die Vergleichslogik zwischen EDP und NDP.
+
+
+5. Routingverhalten:
+Mehrere Tests prüfen das konkrete Routing:
+- test_shortest_node_disjoint_path_is_tried_first
+  Prüft, dass zuerst der kürzere NDP verwendet wird.
+- test_link_failure_falls_back_to_second_node_disjoint_path
+  Prüft, dass bei einem Linkausfall ein anderer funktionsfähiger Pfad gewählt werden kann.
+- test_node_failure_falls_back_to_unaffected_node_disjoint_path
+  Prüft, dass ein Knotenausfall über gesperrte inzidente Kanten abgebildet wird und das Routing einen nicht betroffenen Pfad verwendet.
+- test_failure_of_each_internal_path_returns_no_route
+  Prüft, dass korrekt -1 zurückgegeben wird, wenn alle inneren NDP-Alternativen durch Knotenausfälle blockiert sind.
+
+6. Clustered Failures:
+Die Clustered-Failure-Tests prüfen sowohl Link- als auch Node-Failures:
+- test_clustered_link_failures_start_at_destination_without_duplicates 
+   Prüft, dass Clustered Link Failures bei den inzidenten Kanten des Zielknotens starten und keine doppelten Kanten entstehen.
+- test_clustered_node_failures_start_next_to_destination_and_protect_endpoints 
+   Prüft, dass Clustered Node Failures bei den Nachbarn des Zielknotens starten
+  und Quelle sowie Ziel nicht als ausgefallene Knoten gewählt werden.
+- test_cluster_parameters_reject_non_positive_drop 
+   Prüft, dass ungültige Clusterparameter abgelehnt werden.
+- test_clustered_link_and_node_csvs_record_parameters 
+   Prüft, dass failureModel, failureStart und failureDrop korrekt in den CSV-Dateien gespeichert werden.
+- test_clustered_cli_writes_one_csv_per_start_and_failure_type 
+   Prüft, dass die Kommandozeile bei failure-type both für jeden failureStart je eine Link- und eine Node-CSV erzeugt.
+- test_clustered_series_uses_paired_instances_across_starts 
+   Prüft, dass verschiedene Clustered-Startwerte auf denselben Graphinstanzen, Quellen und Zielen verglichen werden.
+
+7. Random Failures und CSV-Erzeugung:
+Die Tests zur CSV-Erzeugung prüfen, dass kResiliencePaths.py die Experimentdaten selbst erzeugt:
+- test_experiment_csvs_are_generated_by_k_resilience_paths
+  Prüft, dass für Link und Node Failures CSV-Zeilen geschrieben werden und Node Failures auch nrFailedNodes befüllen.
+- test_failure_factor_series_writes_one_csv_per_factor
+  Prüft, dass für jeden Failure Factor eine eigene CSV entsteht.
+Besonders wichtig ist hier die Fairness der Vergleiche:
+Die Tests prüfen, dass verschiedene Failure Factors bei gleicher Seed-Verwendung
+auf konsistenten Graph-, Quellen- und Zielinstanzen ausgeführt werden.
+Dadurch werden EDP und NDP nicht auf unterschiedlichen Zufallsgraphen verglichen.
+
+8. Erdos-Renyi-Graphen:
+Die Erdos-Renyi-Tests prüfen die synthetischen Random Graphs:
+- test_erdos_renyi_csv_records_graph_parameters
+  Prüft, dass graphType, graphParam, edgeProb und nrNodes korrekt in die CSV geschrieben werden.
+- test_erdos_renyi_cli_requires_probability
+  Prüft, dass für graph-type erdos_renyi eine Wahrscheinlichkeit p angegeben werden muss.
+- test_erdos_renyi_series_uses_paired_instances
+  Prüft, dass mehrere Failure Factors auf denselben Graphen, Quellen und Zielen laufen.
+
+9. Real-World-Graphen über GraphML:
+Die GraphML-Tests sichern die Real-World-Experimente ab:
+- test_graphml_csv_records_topology_metadata
+  Prüft, dass GraphML-Topologien korrekt geladen werden und graphType,
+  graphName, graphMLPath, nrNodes und nrEdges in der CSV stehen.
+- test_graphml_cli_uses_paired_instances_across_factors
+  Prüft, dass auch bei GraphML-Experimenten verschiedene Failure Factors auf denselben Instanzen ausgeführt werden.
+
+10. Ausführung:
+Die Tests werden aus dem Projektwurzelordner ausgeführt mit:
+python -m unittest discover -s schritt3_knoten_disjunkte_pfade/evaluation -p "test_*.py" -v
+
+Aktueller Stand:
+Zum Zeitpunkt der Prüfung liefen 19 Tests erfolgreich.
+
+11. Bedeutung für Schritt 3:
+Die Testdatei sichert die wichtigsten Anforderungen der Bachelorarbeit ab:
+- Node-Disjoint Paths wurden wirklich neu ergänzt.
+- EDP bleibt als Vergleichsbasis erhalten.
+- Link Failures und Node Failures werden korrekt behandelt.
+- Random und Clustered Failures werden erzeugt und gespeichert.
+- CSV-Dateien enthalten die nötigen Metadaten für die Notebooks.
+- Parameterreihen verwenden gepaarte Instanzen und sind dadurch fair vergleichbar.
+Damit ist test_node_disjoint_paths.py die technische Kontrolle dafür, 
+dass die Plots in den Notebooks auf der erwarteten Schritt-3-Implementierung beruhen.

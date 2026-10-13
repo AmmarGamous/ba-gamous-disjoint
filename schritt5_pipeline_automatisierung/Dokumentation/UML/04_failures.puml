@@ -1,0 +1,50 @@
+@startuml
+!include _style.iuml
+start
+partition "Eingabe" {
+  :select_failures(G, s, d, Typ, Modell,\nnr_failures, failure_start, failure_drop, rng);
+  :Fehlermodell und Parameter prüfen;
+}
+partition "Auswahl" {
+  if (Modell?) then (random)
+    if (Ausfalltyp?) then (link)
+      :sorted_edges(G)\nAlle Kanten als Kandidaten\nmin(nr_failures, Anzahl Kanten) ziehen;
+      note right
+        Bei Random Link sind Kanten an s/d
+        nicht zusätzlich geschützt.
+      end note
+    else (node)
+      :unique_sorted_nodes()\nKnoten außer s und d als Kandidaten\nmin(nr_failures, Anzahl Kandidaten) ziehen;
+    endif
+  else (clustered)
+    if (Ausfalltyp?) then (link)
+      :clustered_link_failures()\nStart: Kanten an d, aber keine an s;
+    else (node)
+      :clustered_node_failures()\nStart: Nachbarn von d ohne s und d;
+    endif
+    :Auswahlanteil p = failure_start;
+    while (p > 0 und Kandidaten vorhanden?) is (ja)
+      :floor(p * Anzahl Kandidaten) mit rng.sample() ziehen\nAusfälle sammeln und Duplikate entfernen;
+      if (Ausfalltyp?) then (link)
+        :Nächste Kantenkandidaten aus allen aktuellen Kandidaten\nKanten an s und d ausschließen;
+      else (node)
+        :Nächste Knotenkandidaten aus allen aktuellen Kandidaten\ns, d und bereits ausgefallene Knoten ausschließen;
+      endif
+      :Kandidaten stabil ordnen\np um failure_drop vermindern;
+    endwhile (nein)
+  endif
+}
+partition "Rückgabe" {
+  if (Knotenausfälle?) then (ja)
+    :node_failures_to_edges()\nAlle inzidenten Kanten der ausgefallenen Knoten sammeln;
+    :failed_edges, failed_nodes zurückgeben;
+  else (nein)
+    :failed_edges, leere Knotenliste zurückgeben;
+  endif
+  note right
+    Der Eingabegraph wird nicht verändert.
+    Dieses Modul schreibt keine Dateien.
+  end note
+}
+stop
+@enduml

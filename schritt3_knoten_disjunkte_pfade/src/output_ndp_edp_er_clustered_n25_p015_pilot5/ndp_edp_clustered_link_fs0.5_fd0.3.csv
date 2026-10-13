@@ -1,0 +1,6 @@
+rep,failureType,failureModel,nrNodes,nrEdges,graphType,graphParam,degree,edgeProb,source,destination,nrEDPs,nrNDPs,failFactor,failureStart,failureDrop,nrFails,nrFailedNodes,spLength,hopsEDP,stretchEDP,hopsNDP,stretchNDP
+1,link,clustered,25,51,erdos_renyi,0.15,,0.15,1,6,4,4,,0.5,0.3,5,0,4,12,8,-1,
+2,link,clustered,25,49,erdos_renyi,0.15,,0.15,3,19,4,4,,0.5,0.3,6,0,3,7,4,7,4
+3,link,clustered,25,46,erdos_renyi,0.15,,0.15,8,23,5,5,,0.5,0.3,6,0,4,12,8,12,8
+4,link,clustered,25,50,erdos_renyi,0.15,,0.15,4,17,4,3,,0.5,0.3,4,0,3,8,5,8,5
+5,link,clustered,25,49,erdos_renyi,0.15,,0.15,2,3,4,4,,0.5,0.3,5,0,3,9,6,9,6

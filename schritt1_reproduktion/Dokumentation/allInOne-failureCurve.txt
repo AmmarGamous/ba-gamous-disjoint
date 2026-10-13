@@ -1,0 +1,8 @@
+ Überarbeitung von allInOne-failureCurve
+
+Durchgeführte Änderungen:
+
+1. Anpassung der Datenquellen und Messpunkte:
+   Die bisherigen relativen Pfade vom Typ CSVs/curve/ wurden auf die aktuelle Projektstruktur ../../../../external/TREE/evaluation/output/ umgestellt. Dadurch greift das Notebook aus dem Ordner evaluation/notebooks/resilience direkt auf die CSV-Ausgaben der extern eingebundenen TREE-Referenzimplementierung zu. Die CSV-Aufrufe für die Failure Rates 0.3 bis 0.8 wurden entsprechend angepasst. Der Messpunkt 0.9 wurde ausgeklammert, weil keine passende CSV-Datei dafür verwendet werden soll. Deshalb wurden auch xVals sowie die y-Wert-Listen angepasst, sodass nur noch die Werte 0.3 bis 0.8 geplottet werden. Damit stimmen die Dimensionen von x- und y-Werten überein, und der Plot enthält nur tatsächlich vorhandene und fachlich passende Messpunkte.
+
+2. Beibehaltung der Plot-Erzeugung und Berechnungslogik: Die Plot-Zelle wurde in der grundlegenden Struktur beibehalten. Es werden weiterhin die Resilience-Werte von EDPs, One Tree und Multiple Trees über die Failure Rate geplottet. Die Achsenbeschriftungen Failure Rate und Resilience sowie der Titel Resilience - Failure Rate bleiben unverändert und passen zur Zielsetzung des Notebooks. Auch die zentrale Auswertungsfunktion allInOne wurde nicht verändert. Die Berechnung der Resilience-Werte und der Hop-Auswertung bleibt daher identisch zur alten Version. Die Änderungen betreffen hauptsächlich die Datenquellen und die Auswahl der tatsächlich verwendeten Messpunkte.

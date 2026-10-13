@@ -1,0 +1,137 @@
+Überarbeitung von kResilienceTrees.py für Schritt 2
+
+Ziel:
+
+In Schritt 2 sollen die in Schritt 1 verwendeten Verfahren nicht neu entworfen werden.
+Die Algorithmen bleiben fachlich unverändert:
+- Edge-disjoint paths
+- One Tree
+- Multiple Trees
+Geändert wurde nur das Fehlermodell im Experiment. Statt Kanten direkt als ausgefallen
+zu markieren, werden nun Knoten als ausgefallen ausgewählt. Ein ausgefallener Knoten
+wird intern dadurch modelliert, dass alle inzidenten Kanten dieses Knotens als
+ausgefallene Kanten an die bestehenden Routing-Routinen übergeben werden.
+Dadurch kann die vorhandene Routinglogik weiterverwendet werden. Die Auswertung beschreibt
+aber nun Node/Vertex Failures statt Edge/Link Failures.
+
+Durchgeführte Änderungen:
+
+1. Zusätzliche CSV-Spalte für Knotenausfälle:
+Die feste CSV-Spaltenliste CSV_FIELDNAMES wurde um die Spalte nrFailedNodes erweitert.
+Damit ist in jeder Ergebniszeile sichtbar, wie viele Knoten in diesem Experiment
+tatsächlich ausgefallen sind.
+Die historische Spalte nrFails bleibt aus Kompatibilitätsgründen erhalten. Bei random
+Node Failures enthält nrFails ebenfalls die Anzahl der ausgefallenen Knoten. Bei
+clustered Node Failures bleibt nrFails wie in Schritt 1 leer, während nrFailedNodes
+den tatsächlichen Wert enthält.
+
+2. Kandidatenmenge für Node Failures eingeführt:
+Mit getNodeFailureCandidates(g, s, d) wird die Menge der möglichen ausgefallenen Knoten
+gebildet. Quelle s und Ziel d werden dabei ausgeschlossen.
+Diese Entscheidung ist wichtig, weil die Routing-Experimente sonst in vielen Fällen
+trivial fehlschlagen würden, wenn direkt Quelle oder Ziel entfernt werden.
+
+3. Random Node Failures umgesetzt:
+Mit getRandomNodeFailures(g, s, d, nodesToFail) werden zufällige ausgefallene Knoten
+aus der Kandidatenmenge ausgewählt.
+Die Anzahl der Knotenausfälle orientiert sich analog zu Schritt 1 an der Anzahl der
+edge-disjoint paths. Gesteuert wird sie über den Parameter --node-fail-factor.
+Wenn mehr Knotenausfälle angefordert werden als Kandidaten vorhanden sind, wird die
+Auswahl auf die vorhandenen Kandidaten begrenzt.
+
+4. Clustered Node Failures umgesetzt:
+Mit getClusteredNodeFailures(g, s, d, failureStart, failureDrop) wird ein lokaler
+Ausfallbereich in der Umgebung des Zielknotens d erzeugt.
+Analog zur Link-Failure-Variante startet der Cluster nahe beim Ziel. Zuerst werden
+Nachbarn des Zielknotens betrachtet, danach weitere Nachbarschaftsschichten. Quelle
+und Ziel werden auch hier ausgeschlossen.
+
+5. Simulation von Knotenausfällen über ausgefallene Kanten:
+Die Funktion nodeFailuresToEdgeFailures(g, failed_nodes) wandelt die ausgefallenen Knoten
+in die Menge der dadurch betroffenen Kanten um.
+Für jeden ausgefallenen Knoten werden alle inzidenten Kanten gesammelt. Doppelte Kanten
+werden entfernt. Diese Kantenmenge wird anschließend an die bestehenden Routing-Routinen
+übergeben.
+Damit wird ein Knotenausfall so simuliert, als wären alle Kanten dieses Knotens
+nicht mehr nutzbar.
+
+6. Erdos-Renyi-Graphen für die Paper-nahe synthetische Reihe:
+Die Datei unterstützt weiterhin random_regular_graph, aber zusätzlich auch
+erdos_renyi. Der Parameter --graph-type steuert, welcher Graphentyp erzeugt wird.
+Für die Paper-nahe synthetische Reihe wurden Erdos-Renyi-Graphen mit den im Paper
+verwendeten Parametern genutzt:
+- n=25, p=0.15
+- n=50, p=0.15
+- n=100, p=0.02
+
+7. GraphML-Unterstuetzung für Real-World-Graphen:
+Für Real-World-Graphen liest kResilienceTrees.py die Topologie über NetworkX aus
+einer GraphML-Datei:
+loadedML = nx.Graph(nx.read_graphml(graphMLpath))
+Diese Funktionalität war bereits in der alten TREE-Implementierung vorgesehen. Für
+Schritt 2 wird sie benötigt, weil Node Failures nur dann korrekt simuliert werden
+können, wenn die Kantenliste der realen Topologie bekannt ist.
+
+8. Kommandozeilenparameter für Schritt 2:
+Die Datei kann über die Kommandozeile gestartet werden. Wichtige Parameter sind:
+- --runs
+- --graph-type
+- --p
+- --nodes
+- --failure-model
+- --node-fail-factor
+- --failure-percent
+- --failure-drop
+- --graphml
+- --output-dir
+- --runtime-csv
+- --seed
+Dadurch können kleine Pilotlaeufe und große BA-Laeufe gestartet werden, ohne Werte
+direkt im Code umzuschreiben.
+
+Wichtiges Problem bei den Real-World-Graphen:
+Beim Übertragen der Real-World-Plots aus Schritt 1 ist aufgefallen, dass die alten
+Plot-Notebooks die CSV-Dateien nicht neu erzeugt haben. Sie haben die bereits vorhandenen
+Paper_CSVs aus external/TREE/evaluation/output/Paper_CSVs gelesen.
+Im alten Original-Code steht aber trotzdem, dass für eine echte Neugenerierung GraphML
+gebraucht wird:
+loadedML = nx.Graph(nx.read_graphml(graphMLpath))
+Außerdem sind dort die Real-World-Dateien explizit vorgesehen:
+- graphml/AttMpls.graphml
+- graphml/Cogentco.graphml
+- graphml/Oteglobe.graphml
+In dem aktuellen Workspace existierte dieser graphml-Ordner aber nicht. Es gab nur die
+fertigen alten CSV-Dateien für Link Failures. Diese CSV-Dateien enthalten keine
+Kantenliste, sondern nur Ergebniskennzahlen pro Lauf. Daraus können keine
+Node-Failure-CSV-Dateien erzeugt werden.
+
+Deshalb mussten die echten Topologien nachgeladen werden. Die Topology-Zoo-Seite verweist
+inzwischen auf das GitHub-Archiv mroughan/InternetTopologyZoo. Dort liegen die Daten als
+GraphML und GML für Netzwerktopologie-Projekte.
+
+Quellen:
+- https://topology-zoo.org/dataset.html
+- https://github.com/mroughan/InternetTopologyZoo
+Für Schritt 2 wurden die drei benötigten GraphML-Dateien in den Datenordner kopiert:
+- schritt2_knotenausfälle/data/topology_zoo/AttMpls.graphml
+- schritt2_knotenausfälle/data/topology_zoo/Cogentco.graphml
+- schritt2_knotenausfälle/data/topology_zoo/Oteglobe.graphml
+Durchgeführte Kontrollen:
+
+Pilotlaeufe:
+Vor den großen 1000-Run-Reihen wurden kleine Pilotlaeufe mit 5 Wiederholungen gestartet.
+Damit wurde geprüft, ob CSV-Dateien erzeugt werden und ob die Plot-Notebooks die Daten
+einlesen können.
+
+1000-Run-Kontrollen:
+Für die finalen BA-Plots wurden die Ergebnisordner auf folgende Punkte geprüft:
+- erwartete Anzahl CSV-Dateien
+- 1000 Zeilen pro Ergebnis-CSV
+- passende Werte für nrNodes, nrEdges, edgeProb und failureModel
+- vorhandene Spalte nrFailedNodes
+- plausible Mittelwerte der tatsächlich ausgefallenen Knoten
+
+Ergebnis:
+kResilienceTrees.py erzeugt nun CSV-Dateien für Node/Vertex Failures. Die Routingalgorithmen
+selbst wurden nicht grundlegend veraendert. Die Änderung betrifft das experimentelle
+Fehlermodell und die CSV-Dokumentation der tatsächlich ausgefallenen Knoten.

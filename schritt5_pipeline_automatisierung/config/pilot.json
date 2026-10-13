@@ -1,0 +1,77 @@
+{
+  "run_name": "pilot_1synthetic_1realworld",
+  "title": "Step 5 CLI",
+  "runs": 5,
+  "seed": 123,
+  "resume": true,
+  "algorithms": [
+    "edp_paths",
+    "edp_one_tree",
+    "edp_multiple_trees",
+    "ndp_paths",
+    "ndp_one_tree",
+    "ndp_multiple_trees"
+  ],
+  "failures": [
+    "random_link",
+    "random_node",
+    "clustered_link",
+    "clustered_node"
+  ],
+  "metrics": ["resilience", "avgHops", "avgStretch"],
+  "datasets": [
+    {
+      "name": "synthetic_n25_p015",
+      "display_name": "Erdos-Renyi n=25, p=0.15",
+      "type": "synthetic",
+      "graph_type": "erdos_renyi",
+      "nodes": 25,
+      "p": 0.15,
+      "fail_factors": [
+        0.8,
+        4.0,
+        8.0
+      ],
+      "failure_starts": [
+        0.3,
+        0.6,
+        0.9
+      ],
+      "failure_drop": 0.3
+    },
+    {
+      "name": "real_attmpls",
+      "display_name": "Small: ATT-MPLS",
+      "type": "graphml",
+      "graphml": "data/topology_zoo/AttMpls.graphml",
+      "graph_name": "attmpls",
+      "fail_factors": [
+        0.8,
+        4.0,
+        8.0
+      ],
+      "failure_starts": [
+        0.3,
+        0.6,
+        0.9
+      ],
+      "failure_drop": 0.3
+    }
+  ],
+  "plot_groups": [
+    {
+      "name": "random_graphs",
+      "title": "Random Graphs",
+      "datasets": [
+        "synthetic_n25_p015"
+      ]
+    },
+    {
+      "name": "real_world",
+      "title": "Real-World Graphs",
+      "datasets": [
+        "real_attmpls"
+      ]
+    }
+  ]
+}

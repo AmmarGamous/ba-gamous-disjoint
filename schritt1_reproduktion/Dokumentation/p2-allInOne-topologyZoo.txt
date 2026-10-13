@@ -1,0 +1,9 @@
+Überarbeitung von p2-allInOne-topologyZoo
+
+Durchgeführte Änderungen:
+
+1. Anpassung der Dateipfade:
+   Die bisherigen relativen Pfade vom Typ CSVs/... wurden auf die aktuelle Projektstruktur ../../../../external/TREE/evaluation/output/ umgestellt. Dadurch greift die Klasse aus dem Ordner evaluation/notebooks/resilience korrekt auf die CSV-Dateien der extern eingebundenen TREE-Referenzimplementierung zu. Die CSV-Dateien müssen dadurch nicht doppelt im eigenen GitLab-Repository gespeichert werden.
+
+2. Kontrolle der Programmierung:
+   Die zentrale Berechnungslogik von allInOne wurde nicht inhaltlich verändert. Die Erfolgsraten werden weiterhin auf Basis der vorhandenen Spalten hopsPath, hopsRankedOne und hopsRanked berechnet. 

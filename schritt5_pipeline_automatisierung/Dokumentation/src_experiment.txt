@@ -1,0 +1,140 @@
+src/experiment.py
+
+
+Zweck
+`src/experiment.py` erzeugt die eigentlichen Experimentdaten. Es baut Graphen,
+wählt Source/Destination-Paare, erzeugt Failure-Instanzen, ruft die
+Routingalgorithmen auf und schreibt CSV-Dateien im langen Format
+(eine Zeile je Wiederholung, Failure-Parameter und Algorithmus).
+
+Aufgaben
+- synthetische Graphen erzeugen
+- GraphML-Graphen laden
+- gültige Endpunkte wählen
+- EDP- und NDP-Pfade pro Instanz vorbereiten
+- zufällige und geclusterte Ausfallmengen über `select_failures(...)` bestimmen
+- alle ausgewählten Algorithmen auf derselben Failure-Instanz vergleichen
+- Rohdaten im langen CSV-Format schreiben
+- unterbrochene Läufe über Resume fortsetzen
+
+Wichtige Strukturen
+- `CSV_FIELDNAMES`: definiert die Rohdaten-Spalten.
+- `GRAPH_BUILDERS`: registriert synthetische Graph-Builder.
+- `GRAPH_PARAMETER_SPECS`: beschreibt, welcher Dataset-Parameter für welchen Graphen gelesen wird.
+- `GRAPH_VALIDATORS`: validiert Graphparameter vor langen Läufen.
+- `GRAPH_TYPES`: wird beim Import aus `GRAPH_BUILDERS` gebildet und für
+  CLI-Auswahlmöglichkeiten verwendet; nachträgliche Einträge aktualisieren es nicht.
+- `GRAPH_ENDPOINT_SELECTORS`: optionale Endpunktregeln für ausdrücklich registrierte Grapharten.
+- `DEFAULT_OUTPUT_DIR`: portabler Standardpfad zum Schritt-5-Ordner `Output/`.
+- `BASE_FAILURE_MODELS`: die zwei Basismodelle für die unveränderte Auswahl `both`.
+
+Aktuelle CSV-Zähler
+- `nrFailedEdges`: Anzahl der betroffenen oder direkt ausgefallenen Kanten.
+- `nrFailedNodes`: Anzahl der ausgefallenen Knoten.
+
+Diese Trennung ersetzt die frühere Mischspalte `nrFails` und macht Link- und
+Node-Failure-Ergebnisse eindeutiger lesbar.
+
+Wichtige Funktionen
+- `create_graph(...)`: erzeugt einen registrierten synthetischen Graphen.
+- `choose_endpoints(...)`: wählt ein verbundenes, nicht direkt benachbartes Source-Destination-Paar.
+- `choose_graph_endpoints(...)`: verwendet eine registrierte Regel oder `choose_endpoints(...)`.
+- `choose_complete_graph_endpoints(...)`: erlaubt benachbarte Paare nur in
+  vollständigen einfachen ungerichteten Graphen mit n >= 2.
+- `report_progress(...)`: übergibt Meldungen an einen Callback oder gibt sie mit `flush=True` aus.
+- `seed_parameter_token(...)`: normalisiert numerisch gleiche Failure-Parameter
+  für reproduzierbare Zufallsschlüssel.
+- `build_configurations(...)`: erzeugt alle Failure-Parameterkombinationen.
+- `configuration_filename(...)`: erzeugt CSV-Dateinamen aus Modell, Typ und
+  Parametern. Anders als RNG-Tokens können Dateinamen 1 und 1.0 unterscheiden.
+- `create_instance_rows(...)`: erzeugt die CSV-Zeilen einer Instanz.
+- `run_experiment_series(...)`: führt eine ganze Experimentreihe aus.
+- `completed_rep_prefix(...)`: zählt den lückenlosen Präfix vollständiger
+  Wiederholungen anhand der Algorithmusnamen und Zeilenanzahl.
+- `truncate_to_completed_reps(...)`: entfernt Zeilen hinter diesem Präfix.
+- `run_from_args(...)`: übersetzt direkte CLI-Argumente in eine Experimentserie.
+
+Erweiterungspunkte
+- Neue synthetische Graphen benötigen für die Pipeline Einträge in
+  `GRAPH_BUILDERS`, `GRAPH_PARAMETER_SPECS` und `GRAPH_VALIDATORS`. Auch ein Graph
+  ohne Zusatzparameter braucht eine Beschreibung, etwa `config_key=None` und
+  `cast=str`, sowie einen aufrufbaren Validator. Vor der Bildung von `GRAPH_TYPES`
+  registrieren und anschließend einen neuen Prozess starten.
+- Neue Failure-Modelle werden in `src/failures.py` beschrieben und hier über
+  die Metadaten automatisch parametrisiert.
+- Neue Algorithmen werden über `routing_algorithms.run_algorithms(...)` genutzt.
+
+Ein- und Rückgabeverträge
+- `create_graph(graph_type, nodes, graph_param, seed)` liefert einen NetworkX-Graphen.
+  Builder haben die Signatur `(nodes, graph_param, seed)`; Validatoren erhalten
+  `(label, nodes, graph_param)` und lösen bei ungültigen Werten `ValueError` aus.
+- `graph_parameter_from_dataset(...)` liest je nach `GRAPH_PARAMETER_SPECS`
+  den passenden Parameter und wandelt ihn mit `cast` um. Ohne Parameter wird
+  `graph_param` bzw. eine leere Zeichenkette verwendet.
+- `choose_endpoints(graph, rng)` liefert ein verbundenes, nicht benachbartes
+  Paar. Ohne passende Kandidaten wird `NetworkXNoPath` ausgelöst. Ein neuer
+  Graphtyp wie der vollständige Graph kann seine Regel in `GRAPH_ENDPOINT_SELECTORS`
+  registrieren. Signatur `(graph, rng)`, Rückgabe `(source, destination)`;
+  unterschiedliche verbundene Knoten, stabile Kandidatenreihenfolge und nur den
+  übergebenen RNG verwenden. Die Registry ist im Basiscode leer. Es gibt keinen
+  globalen Fallback für bisherige Datensätze.
+- `create_instance_rows(...)` liefert Dictionaries gemäß `CSV_FIELDNAMES`,
+  eine Zeile je ausgewähltem Algorithmus, nicht grundsätzlich immer sechs.
+- `run_experiment_series(...)` liefert die Pfade der erzeugten Rohdaten-CSV-Dateien.
+  Der direkte Moduleinstieg erstellt keine Pipeline-Summary oder Plots.
+- `shortest_path_after_failures(...)` liefert die Restpfadlänge bzw. -1.
+  Nicht verbundene Szenen werden nicht aus der Auswertung herausgefiltert.
+
+Wichtige Grenzen für Erweiterungen
+Die direkte CLI liest die Modellnamen aus `FAILURE_MODEL_SPECS`. Neue Modelle
+sind über `--failure-model <name>` wählbar; ihre Auswahlzweige müssen zusätzlich
+in `select_failures(...)` implementiert werden. `both` steht weiterhin nur für
+`random` und `clustered` und ist als CLI-Schlüssel reserviert.
+Die Graph-CLI übernimmt Namen aus `GRAPH_TYPES`, verarbeitet zusätzliche
+Parameter in `run_from_args(...)` aber nur für Erdős-Rényi und Random-Regular.
+Andere Typen erhalten dort `graph_param=""`; eigene CLI-Parameter erfordern
+zusätzliche Argumente und eine passende Weitergabe. Der vollständige Graph ist
+im Basiscode nicht registriert; seine Endpunkt-Hilfsfunktion allein erzeugt ihn nicht.
+Die Algorithmusauswahl kennt alle `ALGORITHMS`, verwendet ohne explizite Auswahl
+jedoch `BASE_ALGORITHMS`. Dies gilt auch für die direkten Python-Einstiege.
+Anders als die Pipeline verwenden direkte Serien und die Experiment-CLI
+standardmäßig `seed=None` und `resume=False`; die CLI verlangt für Erdős-Rényi
+außerdem ausdrücklich `--p`. Einen festen Seed daher selbst angeben.
+`environment_check.check_dependencies(...)` prüft Python und NetworkX vor den
+Experimentimporten; vollständige Pipeline-Prüfungen gelten nicht automatisch
+für einen direkten Aufruf dieses Moduls.
+Direkte CLI und Python-Serien schreiben standardmäßig in den absoluten Pfad
+`<Schritt-5-Ordner>/Output/`, unabhängig vom Arbeitsverzeichnis. Ausdrückliche
+`output_dir`-Angaben bleiben unverändert; alte Ordner werden nicht umbenannt.
+
+Randomisierung und Resume
+`master_rng = random.Random(seed)` steuert Graph-Seeds und Endpunktauswahl.
+GraphML-Topologien werden einmal eingelesen und je Wiederholung kopiert.
+Bis zu 1000 Versuche suchen eine gültige Szene vor den Ausfällen. Alle
+Algorithmen einer Failure-Konfiguration erhalten dieselbe Szene. Ihre Routen
+werden nicht als Kantenfolgen in der CSV gespeichert, sondern als Kennzahlen.
+
+Der separate Failure-RNG verwendet Seed, Wiederholung, Ausfalltyp, Modell,
+failFactor und failureStart als Schlüssel. failureDrop ist nicht Teil dieses
+Schlüssels, beeinflusst aber die anschließenden Cluster-Runden.
+Beim Resume wird der kleinste vollständige Präfix aller CSVs der Serie
+verwendet; spätere Zeilen werden abgeschnitten. Bei teilweise abgeschlossenen
+Serien werden Graph- und Endpunktauswahl der übersprungenen Wiederholungen
+rekonstruiert. Deren Ausfälle und Routing werden nicht erneut berechnet.
+Ist die ganze Serie bereits vollständig, erfolgt die Rückgabe sofort.
+Resume prüft weder Seed, Graphinhalt noch Codeversion der alten Zeilen;
+für geänderte Versuchsbedingungen einen neuen Ausgabeordner verwenden.
+
+Fortschrittsmeldungen
+`run_experiment_series(..., progress_callback=None)` meldet den Startstand und
+vollständig gespeicherte Wiederholungen in Blöcken von höchstens 100 bzw.
+ungefähr zehn Schritten je Job. Die letzte Wiederholung wird immer gemeldet.
+Der Callback erhält ein Dictionary mit `message`, `phase="experiment"`,
+`completed`, `total` und `resumed`. Ohne Callback erfolgt eine Konsolenausgabe.
+Resume meldet den übernommenen Stand; seine RNG-Rekonstruktion bleibt unverändert.
+
+Abgrenzung
+Die Umrechnung von Knotenausfällen und die Auswahlregeln gehören zu
+src_failures.txt; Routingergebnisse zu src_routing_algorithms.txt.
+Die Parameterbedeutung und die failFactor-Formel stehen in README.txt, Abschnitt 5.
+Pipeline-Metadaten, Summary und Plots werden nicht in diesem Modul erzeugt.

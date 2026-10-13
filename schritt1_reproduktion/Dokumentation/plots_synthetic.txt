@@ -1,0 +1,14 @@
+Überarbeitung von plots_synthetic und Fehlerbehebung bei der Plot-Erzeugung
+
+Durchgeführte Änderungen:
+1. Anpassung der Dateipfade:
+   Die bisherigen relativen Pfade vom Typ CSVs/... wurden auf die aktuelle Projektstruktur ../../../../external/TREE/evaluation/output/Paper_CSVs/... umgestellt, damit das Notebook aus dem Ordner evaluation/notebooks/resilience korrekt auf die erzeugten CSV-Dateien zugreift.
+
+2. Korrektur der plotEval-Aufrufe:
+   Mehrere Aufrufe von plotEval(...) wurden angepasst, sodass nun xVals als erstes Argument übergeben wird. Dadurch wurde ein Fehler in der Argumentübergabe behoben.
+
+3. Ergänzung der x-Achsen-Werte:
+   In der betroffenen Zelle für n=50 mit Failure Rates 0.3 bis 0.9 wurde xVals explizit als Liste [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9] ergänzt. Dadurch stimmen die Dimensionen von x- und y-Werten beim Plotten überein.
+
+4. Lokale Initialisierung der Auswertungsarrays:
+   In der betroffenen Zelle wurden nrFiles sowie rPaths, rOne, rMult, avgHopsPaths, avgHopsOne, avgHopsMult und avgHopsSP neu initialisiert, damit die Zelle unabhängig von vorherigen Zellen ausgeführt werden kann.

@@ -1,0 +1,84 @@
+Schritt 3: Serverbefehle für Real-World Graphs
+
+Ausführung vom Repository-Root in einer Linux-Shell:
+
+PYTHON=python3
+
+Alternativ mit virtueller Umgebung:
+
+PYTHON=venv/bin/python
+
+Jeder Aufruf erzeugt Link- und Node-Failure-Reihen gemeinsam.
+
+
+1. Random Failures: ATT-MPLS
+
+$PYTHON schritt3_knoten_disjunkte_pfade/src/kResiliencePaths.py \
+  --runs 1000 --failure-type both --failure-model random \
+  --graphml schritt3_knoten_disjunkte_pfade/data/topology_zoo/AttMpls.graphml \
+  --graph-name attmpls --fail-factor 1 2 3 4 5 6 7 8 9 10 --seed 123 \
+  --output-dir schritt3_knoten_disjunkte_pfade/src/output_ndp_edp_zoo_random_attmpls_runs1000
+
+
+2. Random Failures: Cogentco
+
+$PYTHON schritt3_knoten_disjunkte_pfade/src/kResiliencePaths.py \
+  --runs 1000 --failure-type both --failure-model random \
+  --graphml schritt3_knoten_disjunkte_pfade/data/topology_zoo/Cogentco.graphml \
+  --graph-name cogentco --fail-factor 1 2 3 4 5 6 7 8 9 10 --seed 123 \
+  --output-dir schritt3_knoten_disjunkte_pfade/src/output_ndp_edp_zoo_random_cogentco_runs1000
+
+
+3. Random Failures: Oteglobe
+
+$PYTHON schritt3_knoten_disjunkte_pfade/src/kResiliencePaths.py \
+  --runs 1000 --failure-type both --failure-model random \
+  --graphml schritt3_knoten_disjunkte_pfade/data/topology_zoo/Oteglobe.graphml \
+  --graph-name oteglobe --fail-factor 1 2 3 4 5 6 7 8 9 10 --seed 123 \
+  --output-dir schritt3_knoten_disjunkte_pfade/src/output_ndp_edp_zoo_random_oteglobe_runs1000
+
+
+4. Clustered Failures: ATT-MPLS
+
+$PYTHON schritt3_knoten_disjunkte_pfade/src/kResiliencePaths.py \
+  --runs 1000 --failure-type both --failure-model clustered \
+  --graphml schritt3_knoten_disjunkte_pfade/data/topology_zoo/AttMpls.graphml \
+  --graph-name attmpls --failure-start 0.3 0.4 0.5 0.6 0.7 0.8 0.9 \
+  --failure-drop 0.3 --seed 123 \
+  --output-dir schritt3_knoten_disjunkte_pfade/src/output_ndp_edp_zoo_clustered_attmpls_runs1000
+
+
+5. Clustered Failures: Cogentco
+
+$PYTHON schritt3_knoten_disjunkte_pfade/src/kResiliencePaths.py \
+  --runs 1000 --failure-type both --failure-model clustered \
+  --graphml schritt3_knoten_disjunkte_pfade/data/topology_zoo/Cogentco.graphml \
+  --graph-name cogentco --failure-start 0.3 0.4 0.5 0.6 0.7 0.8 0.9 \
+  --failure-drop 0.3 --seed 123 \
+  --output-dir schritt3_knoten_disjunkte_pfade/src/output_ndp_edp_zoo_clustered_cogentco_runs1000
+
+
+6. Clustered Failures: Oteglobe
+
+$PYTHON schritt3_knoten_disjunkte_pfade/src/kResiliencePaths.py \
+  --runs 1000 --failure-type both --failure-model clustered \
+  --graphml schritt3_knoten_disjunkte_pfade/data/topology_zoo/Oteglobe.graphml \
+  --graph-name oteglobe --failure-start 0.3 0.4 0.5 0.6 0.7 0.8 0.9 \
+  --failure-drop 0.3 --seed 123 \
+  --output-dir schritt3_knoten_disjunkte_pfade/src/output_ndp_edp_zoo_clustered_oteglobe_runs1000
+
+
+Erwartete Ausgaben
+
+Random je Topologie:
+- 10 Faktoren x 2 Fehlertypen = 20 CSV-Dateien
+
+Clustered je Topologie:
+- 7 Startwerte x 2 Fehlertypen = 14 CSV-Dateien
+
+Jede CSV-Datei muss 1000 Datenzeilen enthalten.
+
+Hinweis:
+Cogentco ist deutlich langsamer als ATT-MPLS und Oteglobe. Die großen
+Cogentco-Reihen sollten auf dem Server einzeln oder mit kontrollierter
+Parallelität gestartet werden.

@@ -1,0 +1,7 @@
+kResiliencePaths output1
+Number of nodes: 12
+Number of edges: 22
+Probability of edge appearance: 0.3
+Number of edge-disjoint paths: 1
+Number of failed edges: 0
+(2, <networkx.classes.graph.Graph object at 0x000001D077443290>, [(11, 10), (10, 0)], ['1'])

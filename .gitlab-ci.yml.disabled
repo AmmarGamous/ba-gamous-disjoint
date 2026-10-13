@@ -1,0 +1,15 @@
+image: python:3.11-slim
+
+stages:
+  - test
+
+variables:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+test:
+  stage: test
+  before_script:
+    - python -m pip install --no-cache-dir "networkx>=3,<4"
+  script:
+    - python -m unittest discover -s schritt3_knoten_disjunkte_pfade/evaluation -p "test_*.py" -v

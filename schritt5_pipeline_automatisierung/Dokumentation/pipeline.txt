@@ -1,0 +1,111 @@
+pipeline.py
+
+
+Zweck
+`pipeline.py` ist der zentrale Einstiegspunkt der Umgebung. 
+Das Modul lädt eine JSON-Konfiguration, erzeugt daraus konkrete Experimentjobs, startet
+den Experimentgenerator, schreibt Summary-Dateien und erzeugt Plots.
+
+Aufgaben
+- lokale Module gezielt aus `src/` und `evaluation/` importieren
+- JSON-Konfiguration laden und Defaults ergänzen
+- CLI-Overrides auf Config und Datasets anwenden
+- Algorithmen, Fehlertypen und Datasets validieren
+- Experimentplan aus Dataset- und Failure-Kombinationen erstellen
+- Rohdaten, Summary, Plots, `used_config.json` und `manifest.json` erzeugen
+- Ausführungsmodi koordinieren; Bedienung und CLI-Beispiele stehen in README.txt.
+
+Wichtige Funktionen
+- `_import_local_module(...)`: lädt das angegebene Projektmodul neu und prüft
+  seinen Dateipfad. Externe Bibliotheken kommen weiterhin aus der Python-Umgebung.
+- `load_config(...)`: lädt die JSON-Konfiguration und ergänzt aktuelle Defaults.
+- `selected_algorithms(...)`: validiert die Algorithmusauswahl.
+- `selected_failures(...)`: validiert Fehlertypen und prüft die Failure-Modell-Metadaten.
+- `build_experiment_plan(...)`: erzeugt die konkreten Experimentjobs.
+- `expected_summary_groups(...)`: leitet die erwarteten Dataset-, Failure- und
+  Parametergruppen aus dem tatsächlichen Experimentplan ab.
+- `run_experiments(...)`: ruft `experiment.run_experiment_series(...)` für jeden Job auf.
+- `write_summary_and_plots(...)`: aggregiert Rohdaten, prüft sie gegen den
+  Experimentplan und erzeugt PNG/SVG-Plots.
+- `validate_preflight(...)`: prüft Konfiguration, Dateien und Schreibrechte ohne lange Berechnung.
+- `write_used_config(...)`: speichert das intern verwendete Config-Dictionary.
+- `write_manifest(...)`: schreibt Laufmetadaten und gibt den Manifestpfad zurück.
+- `collect_run_provenance(...)`: erfasst installierte Paketversionen sowie
+  SHA-256-Prüfsummen der Code-, Requirements- und verwendeten GraphML-Dateien.
+- `validate_registrations(...)`: prüft Parameterverträge und aufrufbare Registry-Einträge.
+- `validate_plot_metadata(...)`: prüft Beschriftungen und gültige Plotfarben.
+- `run_pipeline(...)`: Hauptfunktion für Tests, CLI und GUI.
+- `main(...)`: CLI-Einstiegspunkt.
+
+Ein- und Ausgaben
+- Eingabe: JSON-Konfiguration, CLI-Parameter, optional GraphML-Dateien.
+- Ausgabe: Rohdaten-CSV, Summary-CSV, PNG/SVG-Plots, `used_config.json`,
+  `manifest.json`.
+
+Erweiterungspunkte
+- Neue auswählbare Failure-Kombinationen werden in `FAILURE_COMBINATIONS` ergänzt.
+- Synthetische Graphen benötigen Builder, Parameterbeschreibung und Validator
+  in `experiment.py`; siehe src_experiment.txt. Die Pipeline verwendet diese
+  Registrierungen für Planung und Vorabprüfung. Ein GUI-Dialog ist separat nötig.
+- Neue Algorithmen werden über `routing_algorithms.ALGORITHMS` sichtbar;
+  Runner-Vertrag und Zeitpunkt der Registrierung stehen in src_routing_algorithms.txt.
+
+Schnittstelle und Grenzen
+- `run_pipeline(...)` liefert ein Dictionary mit `config`, `plan`, `dry_run`,
+  `preflight`, `generated_csvs`, `summary`, `plots` und `manifest`. Je nach Modus
+  sind Ergebnislisten leer bzw. Dateipfade nicht vorhanden. `preflight` ist eine
+  Liste von Prüfmeldungen, kein boolescher Wert. `generated_csvs` enthält Strings;
+  `summary`, `manifest` und die Elemente von `plots` sind Path-Objekte bzw. None.
+  Bei `only_plots=True` bleibt `generated_csvs` leer, obwohl Rohdaten gelesen werden.
+- `--only-plots` liest sämtliche `algorithms_*.csv` in den gewählten Dataset-Ordnern,
+  keine Summary-CSV. Die Auswahl beschränkt nicht nachträglich die eingelesenen
+  Failure-Parameter. Einzelheiten der Vollständigkeitsprüfung stehen in
+  evaluation_result_analysis.txt.
+- CLI-Overrides der Failure-Parameter haben Vorrang vor Dataset- und globalen Werten.
+- Die automatischen Plotgruppen trennen synthetische und Real-World-Datasets
+  mit maximal drei Datasets pro Gruppe. Eigene JSON-Plotgruppen werden nicht
+  automatisch auf drei Teilplots begrenzt.
+- Preflight validiert Failure-Parameter anhand der Modellmetadaten, auch bei
+  neuen Namen. Dieselben Prüfungen laufen vor normalen Pipeline-Läufen.
+  Für reine Rohdatenläufe werden keine Plotmetadaten verlangt; bei Nur Plots
+  entfallen Eingabeprüfungen der Graphparameter und der GraphML-Existenz.
+  Dry Run überspringt Preflight, prüft aber Auswahl und Registrierungen bereits
+  während der Planung. Vorhandene GraphML-Dateien werden für ihre Knotenzahl gelesen.
+- Registrierungen, Farben und Labels werden geprüft, nicht die inhaltliche
+  Korrektheit einer Erweiterung. Hierfür bleiben Funktionstests erforderlich.
+- `environment_check.check_dependencies(...)` liefert früh Installationshinweise
+  bei ungeeignetem Python oder nicht ladbaren Bibliotheken.
+- `DEFAULT_ALGORITHMS` und `DEFAULT_FAILURES` behalten sechs bzw. vier Einträge.
+  Registrierungen erweitern nur die auswählbaren Optionen.
+- Das Manifest erhält `provenance` mit Paketversionen und Datei-Prüfsummen.
+  `run_pipeline(...)` erfasst diese vor der Berechnung und übergibt sie an
+  `write_manifest(...)`. Bei einem direkten Manifest-Aufruf erfolgt die Erfassung
+  dort. Erfasst wird der aktuelle Aufruf, nicht die Herkunft wiederverwendeter CSVs.
+  Der Fingerabdruck umfasst Python-Code im Hauptordner, src/, evaluation/ und
+  illustrations/ sowie requirements*.txt in Dokumentation/, nicht die Tests oder
+  übrigen Texte. Auch geänderte Zeilenenden beeinflussen die Byte-Prüfsummen.
+  Bei nicht vorhandenen GraphML-Dateien steht deren Prüfsumme auf None/JSON null.
+- `main(...)` und `run_pipeline(...)` weisen gleichzeitige Only-Experiments- und
+  Only-Plots-Optionen ab. Der Python-Einstieg prüft dies vor dem Laden der Config.
+- `run_pipeline(..., progress_callback=None)` meldet die Phasen `preparation`,
+  `experiment`, `analysis` und `complete`. Bei Experimenten ergänzt
+  `run_experiments(...)` die Felder `job_index`, `job_total`, `dataset` und
+  `failure` zu den Wiederholungsdaten des Generators. Jobs sind ab 1 nummeriert.
+  Der Callback erhält ein Dictionary mit `message` und den genannten Daten;
+  ohne Callback werden Meldungen sofort in die Konsole geschrieben.
+  Die Meldungen verändern keine RNG-Zustände. Dry Run und Preflight senden keine.
+
+Gespeicherte effektive Konfiguration
+Nach der Validierung schreibt `run_pipeline(...)` die wirksamen Algorithmus-,
+Failure-, Dataset- und Resume-Auswahlen in das Config-Dictionary zurück.
+`used_config.json`, das zurückgegebene Config-Dictionary und das Manifest bilden
+dadurch auch entsprechende CLI-Overrides ab. Das Manifest leitet Algorithmen und
+Failure-Kombinationen zusätzlich aus dem tatsächlichen Experimentplan ab.
+Automatisch erzeugte Plotgruppen werden nicht in `config.plot_groups` ergänzt;
+das entsprechende Manifestfeld kann trotz erzeugter Gruppen leer bleiben.
+
+Besonderheiten
+- Relative Ausgabepfade werden relativ zum Schritt-5-Ordner aufgelöst.
+- `resume` kann unvollständige Läufe fortsetzen.
+- Das Manifest enthält zusätzlich `job_failure_parameters`, damit
+  dataset-spezifische Failure-Parameter nachvollziehbar bleiben.

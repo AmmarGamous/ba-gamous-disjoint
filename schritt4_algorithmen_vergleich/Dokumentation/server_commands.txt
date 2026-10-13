@@ -1,0 +1,245 @@
+Schritt 4: vollständige Serverbefehle für 1000 Runs
+====================================================
+
+Diese Befehle werden vom Repository-Root auf dem Linux-Server ausgeführt.
+Also zuerst:
+
+    cd ~/ba-gamous-disjoint
+
+Wenn die virtuelle Umgebung noch nicht aktiv ist, vorher zusätzlich:
+
+    source venv/bin/activate
+
+Alle Befehle nutzen direkt `python`, weil du im aktivierten venv bist.
+Random und Clustered werden getrennt gestartet, damit lange Reihen einzeln
+kontrolliert und bei Bedarf mit `--resume` fortgesetzt werden können.
+
+Wichtig zur Bash-Schreibweise:
+
+- Der Backslash `\` steht nur am Ende einer Zeile.
+- Nach dem Backslash darf kein Leerzeichen mehr kommen.
+- Wenn beim Einfügen ein kaputter Prompt entsteht, mit `Ctrl+C` abbrechen und
+  den ganzen Befehl erneut sauber einfügen.
+
+
+1. SYNTHETISCH: n=25, p=0.15, RANDOM
+------------------------------------
+
+python schritt4_algorithmen_vergleich/src/experiment.py \
+  --runs 1000 \
+  --failure-type both \
+  --failure-model random \
+  --graph-type erdos_renyi \
+  --nodes 25 \
+  --p 0.15 \
+  --fail-factor 0.8 1.6 2.4 3.2 4.0 4.8 5.6 6.4 7.2 8.0 8.8 \
+  --seed 123 \
+  --resume \
+  --output-dir schritt4_algorithmen_vergleich/output/server/synthetic_n25_p015
+
+
+2. SYNTHETISCH: n=25, p=0.15, CLUSTERED
+---------------------------------------
+
+python schritt4_algorithmen_vergleich/src/experiment.py \
+  --runs 1000 \
+  --failure-type both \
+  --failure-model clustered \
+  --graph-type erdos_renyi \
+  --nodes 25 \
+  --p 0.15 \
+  --failure-start 0.3 0.4 0.5 0.6 0.7 0.8 0.9 \
+  --failure-drop 0.3 \
+  --seed 123 \
+  --resume \
+  --output-dir schritt4_algorithmen_vergleich/output/server/synthetic_n25_p015
+
+
+3. SYNTHETISCH: n=50, p=0.15, RANDOM
+------------------------------------
+
+python schritt4_algorithmen_vergleich/src/experiment.py \
+  --runs 1000 \
+  --failure-type both \
+  --failure-model random \
+  --graph-type erdos_renyi \
+  --nodes 50 \
+  --p 0.15 \
+  --fail-factor 0.8 1.6 2.4 3.2 4.0 4.8 5.6 6.4 7.2 8.0 8.8 9.6 10.4 11.2 12.0 12.8 13.6 14.4 15.2 16.0 16.8 \
+  --seed 123 \
+  --resume \
+  --output-dir schritt4_algorithmen_vergleich/output/server/synthetic_n50_p015
+
+
+4. SYNTHETISCH: n=50, p=0.15, CLUSTERED
+---------------------------------------
+
+python schritt4_algorithmen_vergleich/src/experiment.py \
+  --runs 1000 \
+  --failure-type both \
+  --failure-model clustered \
+  --graph-type erdos_renyi \
+  --nodes 50 \
+  --p 0.15 \
+  --failure-start 0.3 0.4 0.5 0.6 0.7 0.8 0.9 \
+  --failure-drop 0.3 \
+  --seed 123 \
+  --resume \
+  --output-dir schritt4_algorithmen_vergleich/output/server/synthetic_n50_p015
+
+
+5. SYNTHETISCH: n=100, p=0.02, RANDOM
+-------------------------------------
+
+python schritt4_algorithmen_vergleich/src/experiment.py \
+  --runs 1000 \
+  --failure-type both \
+  --failure-model random \
+  --graph-type erdos_renyi \
+  --nodes 100 \
+  --p 0.02 \
+  --fail-factor 0.8 1.6 2.4 3.2 4.0 4.8 5.6 6.4 7.2 8.0 8.8 9.6 10.4 11.2 12.0 12.8 13.6 14.4 15.2 16.0 16.8 17.6 18.4 19.2 20.0 20.8 21.6 22.4 23.2 24.0 24.8 25.6 26.4 27.2 28.0 28.8 29.6 30.4 31.2 32.0 32.8 33.6 34.4 35.2 36.0 36.8 37.6 38.4 39.2 40.0 40.8 41.6 42.4 43.2 44.0 44.8 45.6 46.4 47.2 48.0 48.8 49.6 \
+  --seed 123 \
+  --resume \
+  --output-dir schritt4_algorithmen_vergleich/output/server/synthetic_n100_p002
+
+
+6. SYNTHETISCH: n=100, p=0.02, CLUSTERED
+----------------------------------------
+
+python schritt4_algorithmen_vergleich/src/experiment.py \
+  --runs 1000 \
+  --failure-type both \
+  --failure-model clustered \
+  --graph-type erdos_renyi \
+  --nodes 100 \
+  --p 0.02 \
+  --failure-start 0.3 0.4 0.5 0.6 0.7 0.8 0.9 \
+  --failure-drop 0.3 \
+  --seed 123 \
+  --resume \
+  --output-dir schritt4_algorithmen_vergleich/output/server/synthetic_n100_p002
+
+
+7. REAL-WORLD: ATT-MPLS, RANDOM
+-------------------------------
+
+python schritt4_algorithmen_vergleich/src/experiment.py \
+  --runs 1000 \
+  --failure-type both \
+  --failure-model random \
+  --graphml schritt3_knoten_disjunkte_pfade/data/topology_zoo/AttMpls.graphml \
+  --graph-name attmpls \
+  --fail-factor 1 2 3 4 5 6 7 8 9 10 \
+  --seed 123 \
+  --resume \
+  --output-dir schritt4_algorithmen_vergleich/output/server/real_attmpls
+
+
+8. REAL-WORLD: ATT-MPLS, CLUSTERED
+----------------------------------
+
+python schritt4_algorithmen_vergleich/src/experiment.py \
+  --runs 1000 \
+  --failure-type both \
+  --failure-model clustered \
+  --graphml schritt3_knoten_disjunkte_pfade/data/topology_zoo/AttMpls.graphml \
+  --graph-name attmpls \
+  --failure-start 0.3 0.4 0.5 0.6 0.7 0.8 0.9 \
+  --failure-drop 0.3 \
+  --seed 123 \
+  --resume \
+  --output-dir schritt4_algorithmen_vergleich/output/server/real_attmpls
+
+
+9. REAL-WORLD: COGENTCO, RANDOM
+-------------------------------
+
+python schritt4_algorithmen_vergleich/src/experiment.py \
+  --runs 1000 \
+  --failure-type both \
+  --failure-model random \
+  --graphml schritt3_knoten_disjunkte_pfade/data/topology_zoo/Cogentco.graphml \
+  --graph-name cogentco \
+  --fail-factor 1 2 3 4 5 6 7 8 9 10 \
+  --seed 123 \
+  --resume \
+  --output-dir schritt4_algorithmen_vergleich/output/server/real_cogentco
+
+
+10. REAL-WORLD: COGENTCO, CLUSTERED
+-----------------------------------
+
+python schritt4_algorithmen_vergleich/src/experiment.py \
+  --runs 1000 \
+  --failure-type both \
+  --failure-model clustered \
+  --graphml schritt3_knoten_disjunkte_pfade/data/topology_zoo/Cogentco.graphml \
+  --graph-name cogentco \
+  --failure-start 0.3 0.4 0.5 0.6 0.7 0.8 0.9 \
+  --failure-drop 0.3 \
+  --seed 123 \
+  --resume \
+  --output-dir schritt4_algorithmen_vergleich/output/server/real_cogentco
+
+
+11. REAL-WORLD: OTEGLOBE, RANDOM
+--------------------------------
+
+python schritt4_algorithmen_vergleich/src/experiment.py \
+  --runs 1000 \
+  --failure-type both \
+  --failure-model random \
+  --graphml schritt3_knoten_disjunkte_pfade/data/topology_zoo/Oteglobe.graphml \
+  --graph-name oteglobe \
+  --fail-factor 1 2 3 4 5 6 7 8 9 10 \
+  --seed 123 \
+  --resume \
+  --output-dir schritt4_algorithmen_vergleich/output/server/real_oteglobe
+
+
+12. REAL-WORLD: OTEGLOBE, CLUSTERED
+-----------------------------------
+
+python schritt4_algorithmen_vergleich/src/experiment.py \
+  --runs 1000 \
+  --failure-type both \
+  --failure-model clustered \
+  --graphml schritt3_knoten_disjunkte_pfade/data/topology_zoo/Oteglobe.graphml \
+  --graph-name oteglobe \
+  --failure-start 0.3 0.4 0.5 0.6 0.7 0.8 0.9 \
+  --failure-drop 0.3 \
+  --seed 123 \
+  --resume \
+  --output-dir schritt4_algorithmen_vergleich/output/server/real_oteglobe
+
+
+ERWARTETE AUSGABEN
+------------------
+
+Jede vollständige CSV enthält:
+
+    1000 Runs * 6 Algorithmen = 6000 Datenzeilen
+
+Dateizahlen:
+
+    synthetic_n25_p015:  22 Random + 14 Clustered = 36 CSVs
+    synthetic_n50_p015:  42 Random + 14 Clustered = 56 CSVs
+    synthetic_n100_p002: 124 Random + 14 Clustered = 138 CSVs
+    real_attmpls:         20 Random + 14 Clustered = 34 CSVs
+    real_cogentco:        20 Random + 14 Clustered = 34 CSVs
+    real_oteglobe:        20 Random + 14 Clustered = 34 CSVs
+
+Die finalen Notebooks erwarten exakt diese Verzeichnisse:
+
+    schritt4_algorithmen_vergleich/evaluation/notebooks/synthetic_graphs_runs1000.ipynb
+    schritt4_algorithmen_vergleich/evaluation/notebooks/real_world_graphs_runs1000.ipynb
+
+WICHTIG
+-------
+
+- Die Befehle nicht parallel in denselben output-dir schreiben lassen.
+- Cogentco ist die rechenintensivste Real-World-Reihe.
+- Für einen Neustart exakt denselben Befehl inklusive Seed und --resume nutzen.
+- Ohne --resume beginnt der betreffende Random- oder Clustered-Teil neu und
+  überschreibt seine vorhandenen Konfigurationsdateien.

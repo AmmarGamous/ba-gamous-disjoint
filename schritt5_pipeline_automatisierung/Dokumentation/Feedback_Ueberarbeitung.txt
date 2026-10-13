@@ -1,0 +1,152 @@
+Überarbeitung nach der Artefaktevaluation
+
+Grundlage sind die Rückmeldungen von T1 (Mouaiad), T2 (Ahmed) und T3 (Yara).
+Die folgende Zusammenfassung beschreibt die aufgegriffenen Hinweise und die
+daraus abgeleiteten Änderungen am lokalen Basiscode und seiner Dokumentation.
+Die zurückgegebenen studentischen Erweiterungen wurden nicht in den Basiscode
+übernommen.
+
+1. Überarbeitete Dokumentation
+
+Auf den Hinweis von T1 wurden README und Erweiterungsleitfaden übersichtlicher
+gegliedert. Die README wurde gekürzt und verweist für Einzelheiten auf die
+Modulprotokolle und den Erweiterungsleitfaden.
+
+Die Einrichtungshinweise von T2 wurden gemeinsam mit den Installationsproblemen
+von T3 aufgegriffen. Die Anleitung nennt jetzt die erforderliche Python-Version,
+die gemeinsamen Abhängigkeiten für CLI und GUI sowie die Einrichtung und Prüfung
+einer virtuellen Umgebung. PowerShell- und Bash-Befehle sind getrennt angegeben.
+Außerdem wird erklärt, in welchem Ordner die Befehle ausgeführt werden und wie
+sie nach dem Kopieren des eigenständigen Schritt-5-Ordners anzupassen sind.
+
+Weitere Hinweise von T2 betrafen die Nachvollziehbarkeit der Versuche. Die
+Dokumentation erklärt die Failure-Parameter, Ausführungsmodi, Plotgruppen und
+erwarteten Dateien eines Pilotlaufs. Für einen Wiederholungstest werden zwei
+neue Ausgabeordner und ein Vergleich der Ergebnisse empfohlen. Das Fortsetzen
+eines abgeschlossenen Resume-Laufs belegt dagegen keine erneute Berechnung.
+Die Bedeutung gleicher Softwareversionen und die Grenzen des Manifests werden
+ebenfalls erläutert.
+
+Die Rückmeldungen von T2 zur Erweiterbarkeit wurden zusammengeführt. Leitfaden
+und Modulprotokolle beschreiben die Argumente und Rückgaben neuer Funktionen,
+den Schutz des Eingabegraphen, Kantenformate und die Nutzung des Zufallsgenerators.
+Für neue GUI-Grapharten werden die eigene Parameterverarbeitung und die
+Erstellung des Datasets erklärt. Die Checkliste umfasst unveränderte
+Standardauswahlen, die Auswahl von Start- und Zielknoten, die direkte
+Experiment-CLI, Vergleichstests mit gleichem Seed und die Aktualisierung der
+betroffenen Dokumentation.
+
+Für T3 wurde die Änderung der Wiederholungszahl mit einem kurzen Aufruf mit
+--runs 5 verdeutlicht. Hinweise zum Speicherort der Plotfarben und Beschriftungen,
+zum Speichern der Änderungen, zum Prozessneustart und zu einem frühen kleinen
+Plot-Test ergänzen die Anleitung für Zusatzalgorithmen.
+
+2. Umgesetzte technische Änderungen
+
+Die gemeinsame Datei Dokumentation/requirements.txt enthält alle 44 direkten
+und indirekten Pakete mit festen Versionen für CLI, GUI, Auswertung und
+Illustrationen. Die bisherigen drei Paketlisten wurden ohne Versionsänderungen
+zusammengeführt. Python selbst wird getrennt installiert; venv gehört zur
+Python-Standardbibliothek und ist kein zusätzliches pip-Paket.
+
+collect_run_provenance(...) erfasst vor der Berechnung die installierten
+Paketversionen sowie Prüfsummen des Codes, der Requirements-Datei und der
+GraphML-Dateien. Relative Code-Dateischlüssel erlauben auch den Vergleich
+verschobener ZIP-Kopien. Die Angaben beschreiben den aktuellen Aufruf und
+belegen nicht nachträglich die Herkunft wiederverwendeter Resume-Rohdaten.
+
+Gemeinsame Vorabprüfungen erkennen ungeeignete Python-Versionen, fehlende
+Bibliotheken, fehlerhafte Einträge an Erweiterungsstellen, ungültige
+Failure-Parameter sowie fehlende Plotfarben und Beschriftungen. Sie laufen
+auch vor normalen Pipeline-Läufen. Direkte Plotaufrufe prüfen die benötigten
+Farben und Beschriftungen ebenfalls. Fehlende Angaben werden abgewiesen;
+eine automatische Ersatzfarbe wurde nicht eingeführt. Die bereits vorhandene
+Cluster-Parameterprüfung wird auch für entsprechend beschriebene neue Modelle
+genutzt. Vorabprüfungen ersetzen keine inhaltlichen Tests einer Erweiterung.
+
+Pipeline, GUI und die direkten Python- und CLI-Einstiege behalten die sechs
+Basisalgorithmen und vier ursprünglichen Failure-Kombinationen als Standard.
+Neue Verfahren müssen ausdrücklich ausgewählt werden. Die direkte Experiment-CLI
+berücksichtigt zusätzlich die in FAILURE_MODEL_SPECS eingetragenen Modellnamen.
+both bezeichnet weiterhin nur random und clustered. Die eigentliche Auswahl
+der Ausfälle muss für jedes neue Modell weiterhin implementiert werden.
+
+Der GUI-Graphdialog weist unbekannte Grapharten ab, statt sie als Real-World-
+Dataset zu speichern. In GRAPH_ENDPOINT_SELECTORS kann für eine neue Graphart
+eine eigene Funktion zur Auswahl von Start- und Zielknoten eingetragen werden.
+Die Hilfsfunktion choose_complete_graph_endpoints(...) erlaubt benachbarte
+Paare nur für vollständige einfache Graphen mit mindestens zwei Knoten.
+Die Zuordnung ist im Basiscode leer. Die bisherige Auswahl verbundener, nicht
+direkt benachbarter Paare bleibt für die vorhandenen Grapharten unverändert.
+Der frühere Leitfadenvorschlag, bei fehlenden geeigneten Paaren generell auf
+benachbarte Paare auszuweichen, wurde entfernt. Ein solcher allgemeiner Ersatz
+hätte auch die bisherigen Versuchsszenen verändern können.
+
+Die Standardausgaben liegen einheitlich im Schritt-5-Ordner unter Output/;
+Illustrationen verwenden dort den Unterordner illustrations/. Alte Ergebnisordner
+und ausdrücklich gewählte Zielpfade bleiben unverändert. CLI und GUI zeigen
+laufende Jobs und abgeschlossene Wiederholungsblöcke an. Die GUI ergänzt einen
+Fortschrittsbalken und die Auswertungsphase. Resume-Bestände werden ausgewiesen.
+Die Anzeige verändert keine Zufallsentscheidungen und ist keine Zeitprognose.
+
+Ergänzend weist run_pipeline(...) auch beim direkten Python-Aufruf die
+Kombination only_experiments=True und only_plots=True ab. Neue Fehlermodelltitel
+werden ohne Unterstriche dargestellt. Dateinamen und Basisdarstellung bleiben
+erhalten.
+
+Algorithmus-, Failure- und Resume-Overrides werden nach ihrer Validierung in die
+wirksame Konfiguration übernommen. Rückgabe, used_config.json und Manifest geben
+diese Werte dadurch einheitlich wieder. Vor der Summary-Erstellung leitet die
+Pipeline außerdem alle erwarteten Parametergruppen aus dem Experimentplan ab.
+Fehlt eine solche Gruppe vollständig, wird die Auswertung mit einer verständlichen
+Fehlermeldung beendet. Ein Regressionstest entfernt dafür gezielt eine vollständige
+Rohdatendatei.
+
+Nicht übernommene Vorschläge, etwa der vollständige Umbau der Fehlermodellauswahl
+auf eine Funktionstabelle, werden nicht als umgesetzt geführt. Weitere technische
+Einschränkungen sind in den jeweiligen Modulprotokollen beschrieben. Die
+Überarbeitung bedeutet nicht, dass sämtliche Probleme behoben sind.
+
+3. Technische Prüfung
+
+Die Überarbeitung wurde in einer separat eingerichteten Windows-Umgebung mit
+Python 3.11.3 geprüft. Verwendet wurden NetworkX 3.6.1, Pandas 3.0.2,
+Matplotlib 3.10.8 und Streamlit 1.63.0. Der vollständige Paketstand ist in
+Dokumentation/requirements.txt festgehalten. pip check meldete keine Paketkonflikte.
+
+Bei der Paket-/Feedback-Überarbeitung bestanden alle 74 Tests, darunter drei
+Streamlit-AppTests. Sie prüfen die Basis-Vorauswahl, neue Registrierungen,
+frühe Parameter- und Metadatenfehler, Endpunktregeln, Ausgabepfade, Fortschritt
+sowie Unterbrechung und Resume. Hinzu kommen die Speicherung wirksamer Overrides
+und der Abbruch bei einer vollständig fehlenden Parametergruppe. Ein kleiner
+GUI-Lauf prüft zusätzlich die Erzeugung von Rohdaten, Plots und Manifest. Die
+AppTests benötigen keinen externen Browser. Erweiterungen werden durch kleine
+isolierte Registrierungen getestet, nicht durch eine Übernahme der studentischen
+Implementierungen.
+
+Vor und nach den funktionalen Anpassungen wurden dieselben sechs Datasets mit
+allen sechs Algorithmen und vier Failure-Kombinationen ausgeführt. Dabei wurden
+zwei Wiederholungen, failFactor 0.8/1.6, failureStart 0.3/0.6 und failureDrop 0.3
+verwendet. Alle 48 Rohdaten-CSVs waren bytegleich. Dieser Vergleich belegt die
+Übereinstimmung für die geprüfte Konfiguration, nicht für beliebige Erweiterungen.
+
+Zusätzlich wurde config/pilot.json im folgenden Stand vollständig geprüft:
+Der Lauf pilot_1synthetic_1realworld verwendet fünf Wiederholungen, Seed 123 und
+aktiviertes Resume. Er enthält Erdős-Rényi mit n=25 und p=0.15 sowie Small:
+ATT-MPLS. Für beide sind failFactor 0.8/4.0/8.0, failureStart 0.3/0.6/0.9 und
+failureDrop 0.3 eingestellt. Ausgewählt sind alle sechs Basisalgorithmen,
+die vier Kombinationen Random Link, Random Node, Clustered Link und Clustered
+Node sowie Resilience, Average Hops und Average Stretch. Die Plotgruppen
+random_graphs und real_world trennen die beiden Graphkategorien.
+
+In einem frischen temporären Ausgabeordner ohne vorhandene Resume-Daten
+erzeugte dieser Pilotlauf acht Jobs, 24 Rohdaten-CSVs mit jeweils 30 Ergebniszeilen,
+eine Summary mit 144 Ergebniszeilen und 24 Abbildungen. Jede Abbildung wurde
+als PNG und SVG gespeichert, insgesamt also 48 Plotdateien. Hinzu kamen die
+verwendete Konfiguration und das Manifest. Die automatisierten Tests verwenden
+eine eigene kleine Konfiguration, damit Änderungen an config/pilot.json ihre
+Erwartungen nicht unbeabsichtigt verändern.
+
+Bei diesen Prüfungen wurde MPLBACKEND=Agg gesetzt, damit Matplotlib ohne
+grafische Desktopfenster rendert. Bestehende Ergebnisse wurden nicht verändert.
+Ein erneuter 1000-Run-Lauf und ein erneuter Serverlauf wurden nicht durchgeführt.

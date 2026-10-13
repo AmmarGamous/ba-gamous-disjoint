@@ -1,0 +1,9 @@
+Überarbeitung von zoo-clustered
+
+Durchgeführte Änderungen:
+
+1. Anpassung der Dateipfade und der ausgewerteten Messpunkte:
+   Die bisherigen relativen Pfade vom Typ CSVs/curve/ wurden auf die aktuelle Projektstruktur ../../../../external/TREE/evaluation/output/ umgestellt. Dadurch greift das Notebook auf die CSV-Dateien der extern eingebundenen TREE-Referenzimplementierung zu. Für die Auswertung wurden nur die tatsächlich vorhandenen CSV-Dateien für die Failure Rates 0.3 bis 0.8 übernommen. Da keine passende CSV-Datei für Failure Rate 0.9 existiert, wurde dieser Messpunkt entfernt. Entsprechend wurde xVals von [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9] auf [0.3, 0.4, 0.5, 0.6, 0.7, 0.8] angepasst, und die Plot-Erzeugung verwendet nur noch die Werte rPaths03 bis rPaths08, rOne03 bis rOne08 und rMult03 bis rMult08. Dadurch stimmen x-Werte und y-Werte wieder überein, und der Plot stellt nur vorhandene Messpunkte dar.
+
+2. Kontrolle der Berechnungslogik und Bewertung:
+   Die zentrale Auswertungsfunktion allInOne wurde nicht verändert. Die Berechnung von Resilience für EDPs, One Tree und Multiple Trees bleibt daher identisch zur alten Version. Nach Entfernung des Messpunkts 0.9 ist die neue Version fachlich konsistent, sofern alle zugehörigen y-Wert-Listen im Plot ebenfalls auf sechs Werte reduziert wurden. Die Auswertung basiert damit nur auf den vorhandenen CSV-Dateien für die Failure Rates 0.3 bis 0.8.

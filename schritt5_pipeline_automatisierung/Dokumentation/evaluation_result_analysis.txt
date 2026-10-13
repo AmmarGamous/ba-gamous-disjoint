@@ -1,0 +1,86 @@
+evaluation/result_analysis.py
+
+
+Zweck
+`evaluation/result_analysis.py` lädt Rohdaten, aggregiert die Ergebnisse und
+erzeugt paper-nahe Vergleichsplots.
+
+Aufgaben
+- alle `algorithms_*.csv`-Dateien pro Dataset laden
+- Resilience, Average Hops und Average Stretch aggregieren
+- vorhandene Summary-Gruppen auf Algorithmusauswahl und Stichprobenzahl prüfen
+- PNG- und SVG-Plots pro Failure-Kombination und Metrik schreiben
+
+Wichtige Strukturen
+- `ALGORITHM_LABELS`: sichtbare Plot-Legenden.
+- `ALGORITHM_COLORS`: feste Farben pro Algorithmus.
+
+Wichtige Funktionen
+- `load_result_directories(...)`: liest Rohdatenordner und ergänzt Dataset-Schlüssel.
+- `aggregate_results(...)`: berechnet Summary-Daten.
+- `completeness_table(...)`: erzeugt eine Kontrolltabelle.
+- `validate_summary(...)`: prüft alle erwarteten Parametergruppen, vorhandene
+  Algorithmen und Wiederholungszahlen sowie gültige Resilience-Werte.
+- `plot_all_comparisons(...)`: erzeugt Plotdateien.
+- `validate_plot_metadata(...)`: prüft nicht leere Labels und gültige Matplotlib-Farben.
+- `failure_model_label(...)`: ersetzt Unterstriche durch Leerzeichen und formatiert Titel.
+
+Erweiterungspunkte
+- Neue Algorithmen müssen in `ALGORITHM_LABELS` und `ALGORITHM_COLORS` ergänzt
+  werden, damit die Plot-Erzeugung vollständige Legenden und Farben hat.
+
+Ein- und Rückgabeverträge
+- `load_result_directories(directories)` erwartet Dataset-Namen als Schlüssel
+  und Rohdatenordner als Werte. Rückgabe: DataFrame der Rohdaten und ein
+  Dictionary mit den eingelesenen Dateipfaden je Dataset.
+- `aggregate_results(raw)` liefert den vorbereiteten Rohdaten-DataFrame und
+  den aggregierten Summary-DataFrame. `success` enthält 0/1; fehlgeschlagene
+  Hops/Stretch-Werte werden für die Mittelwertbildung ausgeblendet.
+- `plot_all_comparisons(...)` erhält den Summary-DataFrame im Speicher und
+  liefert eine flache Liste von Path-Objekten mit jeweils PNG und SVG.
+  Es liest nicht selbst die Summary-Datei ein und ruft `validate_summary(...)`
+  nicht auf. Dies übernimmt im Pipeline-Ablauf `write_summary_and_plots(...)`.
+- Jeder gewünschte Algorithmus braucht Label und Farbe unter demselben Schlüssel
+  wie in `ALGORITHMS`. Diese Einträge am Anfang des Moduls vor dem Plotaufruf
+  setzen, speichern und in einem neuen Prozess prüfen.
+
+Aggregation und vorhandene Prüfgrenzen
+Gruppiert wird nach `dataset`, `failureType`, `failureModel`, `failureParameter`
+und `algorithm`. `failureParameter` bevorzugt failFactor; fehlt dessen Wert,
+wird failureStart verwendet. Resilience ist der Mittelwert von success (0/1),
+Hops und Stretch sind Mittelwerte der erfolgreichen Zeilen. Ohne Erfolge bleiben
+beide Mittelwerte NaN. `samples` zählt Zeilen, `successes` summiert Erfolgswerte.
+Die Einzelszenenwerte liefert `experiment.create_instance_rows(...)`;
+die Hopzählung beschreibt src_routing_algorithms.txt.
+
+Die Pipeline leitet aus dem Experimentplan alle erwarteten Kombinationen aus
+Dataset, Failure-Typ, Failure-Modell und Failure-Parameter ab. `validate_summary(...)`
+vergleicht diese Sollmenge mit den vorhandenen Summary-Gruppen. Dadurch werden
+auch vollständig fehlende Failure-/Parametergruppen und eine leere Summary
+abgewiesen. Für jede vorhandene Gruppe prüft die Funktion zusätzlich die
+ausgewählten Algorithmen, `samples == expected_runs` und Resilience im Bereich
+[0, 1]. Sie kontrolliert jedoch noch nicht, ob die Wiederholungsnummern eindeutig
+und lückenlos sind. Dieselbe Wiederholungsnummer könnte daher trotz korrekter
+Zeilenanzahl mehrfach vorkommen.
+
+Der Loader liest sämtliche passenden CSVs je Dataset-Ordner. failureDrop,
+Graphparameter und Seed sind keine Gruppierungsschlüssel. Unterschiedliche
+Versuchsbedingungen daher nicht im selben Dataset-Ordner mischen; sonst können
+fremde oder alte Zeilen aggregiert werden. Getrennte Laufordner bleiben nötig.
+
+Prüfung und Interpretation
+Fehlende oder ungültige Farben und Labels werden mit `ValueError` früh abgewiesen,
+nicht still durch zufällige Farben ersetzt. Pipeline-Läufe prüfen dies vor den
+Experimenten, direkte Plotaufrufe vor dem Anlegen des Ausgabeordners und der
+Abbildungen. Neue Modellnamen wie `clustered_random_center` erscheinen im Titel
+als `Clustered Random Center`; Schlüssel und Dateinamen bleiben unverändert.
+Ein Shortest-Path-Zusatzalgorithmus auf dem Restgraphen
+hat bei Erfolg Stretch null, nutzt aber globale Ausfallkenntnis und ist keine
+gleichartige lokale Failover-Variante.
+
+Abgrenzung zur Pipeline
+Diese Funktion zeichnet genau die übergebene Dataset-Liste als Teilplots,
+ohne selbst nach Graphkategorie zu trennen oder auf drei Datasets zu begrenzen.
+Die automatische Gruppierung übernimmt pipeline.default_plot_groups(...);
+siehe pipeline.txt. Beschriftungen und Farben sind hier festgelegt; NDP-Namen
+mit `ndp_` erhalten gestrichelte, andere Namen durchgezogene Linien.

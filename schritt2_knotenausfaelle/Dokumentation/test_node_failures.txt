@@ -1,0 +1,14 @@
+Unit-Tests:
+
+Die Datei evaluation/test_node_failures.py prüft die wichtigsten neuen Hilfsfunktionen:
+
+- Quelle und Ziel werden nicht als ausgefallene Knoten gewählt.
+- Random Node Failures schließen s und d aus.
+- Ein ausgefallener Knoten blockiert alle inzidenten Kanten.
+- Doppelte Kanten werden bei der Umwandlung vermieden.
+- Clustered Node Failures starten in der Umgebung des Zielknotens.
+- Random- und clustered Mini-Laeufe schreiben nrFailedNodes korrekt in die CSV.
+
+Ergebnis:
+
+7 Tests erfolgreich.

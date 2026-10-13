@@ -1,0 +1,81 @@
+src/failures.py
+
+
+Zweck
+`src/failures.py` enthält die Failure-Modelle für Link- und Knotenausfälle.
+Das Modul kapselt die Auswahl der ausgefallenen Kanten und Knoten.
+
+Aufgaben
+- Failure-Modell-Metadaten bereitstellen
+- zufällige Link- und Node-Failures erzeugen
+- clustered Link- und Node-Failures um den Zielknoten erzeugen
+- ausgefallene Knoten in betroffene Kanten umrechnen
+- Clusterparameter validieren
+
+Wichtige Strukturen
+- `FAILURE_MODEL_SPECS`: beschreibt pro Modell, ob `failFactor` oder
+  `failureStart`/`failureDrop` verwendet wird und welcher CSV-Präfix gilt.
+
+Wichtige Funktionen
+- `failure_model_spec(...)`: liefert die Metadaten eines Failure-Modells.
+- `uses_failure_count(...)`: gibt an, ob ein Modell eine feste Ausfallanzahl nutzt.
+- `uses_cluster_parameters(...)`: gibt an, ob ein Modell Clusterparameter nutzt.
+- `node_sort_key(...)` und `edge_sort_key(...)`: liefern Sortierschlüssel.
+- `sorted_edges(...)`: sortiert Kanten und normalisiert ihre Endpunktreihenfolge.
+- `sorted_edge_sequence(...)`: sortiert Kanten, behält ihre Richtung aber bei.
+- `unique_sorted_nodes(...)`: entfernt doppelte Knoten und sortiert sie.
+- `node_failures_to_edges(...)`: übersetzt Knotenausfälle in inzidente Kanten.
+- `clustered_link_failures(...)`: wählt Linkausfälle schichtweise um
+  `destination`. Kanten zu `source` sind in allen Schichten geschützt. Direkte
+  Kanten zu `destination` sind nur in der ersten Schicht Kandidaten und werden
+  in allen weiteren Schichten ausgeschlossen.
+- `clustered_node_failures(...)`: wählt Knotenausfälle schichtweise um `destination`.
+- `select_failures(...)`: zentrale Auswahlfunktion für Modell und Typ.
+
+Erweiterungspunkte
+- Neue Failure-Modelle werden zuerst in `FAILURE_MODEL_SPECS` beschrieben.
+- Die konkrete Auswahl wird anschließend in `select_failures(...)` ergänzt.
+- Ein neuer Mittelpunkt muss vom tatsächlichen Ziel getrennt werden. Welche
+  Komponente als Auswahlbereich gilt und ob das Zentrum ausfallen darf, sind
+  eigene Modellentscheidungen. Die bisherigen Schutzregeln nicht still verändern.
+
+Ein- und Rückgabevertrag
+`select_failures(graph, source, destination, failure_type, failure_model,
+nr_failures, failure_start, failure_drop, rng)` verändert den Graphen nicht und
+liefert bei gültigem Typ und Modell `(failed_edges, failed_nodes)`. Link-Failure liefert eine leere
+Knotenliste. Node-Failure liefert die gewählten Knoten und alle betroffenen
+inzidenten Kanten. Jede Kante enthält zwei ursprüngliche Knotenkennungen.
+`node_failures_to_edges(...)` entfernt doppelte ungerichtete Kanten.
+
+`nr_failures` ist die bereits in `experiment.py` berechnete gewünschte Anzahl
+für Random Failure. Hier wird sie nur auf vorhandene Kandidaten begrenzt.
+Direkte Aufrufer müssen eine nicht negative ganze Zahl übergeben; die
+Random-Zweige validieren dies nicht gesondert. Kandidaten sind bei Random Link
+alle Kanten, auch solche an s oder d. Bei Random Node sind s und d ausgeschlossen.
+Clustered Failure verwendet `floor(probability * Kandidatenanzahl)` und zieht
+pro Runde `failure_drop` ab. `validate_cluster_parameters(...)` verlangt für
+Start und Drop jeweils `0 < Wert <= 1`. Eine neue Runde beginnt nur bei positiver
+Rate und nicht leerer Kandidatenliste. Ein auf null abgerundeter Auswahlumfang
+beendet die Ausbreitung nicht vorzeitig.
+
+Bei beiden Cluster-Basismodellen wird die nächste Kandidatenliste aus allen
+aktuellen Kandidaten aufgebaut, nicht ausschließlich aus ausgefallenen.
+Beim Linkmodell dienen die jeweils zweiten Endpunkte der orientierten
+Kandidatentupel als nächste Ausgangsknoten. Deshalb bleibt die Tupelrichtung
+beim Sortieren erhalten, während Duplikate über ungerichtete Schlüssel geprüft
+werden. Die Runden sind keine garantiert disjunkten Distanzschichten; auch die
+Ausfallmenge muss nicht zusammenhängend sein.
+Das Linkmodell kann Kanten in späteren Runden erneut als Kandidaten betrachten;
+die endgültige Ausfallmenge enthält sie nur einmal. Das Node-Modell nimmt bereits
+ausgefallene Knoten nicht erneut in die nächste Kandidatenliste auf.
+
+Alle neuen Zufallsentscheidungen müssen den übergebenen `rng` und stabil
+sortierte Kandidaten verwenden. Der Leitfaden beschreibt Integrationsstellen;
+ein Modell mit zufälligem Zentrum ist im aktuellen Basiscode nicht registriert.
+
+Abgrenzung
+Bei Node-Failure bleiben s und d als Knoten erhalten. Ihre inzidenten Kanten
+können trotzdem durch einen ausgefallenen Nachbarknoten betroffen sein.
+Die failFactor-Berechnung erfolgt in experiment.py, nicht in diesem Modul.
+Anschließend verarbeitet das Routing nur die resultierenden Ausfallkanten;
+siehe src_routing_algorithms.txt.

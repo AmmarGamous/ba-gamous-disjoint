@@ -1,0 +1,60 @@
+test_routing_algorithms.py
+
+Datei: schritt4_algorithmen_vergleich/evaluation/test_routing_algorithms.py
+
+1. Aufgabe des Moduls:
+test_routing_algorithms.py enthält die Regressionstests für Schritt 4.
+Die Tests sichern ab, dass Algorithmik, Failure-Modelle, CSV-Ausgabe, Resume-Verhalten und
+Auswertung weiterhin korrekt zusammenarbeiten.
+
+2. Klasse:
+RoutingAlgorithmsTest
+    Zentrale Testklasse für die Schritt-4-Pipeline. 
+    In setUp() wird ein kleiner Testgraph mit zwei disjunkten Pfaden, einem nützlichen Zusatzast und 
+    einem redundanten Blatt erzeugt.
+
+3. Testbereiche:
+Algorithmusnamen
+    Prüft, ob die sechs erwarteten Algorithmusvarianten stabil vorhanden sind.
+
+One Tree
+    Prüft, ob nur der längste Pfad erweitert wird und 
+    ob der Baum bei Ausfällen zusätzliche Äste nutzen kann.
+
+Trunkierung
+    Prüft, ob nutzlose Blätter ohne Ausgang zum Ziel entfernt werden.
+
+Multiple Trees
+    Prüft Kantendisjunktheit der erzeugten Baumstrukturen.
+
+NDP
+    Prüft, ob knotendisjunkte Pfade keine internen Knoten teilen.
+
+Failure-Modelle
+    Prüft die Umwandlung von Knotenausfällen in inzidente Kanten.
+
+CSV-Format
+    Prüft, ob eine Instanz eine Zeile pro Algorithmus im Long-Format erzeugt.
+
+Experimentserie
+    Prüft, ob Random/Clustered und Link/Node korrekt gepaart geschrieben werden.
+
+CLI
+    Prüft, ob eine Algorithmus-Teilmenge über Kommandozeilenargumente ausgeführt werden kann.
+
+Resume
+    Prüft, ob vollständige Wiederholungen erhalten bleiben und unvollständige Wiederholungen ersetzt werden.
+
+Finale Analyse
+    Prüft, ob die Ergebnisdaten vollständig sind: pro Kombination müssen
+    alle sechs Algorithmen vorhanden sein und pro Algorithmus die erwartete Anzahl an Wiederholungen.
+
+4. Ausführung:
+Tests werden ausgeführt mit:
+    python -m unittest discover -s schritt4_algorithmen_vergleich/evaluation -p "test_*.py" -v
+
+5. Prüfstatus:
+Letzter Testlauf:
+
+    Ran 15 tests
+    OK

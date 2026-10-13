@@ -1,0 +1,50 @@
+@startuml
+!include _style.iuml
+start
+partition "Eingabe" {
+  :run_experiment_series()\nGraphparameter oder GraphML-Pfad, runs, seed\nAlgorithmen, Failure-Parameter, Resume, Ausgabeordner;
+  note right
+    Aufruf durch die Pipeline oder direkt
+    über die Experiment-CLI ohne JSON.
+  end note
+}
+partition "Verarbeitung: experiment.py" {
+  :Failure-Konfigurationen und CSV-Pfade bestimmen\nBei Resume: gemeinsamen vollständigen Präfix ermitteln\nund unvollständige Restzeilen abschneiden;
+  if (Bereits vollständig gespeichert?) then (ja)
+    :Vorhandene CSV-Pfade zurückgeben;
+    stop
+  endif
+  :master_rng = random.Random(seed)\nGraphML gegebenenfalls einmal einlesen;
+  while (Weitere Wiederholung r?) is (ja)
+    :graph_seed aus master_rng ableiten\nSynthetischen Graph erzeugen / GraphML-Graph kopieren\nQuell- und Zielknoten mit master_rng wählen;
+    :EDPs und NDPs für die Ausfallanzahl bestimmen;
+    note right
+      Standard: s und d verbunden, nicht benachbart.
+      Ungültige Szene: bis zu 1000 Versuche;
+      danach Fehler. Eigene Endpunktregel
+      nur bei ausdrücklicher Registrierung.
+    end note
+    if (r schon vollständig gespeichert?) then (ja)
+      :Keine neuen Ergebniszeilen schreiben\nGraph-/Endpunktrandomisierung wurde rekonstruiert;
+    else (nein)
+      while (Weitere Failure-Konfiguration?) is (ja)
+        :Anzahl zufälliger Ausfälle berechnen\nSeparaten failure_rng aus Seed, r und\nFailure-Konfiguration erzeugen;
+        :failures.select_failures()\nAusgefallene Kanten und Knoten erhalten;
+        :create_instance_rows()\nRestpfadlänge auf Graphkopie bestimmen\nrun_algorithms() auf ursprünglichem Graph aufrufen;
+        note right
+          Die Strukturen werden auf dem intakten
+          Graphen aufgebaut, nicht auf der Resttopologie.
+          Nach Ausfällen getrennte s/d werden nicht
+          herausgefiltert: Fehlschläge bleiben enthalten.
+        end note
+        :write_rows()\nJe ausgewähltem Algorithmus eine CSV-Zeile anhängen;
+      endwhile (nein)
+      :Fortschritt in Wiederholungsblöcken melden;
+    endif
+  endwhile (nein)
+}
+partition "Ausgabe" {
+  :Liste der Rohdaten-CSV-Pfade\nCSV-Zeilen: Szene, Parameter, Algorithmus,\nErfolg, Hops, additive Stretch-Differenz;
+}
+stop
+@enduml

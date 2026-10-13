@@ -1,0 +1,159 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>UML | Experimentierumgebung</title>
+<style>
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:#20292d;background:#fff;font:16px/1.6 Arial,sans-serif;letter-spacing:0}
+a{color:#27686a;text-underline-offset:3px}a:hover{color:#7d4d16}a:focus-visible{outline:2px solid #27686a;outline-offset:4px}
+nav{position:fixed;inset:0 auto 0 0;width:270px;overflow:auto;border-right:1px solid #d7dfe0;background:#f4f7f7;padding:20px 18px}
+nav a{display:block;padding:6px 0;text-decoration:none;line-height:1.35;font-size:14px}nav span{color:#68777c;font-size:12px;margin-right:6px}
+.navgroup{margin:22px 0 6px;font-size:12px;font-weight:bold;text-transform:uppercase;color:#56646b}.brand{font-size:18px;font-weight:bold;margin:0}
+main{margin-left:270px;max-width:1700px;padding:36px 44px}header{border-bottom:2px solid #27686a;padding-bottom:22px}h1{font-size:30px;line-height:1.2;margin:0 0 14px}h2{font-size:24px;line-height:1.3;margin:4px 0 12px}
+header p{max-width:920px;margin:8px 0}section{padding:32px 0 40px;border-bottom:1px solid #ccd6d9;scroll-margin-top:20px}.eyebrow{font-size:12px;color:#68777c;text-transform:uppercase;margin:0}
+dl{display:grid;grid-template-columns:115px minmax(0,1fr);gap:10px 18px;max-width:1000px}dt{font-weight:bold}dd{margin:0}code{font:14px Consolas,monospace;overflow-wrap:anywhere}
+.links{display:flex;gap:24px;margin:22px 0 14px;font-size:14px}figure{margin:0;overflow:auto}figure img{display:block;max-width:100%;height:auto}
+.note{max-width:1000px;border-left:3px solid #b49a60;padding:5px 0 5px 16px;color:#4e5a60}footer{padding:24px 0;color:#68777c;font-size:14px}
+@media(max-width:850px){nav{position:static;width:100%;max-height:250px;border-right:0;border-bottom:1px solid #ccd6d9}main{margin:0;padding:24px 18px}h1{font-size:26px}h2{font-size:22px}dl{grid-template-columns:1fr;gap:2px}dd{margin-bottom:12px}}
+@media print{nav,.links{display:none}main{margin:0;padding:0}section{break-before:page}figure img{max-height:220mm;object-fit:contain}header{border:0}}
+</style></head><body><nav aria-label="Diagrammübersicht"><p class="brand">UML · Schritt 5</p><p class="navgroup">Überblick</p>
+<a href="#00_gesamtarchitektur"><span>00</span> Gesamtarchitektur</a>
+<p class="navgroup">Module</p>
+<a href="#01_gui"><span>01</span> GUI</a>
+<a href="#02_pipeline"><span>02</span> Pipeline</a>
+<a href="#03_experiment"><span>03</span> Experimentsteuerung</a>
+<a href="#04_failures"><span>04</span> Ausfallerzeugung</a>
+<a href="#05_routing_algorithms"><span>05</span> Routingalgorithmen</a>
+<a href="#08_result_analysis"><span>08</span> Ergebnisanalyse</a>
+<a href="#09_environment_check"><span>09</span> Umgebungsprüfung</a>
+<p class="navgroup">Routingdetails</p>
+<a href="#06_strukturaufbau"><span>06</span> Aufbau der Pfade und Bäume</a>
+<a href="#07_routing_tiefensuche"><span>07</span> Weiterleitung in einer Struktur</a>
+<a href="#10_routing_datenklassen"><span>10</span> Datenklassen des Routings</a>
+<p class="navgroup">Tests</p>
+<a href="#11_test_pipeline"><span>11</span> Pipeline- und Kerntests</a>
+<a href="#12_test_gui"><span>12</span> Tests der GUI-Hilfsfunktionen</a>
+<a href="#13_test_feedback_improvements"><span>13</span> Regressionstests der Überarbeitung</a>
+<a href="#14_test_gui_integration"><span>14</span> Streamlit-Integrationstests</a></nav><main><header><h1>Architektur der Experimentierumgebung</h1>
+<p>Gesamtübersicht und Ablaufdiagramme der aktuellen Implementierung, ohne Illustrationsmodul.
+Die sieben produktiven Module sind einzeln dargestellt; Routingdetails und die vier Testmodule ergänzen die Übersicht.</p>
+<p>In den Aktivitätsdiagrammen stehen Rauten für Entscheidungen und Pfeile für den Ablauf.
+Kreis und Abschlusskreis markieren Anfang und Ende. Die Diagramme zeigen die wesentlichen Schritte, nicht jede Fehlerprüfung.</p>
+<p><a href="README.txt">Erläuterungen und erneute Erzeugung</a></p></header><section id="00_gesamtarchitektur">
+<p class="eyebrow">Überblick / 00</p><h2>Gesamtarchitektur</h2><p>Schritt 5: produktive Module und zentrale Abhängigkeiten</p>
+<dl><dt>Eingabe</dt><dd>GUI-Auswahl oder Pipeline-CLI mit JSON; direkter Aufruf von experiment.py als weiterer Einstieg.</dd><dt>Verarbeitung</dt><dd>Die Pipeline steuert Experimentkern und Auswertung. Die Komponenten enthalten ihre zentralen Ein- und Ausgaben.</dd>
+<dt>Ausgabe</dt><dd>Rohdaten, Summary, Plots und Laufmetadaten. Der gewählte Ausführungsmodus bestimmt den Umfang.</dd></dl>
+<div class="links"><a href="figures/00_gesamtarchitektur.svg">SVG</a><a href="figures/00_gesamtarchitektur.png">PNG</a>
+<a href="00_gesamtarchitektur.puml">PlantUML-Quelle</a></div>
+<figure><a href="figures/00_gesamtarchitektur.svg"><img src="figures/00_gesamtarchitektur.svg" width="1852" height="553" alt="UML: Gesamtarchitektur" loading="lazy"></a></figure>
+<p class="note">Das Komponentendiagramm zeigt Abhängigkeiten, nicht die zeitliche Reihenfolge. Die Ablaufdiagramme darunter ergänzen diese Sicht.</p></section>
+<section id="01_gui">
+<p class="eyebrow">Module / 01</p><h2>GUI</h2><p><a href="../../gui.py"><code>gui.py</code></a></p>
+<dl><dt>Eingabe</dt><dd>Auswahl von Graphen, Algorithmen, Ausfallmodellen, Metriken, Wiederholungszahl und Ausführungsmodus.</dd><dt>Verarbeitung</dt><dd>main(), build_gui_config(), write_gui_config(), mode_to_pipeline_flags(), render_result().</dd>
+<dt>Ausgabe</dt><dd>gui_config.json, Fortschritt und Ergebnisanzeige; bei Servervorbereitung zusätzlich run_on_server.sh.</dd></dl>
+<div class="links"><a href="figures/01_gui.svg">SVG</a><a href="figures/01_gui.png">PNG</a>
+<a href="01_gui.puml">PlantUML-Quelle</a></div>
+<figure><a href="figures/01_gui.svg"><img src="figures/01_gui.svg" width="1156" height="1057" alt="UML: GUI" loading="lazy"></a></figure>
+<p class="note">Die GUI schreibt ihre Konfiguration auch vor Dry Run und Preflight. Server vorbereiten startet keinen entfernten Prozess.</p></section>
+<section id="02_pipeline">
+<p class="eyebrow">Module / 02</p><h2>Pipeline</h2><p><a href="../../pipeline.py"><code>pipeline.py</code></a></p>
+<dl><dt>Eingabe</dt><dd>Pfad einer JSON-Konfiguration und optionale Überschreibungen, Modusschalter und Fortschritts-Callback.</dd><dt>Verarbeitung</dt><dd>run_pipeline(), build_experiment_plan(), validate_preflight(), run_experiments(), write_summary_and_plots(), write_manifest().</dd>
+<dt>Ausgabe</dt><dd>Dictionary mit Plan und Dateipfaden; bei normalem Lauf raw/, summaries/, plots/, used_config.json und manifest.json.</dd></dl>
+<div class="links"><a href="figures/02_pipeline.svg">SVG</a><a href="figures/02_pipeline.png">PNG</a>
+<a href="02_pipeline.puml">PlantUML-Quelle</a></div>
+<figure><a href="figures/02_pipeline.svg"><img src="figures/02_pipeline.svg" width="1049" height="1506" alt="UML: Pipeline" loading="lazy"></a></figure>
+<p class="note">Die Pipeline-CLI benötigt --config. Nur die separate Experiment-CLI kann ohne JSON gestartet werden. Dry Run erzeugt im Pipeline-Kern keine Ergebnisdateien; Preflight kann den Ausgabeordner anlegen.</p></section>
+<section id="03_experiment">
+<p class="eyebrow">Module / 03</p><h2>Experimentsteuerung</h2><p><a href="../../src/experiment.py"><code>src/experiment.py</code></a></p>
+<dl><dt>Eingabe</dt><dd>Graphparameter oder GraphML-Pfad, Algorithmen, Ausfallparameter, runs, seed, Resume und Ausgabeordner.</dd><dt>Verarbeitung</dt><dd>run_experiment_series(), create_graph(), choose_graph_endpoints(), create_instance_rows(), write_rows().</dd>
+<dt>Ausgabe</dt><dd>Rohdaten-CSVs und deren Pfade. Eine Ergebniszeile entspricht einem Algorithmus in einer Szene und Failure-Konfiguration.</dd></dl>
+<div class="links"><a href="figures/03_experiment.svg">SVG</a><a href="figures/03_experiment.png">PNG</a>
+<a href="03_experiment.puml">PlantUML-Quelle</a></div>
+<figure><a href="figures/03_experiment.svg"><img src="figures/03_experiment.svg" width="1225" height="1546" alt="UML: Experimentsteuerung" loading="lazy"></a></figure>
+<p class="note">Eine Szene enthält einen Graphen, Quell-/Zielknoten und Ausfälle. Alle ausgewählten Algorithmen erhalten dieselbe Szene. Bei Zufallsausfällen berechnet dieses Modul round(max(k - 1, 0) * failFactor), mit k = EDP-Anzahl für Kanten und NDP-Anzahl für Knoten. Der failure_rng-Schlüssel enthält Seed, Wiederholung, Typ, Modell, failFactor und failureStart, nicht failureDrop.</p></section>
+<section id="04_failures">
+<p class="eyebrow">Module / 04</p><h2>Ausfallerzeugung</h2><p><a href="../../src/failures.py"><code>src/failures.py</code></a></p>
+<dl><dt>Eingabe</dt><dd>Unveränderter Graph, s, d, Ausfalltyp und -modell, gewünschte Ausfallzahl bzw. Clusterparameter sowie ein Zufallsgenerator.</dd><dt>Verarbeitung</dt><dd>select_failures(), clustered_link_failures(), clustered_node_failures(), node_failures_to_edges().</dd>
+<dt>Ausgabe</dt><dd>Zwei Listen: ausgefallene Kanten und ausgefallene Knoten. Bei Kantenausfällen ist die Knotenliste leer.</dd></dl>
+<div class="links"><a href="figures/04_failures.svg">SVG</a><a href="figures/04_failures.png">PNG</a>
+<a href="04_failures.puml">PlantUML-Quelle</a></div>
+<figure><a href="figures/04_failures.svg"><img src="figures/04_failures.svg" width="1835" height="1217" alt="UML: Ausfallerzeugung" loading="lazy"></a></figure>
+<p class="note">Knotenausfälle werden als Ausfall aller inzidenten Kanten an das Routing übergeben. Cluster breiten sich aus allen aktuellen Kandidaten aus, nicht nur aus gezogenen Ausfällen. Für Cluster gelten 0 &lt; failure_start &lt;= 1 und 0 &lt; failure_drop &lt;= 1. Das Modul verändert den Graphen nicht und schreibt keine Dateien.</p></section>
+<section id="05_routing_algorithms">
+<p class="eyebrow">Module / 05</p><h2>Routingalgorithmen</h2><p><a href="../../src/routing_algorithms.py"><code>src/routing_algorithms.py</code></a></p>
+<dl><dt>Eingabe</dt><dd>Ursprünglicher Graph, s, d, Liste ausgefallener Kanten und ausgewählte Algorithmen.</dd><dt>Verarbeitung</dt><dd>run_algorithms() → route_algorithm() → build_structures() → route_structure().</dd>
+<dt>Ausgabe</dt><dd>Eine Liste von RoutingResult-Objekten, noch keine CSV-Dateien.</dd></dl>
+<div class="links"><a href="figures/05_routing_algorithms.svg">SVG</a><a href="figures/05_routing_algorithms.png">PNG</a>
+<a href="05_routing_algorithms.puml">PlantUML-Quelle</a></div>
+<figure><a href="figures/05_routing_algorithms.svg"><img src="figures/05_routing_algorithms.svg" width="1283" height="1213" alt="UML: Routingalgorithmen" loading="lazy"></a></figure>
+<p class="note">Die sechs Basisverfahren teilen sich die Routingroutine. Registrierte Zusatzverfahren können eigene Runner verwenden. Aufbau und Trunkierung berücksichtigen nicht die Ausfälle; erst die Weiterleitung überspringt ausgefallene Kanten.</p></section>
+<section id="06_strukturaufbau">
+<p class="eyebrow">Routingdetails / 06</p><h2>Aufbau der Pfade und Bäume</h2><p><a href="../../src/routing_algorithms.py"><code>src/routing_algorithms.py</code></a></p>
+<dl><dt>Eingabe</dt><dd>Graph, s, d, berechnete EDPs oder NDPs und Strukturtyp paths, one_tree oder multiple_trees.</dd><dt>Verarbeitung</dt><dd>build_structures(), _base_tree(), _grow_tree(), truncate_tree().</dd>
+<dt>Ausgabe</dt><dd>RoutingStructure-Liste, für das Routing nach der Länge der ursprünglichen Pfade aufsteigend geordnet.</dd></dl>
+<div class="links"><a href="figures/06_strukturaufbau.svg">SVG</a><a href="figures/06_strukturaufbau.png">PNG</a>
+<a href="06_strukturaufbau.puml">PlantUML-Quelle</a></div>
+<figure><a href="figures/06_strukturaufbau.svg"><img src="figures/06_strukturaufbau.svg" width="1653" height="986" alt="UML: Aufbau der Pfade und Bäume" loading="lazy"></a></figure>
+<p class="note">One Tree schützt bei beiden Pfadtypen die übrigen Basispfade. Multiple Trees reserviert gemeinsam Kanten, aber keine inneren Knoten. Schlusskanten nach d liegen außerhalb der gespeicherten Baumgraphen. Trunkierung erfolgt nach dem gesamten Wachstum eines Baums, nicht nach jedem eingefügten Ast.</p></section>
+<section id="07_routing_tiefensuche">
+<p class="eyebrow">Routingdetails / 07</p><h2>Weiterleitung in einer Struktur</h2><p><a href="../../src/routing_algorithms.py"><code>src/routing_algorithms.py</code></a></p>
+<dl><dt>Eingabe</dt><dd>Eine RoutingStructure, s, d, normalisierte Ausfallkanten und das Flag prefer_original_path.</dd><dt>Verarbeitung</dt><dd>route_structure(), _rooted_children(), _distance_to_exit() und die innere rekursive Funktion visit(node).</dd>
+<dt>Ausgabe</dt><dd>Das Tupel (success, hops, route) einer einzelnen Struktur.</dd></dl>
+<div class="links"><a href="figures/07_routing_tiefensuche.svg">SVG</a><a href="figures/07_routing_tiefensuche.png">PNG</a>
+<a href="07_routing_tiefensuche.puml">PlantUML-Quelle</a></div>
+<figure><a href="figures/07_routing_tiefensuche.svg"><img src="figures/07_routing_tiefensuche.svg" width="1205" height="1278" alt="UML: Weiterleitung in einer Struktur" loading="lazy"></a></figure>
+<p class="note">Ein Rückweg zählt als Hop, eine übersprungene Ausfallkante nicht. Die Ausgangsdistanzen werden in der vorbereiteten Struktur berechnet, ohne die Ausfälle in der Rangordnung zu berücksichtigen. route_algorithm() addiert anschließend die Hops aller getesteten Strukturen.</p></section>
+<section id="08_result_analysis">
+<p class="eyebrow">Module / 08</p><h2>Ergebnisanalyse</h2><p><a href="../../evaluation/result_analysis.py"><code>evaluation/result_analysis.py</code></a></p>
+<dl><dt>Eingabe</dt><dd>Dataset-Verzeichnisse mit Rohdaten sowie erwartete Parametergruppen, Algorithmen, Wiederholungszahl und Plotvorgaben.</dd><dt>Verarbeitung</dt><dd>load_result_directories(), aggregate_results(), validate_summary(), plot_all_comparisons().</dd>
+<dt>Ausgabe</dt><dd>DataFrames und PNG-/SVG-Plots. Die Summary-CSV wird vom aufrufenden pipeline.py geschrieben.</dd></dl>
+<div class="links"><a href="figures/08_result_analysis.svg">SVG</a><a href="figures/08_result_analysis.png">PNG</a>
+<a href="08_result_analysis.puml">PlantUML-Quelle</a></div>
+<figure><a href="figures/08_result_analysis.svg"><img src="figures/08_result_analysis.svg" width="708" height="1341" alt="UML: Ergebnisanalyse" loading="lazy"></a></figure>
+<p class="note">Resilienz umfasst alle Szenen, mittlere Hops und Stretch nur erfolgreiche Routings. Die Plotfunktionen erhalten den aggregierten DataFrame, lesen nicht die Summary-CSV. Vollständig fehlende Gruppen werden mit dem Plan abgeglichen; eindeutige Wiederholungsnummern prüft validate_summary() nicht. Automatische Plotgruppen enthalten höchstens drei Datasets; manuelle Gruppen können abweichen.</p></section>
+<section id="09_environment_check">
+<p class="eyebrow">Module / 09</p><h2>Umgebungsprüfung</h2><p><a href="../../src/environment_check.py"><code>src/environment_check.py</code></a></p>
+<dl><dt>Eingabe</dt><dd>Namen der Bibliotheken, die ein aufrufendes Modul benötigt, und die aktuelle Python-Umgebung.</dd><dt>Verarbeitung</dt><dd>check_dependencies() kontrolliert die Python-Code-Mindestversion und versucht die angeforderten Imports.</dd>
+<dt>Ausgabe</dt><dd>Bei Erfolg None; bei ungeeignetem Python oder fehlgeschlagenem Import ein RuntimeError mit Einrichtungshinweisen.</dd></dl>
+<div class="links"><a href="figures/09_environment_check.svg">SVG</a><a href="figures/09_environment_check.png">PNG</a>
+<a href="09_environment_check.puml">PlantUML-Quelle</a></div>
+<figure><a href="figures/09_environment_check.svg"><img src="figures/09_environment_check.svg" width="742" height="877" alt="UML: Umgebungsprüfung" loading="lazy"></a></figure>
+<p class="note">Die Funktion installiert keine Pakete und erzwingt keinen vollständigen Versionsabgleich mit requirements.txt. Python 3.10 ist die Code-Mindestversion; die festgelegten Referenzpakete benötigen Python 3.11 oder neuer.</p></section>
+<section id="10_routing_datenklassen">
+<p class="eyebrow">Routingdetails / 10</p><h2>Datenklassen des Routings</h2><p><a href="../../src/routing_algorithms.py"><code>src/routing_algorithms.py</code></a></p>
+<dl><dt>Eingabe</dt><dd>Ergebnisse des Strukturaufbaus beziehungsweise der Weiterleitung.</dd><dt>Verarbeitung</dt><dd>RoutingStructure und RoutingResult sind die beiden tatsächlichen Datenklassen, keine erfundenen Klassen je Algorithmus.</dd>
+<dt>Ausgabe</dt><dd>Strukturinformationen für die Weiterleitung und Ergebnisinformationen für experiment.py.</dd></dl>
+<div class="links"><a href="figures/10_routing_datenklassen.svg">SVG</a><a href="figures/10_routing_datenklassen.png">PNG</a>
+<a href="10_routing_datenklassen.puml">PlantUML-Quelle</a></div>
+<figure><a href="figures/10_routing_datenklassen.svg"><img src="figures/10_routing_datenklassen.svg" width="389" height="679" alt="UML: Datenklassen des Routings" loading="lazy"></a></figure>
+<p class="note">nr_structures zählt die vorbereiteten, nicht nur die getesteten Strukturen. Die Rohdaten-CSV speichert nicht die vollständige route. grown_graph ist eine optionale Diagnosekopie und im normalen Experiment None.</p></section>
+<section id="11_test_pipeline">
+<p class="eyebrow">Tests / 11</p><h2>Pipeline- und Kerntests</h2><p><a href="../../tests/test_pipeline.py"><code>tests/test_pipeline.py</code></a></p>
+<dl><dt>Eingabe</dt><dd>Kleine Testkonfigurationen, Graphen und feste Seeds.</dd><dt>Verarbeitung</dt><dd>Step5PipelineTest prüft Planung, Parameter, deterministische Szenen, Strukturen und kleine vollständige Läufe.</dd>
+<dt>Ausgabe</dt><dd>unittest-Bericht; vorübergehende Ergebnisdateien in Testordnern.</dd></dl>
+<div class="links"><a href="figures/11_test_pipeline.svg">SVG</a><a href="figures/11_test_pipeline.png">PNG</a>
+<a href="11_test_pipeline.puml">PlantUML-Quelle</a></div>
+<figure><a href="figures/11_test_pipeline.svg"><img src="figures/11_test_pipeline.svg" width="672" height="639" alt="UML: Pipeline- und Kerntests" loading="lazy"></a></figure>
+<p class="note">Die Diagrammblöcke fassen unabhängige Testmethoden thematisch zusammen, nicht in einer verpflichtenden Testreihenfolge.</p></section>
+<section id="12_test_gui">
+<p class="eyebrow">Tests / 12</p><h2>Tests der GUI-Hilfsfunktionen</h2><p><a href="../../tests/test_gui.py"><code>tests/test_gui.py</code></a></p>
+<dl><dt>Eingabe</dt><dd>Beispielauswahlen und Konfigurationen, ohne interaktive Browserbedienung.</dd><dt>Verarbeitung</dt><dd>Step5GuiTest prüft Zahlenbereiche, Datasets, Konfigurationsaufbau, Pfade, Modi und Serverbefehle.</dd>
+<dt>Ausgabe</dt><dd>unittest-Bericht und temporäre Konfigurationsdateien.</dd></dl>
+<div class="links"><a href="figures/12_test_gui.svg">SVG</a><a href="figures/12_test_gui.png">PNG</a>
+<a href="12_test_gui.puml">PlantUML-Quelle</a></div>
+<figure><a href="figures/12_test_gui.svg"><img src="figures/12_test_gui.svg" width="491" height="621" alt="UML: Tests der GUI-Hilfsfunktionen" loading="lazy"></a></figure>
+<p class="note">Diese Tests betreffen die Hilfsfunktionen. Die tatsächliche Streamlit-App wird im gesonderten Integrationstest geprüft.</p></section>
+<section id="13_test_feedback_improvements">
+<p class="eyebrow">Tests / 13</p><h2>Regressionstests der Überarbeitung</h2><p><a href="../../tests/test_feedback_improvements.py"><code>tests/test_feedback_improvements.py</code></a></p>
+<dl><dt>Eingabe</dt><dd>Testregistrierungen, Konfigurationen und temporäre Ergebnisdaten.</dd><dt>Verarbeitung</dt><dd>Prüfung von Defaults, Validierung, Metadaten, fehlenden Gruppen, Fortschritt und Resume.</dd>
+<dt>Ausgabe</dt><dd>unittest-Bericht einschließlich gezielter Vergleiche neu berechneter und fortgesetzter Testläufe.</dd></dl>
+<div class="links"><a href="figures/13_test_feedback_improvements.svg">SVG</a><a href="figures/13_test_feedback_improvements.png">PNG</a>
+<a href="13_test_feedback_improvements.puml">PlantUML-Quelle</a></div>
+<figure><a href="figures/13_test_feedback_improvements.svg"><img src="figures/13_test_feedback_improvements.svg" width="452" height="691" alt="UML: Regressionstests der Überarbeitung" loading="lazy"></a></figure>
+<p class="note">Die Übersicht zeigt die nicht auf Illustrationen bezogenen Prüfbereiche. Sie ist kein Nachweis, dass alle möglichen Erweiterungen oder Konfigurationen korrekt sind.</p></section>
+<section id="14_test_gui_integration">
+<p class="eyebrow">Tests / 14</p><h2>Streamlit-Integrationstests</h2><p><a href="../../tests/test_gui_integration.py"><code>tests/test_gui_integration.py</code></a></p>
+<dl><dt>Eingabe</dt><dd>Streamlit-AppTest, isolierte App-Zustände und ein kleiner Pilotlauf.</dd><dt>Verarbeitung</dt><dd>GuiIntegrationTest: unbekannte Graphart, unveränderte Vorauswahl und vollständiger GUI-Pilot.</dd>
+<dt>Ausgabe</dt><dd>unittest-Bericht; Pilot mit vier Rohdaten-CSVs und 24 Plotdateien. Ohne Streamlit werden die Tests übersprungen.</dd></dl>
+<div class="links"><a href="figures/14_test_gui_integration.svg">SVG</a><a href="figures/14_test_gui_integration.png">PNG</a>
+<a href="14_test_gui_integration.puml">PlantUML-Quelle</a></div>
+<figure><a href="figures/14_test_gui_integration.svg"><img src="figures/14_test_gui_integration.svg" width="682" height="874" alt="UML: Streamlit-Integrationstests" loading="lazy"></a></figure>
+<p class="note">AppTest benötigt keinen externen Browser. Damit werden weder visuelle Browserprüfungen noch Rückmeldungen echter Benutzer ersetzt.</p></section><footer>Quellenabgleich: 20.09.2026. Die Diagramme beschreiben den Code, nicht einen neuen Testlauf.
+SVG und PNG wurden aus denselben PlantUML-Quellen erzeugt.</footer></main></body></html>

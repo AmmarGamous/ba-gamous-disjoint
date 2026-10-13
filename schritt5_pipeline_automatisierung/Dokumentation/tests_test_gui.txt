@@ -1,0 +1,40 @@
+tests/test_gui.py
+
+
+Zweck
+`tests/test_gui.py` prüft die GUI-Hilfsfunktionen ohne laufenden Streamlit-Server.
+
+Geprüfte Bereiche
+- Parsen von Zahlenlisten
+- inklusive Failure-Rate-Bereiche
+- Paper-Graphsets und zugehörige Failure-Defaults der GUI
+- Entfernen veralteter Modulimporte vor einem neuen GUI-Import
+- Spaltennamen und Graphmetadaten im Dry-Run-Plan
+- Aufbau von GUI-Konfigurationen
+- Random- und Real-World-Plotgruppen
+- lokale GraphML-Pfade
+- Pflichtauswahlen
+- Schreiben von `gui_config.json`
+- relative Ausgabeordner
+- vorbereitete Serverbefehle
+
+Wichtige Klasse
+- `Step5GuiTest`: bündelt die Hilfsfunktionstests dieses Moduls.
+
+Besonderheiten
+- Die Tests importieren `gui.py` direkt.
+- Es wird keine Browser- oder Streamlit-Sitzung gestartet.
+- Die Tests prüfen Aufbau und Inhalte erzeugter Konfigurationen. Daraus folgt
+  kein allgemeiner numerischer Gleichheitsnachweis für CLI- und GUI-Experimente.
+
+Zusätzlich nach einer Erweiterung prüfen
+- Der neue Graphdialog erzeugt den korrekten Dataset-Typ und die passenden
+  Parameter, nicht nur einen neuen sichtbaren Namen.
+- Neue Optionen sind auswählbar, aber nicht unbeabsichtigt vorausgewählt.
+- Die erzeugte JSON enthält genau die ausgewählten Algorithmen und Fehlermodelle.
+- Ein kleiner vollständiger Lauf zeigt auch Plots des Zusatzalgorithmus.
+
+Diese Punkte sind ergänzende Prüfaufgaben, keine Behauptung über die Abdeckung
+dieses Moduls. Automatisierte Oberflächenprüfungen beschreibt
+tests_test_gui_integration.txt. Manuelle Browsertests bleiben zusätzlich nötig;
+den allgemeinen Testaufruf und weitere Prüfleitfäden nennt README.txt.
