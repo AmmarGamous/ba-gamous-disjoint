@@ -185,3 +185,22 @@ Angaben und Prüfsummen im Laufordner.
 Für unabhängige Wiederholungstests sollten neue Laufnamen verwendet werden.
 Ein erneuter Aufruf mit aktiviertem Resume verwendet bereits gespeicherte
 Ergebnisse und stellt daher keine unabhängige Neuberechnung dar.
+
+## Lizenz
+
+Der Quellcode, die Projektkonfigurationen und die zugehörige
+Softwaredokumentation stehen unter der [MIT-Lizenz](LICENSE).
+Copyright für die eigenen Beiträge: 2026 Ammar Gamous.
+
+Der übernommene TREE-Code und die daraus abgeleiteten Bestandteile behalten
+den Copyright-Hinweis von Oliver Schweiger (2022). Dieser ist auch in der
+zentralen Lizenzdatei aufgeführt. Die ursprüngliche
+[TREE-Lizenzdatei](external/TREE/LICENSE) bleibt erhalten.
+
+Die MIT-Lizenz erteilt keine zusätzlichen Rechte an Fremdmaterialien:
+Insbesondere bleiben die GraphML-Datensätze der
+[Internet Topology Zoo](http://www.topology-zoo.org/) und eingebundene
+Bibliotheken ihren jeweiligen Nutzungs- und Lizenzbedingungen unterstellt.
+Die studentischen Feedbackarchive in `schritt7_erweiterung/` sowie die
+Bachelorarbeit und Präsentationsfolien in `schritt8/` sind von dieser
+MIT-Lizenzierung ausgenommen.
