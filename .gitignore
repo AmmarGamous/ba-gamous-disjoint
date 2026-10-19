@@ -3,4 +3,7 @@ __pycache__/
 *.pyc
 .ipynb_checkpoints/
 Microsoft/
-schritt5_pipeline_automatisierung/output/
+schritt5_pipeline_automatisierung/[Oo]utput/*
+!schritt5_pipeline_automatisierung/[Oo]utput/illustrations/
+schritt5_pipeline_automatisierung/[Oo]utput/illustrations/*
+!schritt5_pipeline_automatisierung/[Oo]utput/illustrations/figures/
